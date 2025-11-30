@@ -3,8 +3,8 @@ import inspect
 import os
 import sys
 import errno
-import imp
 import subprocess
+import importlib.util
 
 def getMyFilename(up=1):
 	'''
@@ -84,8 +84,13 @@ def get_config_dirs(module_name=None, package_name=None):
 		# not this function, but the caller of this function, so up=2
 		installed_dir = getMyDir(up=2)
 	else:
-		package_path = imp.find_module(package_name)[1]
-		installed_dir = os.path.abspath(package_path)
+		spec = importlib.util.find_spec(package_name)
+		if spec is None:
+			raise ImportError('Cannot find package %s' % (package_name,))
+		if spec.submodule_search_locations:
+			installed_dir = os.path.abspath(list(spec.submodule_search_locations)[0])
+		else:
+			installed_dir = os.path.abspath(os.path.dirname(spec.origin))
 
 	# user home dir
 	user_dir = os.path.expanduser('~')

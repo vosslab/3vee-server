@@ -13,7 +13,6 @@ echo "----------------"
 rm -f importer.py
 {
 	echo "#!/usr/bin/env python3"
-	echo "from pyami import quietscipy"
 	for i in appionlib/*.py; do
 		j=$(basename "$i" .py)
 		echo "print('... ${j}')"
@@ -36,7 +35,6 @@ echo "----------------"
 rm -f importer.py
 {
 	echo "#!/usr/bin/env python3"
-	echo "from pyami import quietscipy"
 	for i in *.py; do
 		j=$(basename "$i" .py)
 		echo "print('... ${j}')"

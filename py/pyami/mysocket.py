@@ -6,14 +6,19 @@ from pyami import moduleconfig
 def getDefaultConfigs():
 	dconfig = {}
 	myname = socket.gethostname().lower()
-	myaddress = socket.gethostbyname(myname)
+	try:
+		myaddress = socket.gethostbyname(myname)
+	except Exception:
+		myaddress = '127.0.0.1'
 	dconfig['my ip map'] = {myname:myaddress}
 	return dconfig
 
 try:
 	# combine is set to false because this is only meaningful to be at one level: Host
 	configs = moduleconfig.getConfigured('pyami.cfg', package='pyami', combine=False)
-except:
+	if 'my ip map' not in configs:
+		raise KeyError
+except Exception:
 	configs = getDefaultConfigs()
 
 def getLoadedConfigs():
