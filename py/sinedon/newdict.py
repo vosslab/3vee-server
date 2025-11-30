@@ -1,7 +1,6 @@
 import numpy
 import os
 from pyami.ordereddict import OrderedDict 
-from pyami import weakattr
 import array
 
 class FileReference(object):

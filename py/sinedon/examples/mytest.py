@@ -25,11 +25,11 @@ def queryTest():
 
 	results = o.query()
 	myresult = results[0]
-	print 'QUERY RESULTS'
-	print 'Other', myresult
-	print 'Some', myresult['abc']
-	print 'T', myresult['t']
-	print 'Asdf', myresult['t']['asdf']
+	print('QUERY RESULTS')
+	print('Other', myresult)
+	print('Some', myresult['abc'])
+	print('T', myresult['t'])
+	print('Asdf', myresult['t']['asdf'])
 
 if __name__ == '__main__':
 	insertTest()

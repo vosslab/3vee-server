@@ -6,14 +6,12 @@
   This allows more complex query such those
 	require in, group by etc.
 """
-import time
 from sinedon import dbconfig
 from sinedon import sqldb
 
 connections = {}
 
 def getConnection(modulename='leginondata'):
-	global connections
 	param = dbconfig.getConfig(modulename)
 	if not modulename in connections.keys():
 		connections[modulename] = sqldb.sqlDB(**param)
@@ -25,7 +23,6 @@ def ping(modulename,param):
 		Check connection stat and reconnect if needed.
 		pymysql can reconnect when pinged.
 		'''
-		global connections
 		db_obj = connections[modulename]
 		# pymysql can reconnect when pinged
 		db_obj.dbConnection.ping(reconnect=True)

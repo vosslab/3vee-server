@@ -55,7 +55,7 @@ class sqlDB(object):
 		## then try the old insert_id() method
 		try:
 			insert_id = self.c.lastrowid
-		except Exception as e:
+		except Exception:
 			insert_id = self.c.insert_id()
 		return insert_id
 
@@ -66,4 +66,3 @@ class sqlDB(object):
 	def close(self):
 		'Close a DB connection'
 		self.dbConnection.close()
-

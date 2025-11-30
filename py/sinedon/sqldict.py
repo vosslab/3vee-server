@@ -148,25 +148,23 @@ OR
 
 
 import sys
-from sinedon import sqlexpr
 import copy
-from sinedon import sqldb
 import datetime
 import re
 import numpy
 import math
 import pymysql
 import pymysql.err
-from types import *
-from sinedon import newdict
-from sinedon import data
 import sinedon
 import pyami.mrc
 import os
-from sinedon import dbconfig
 import pickle as cPickle # python3
 import time
-from pyami import weakattr
+from sinedon import dbconfig
+from sinedon import sqldb
+from sinedon import sqlexpr
+from sinedon import data
+from sinedon import newdict
 
 class SQLDict(object):
 
@@ -464,12 +462,16 @@ class _Cursor:
 
 	def fetchall(self):
 		"""Fetch all objects from the current cursor context."""
-		return map(self.load, self.cursor.fetchall())
+		return list(map(self.load, self.cursor.fetchall()))
 
 	def fetchmany(self, *size):
 		"""Fetch many objects from the current cursor context.
 		Can specify an optional size argument for number of rows."""
-		return map(self.load, apply(self.cursor.fetchmany, size))
+		if size:
+			rows = self.cursor.fetchmany(*size)
+		else:
+			rows = self.cursor.fetchmany()
+		return list(map(self.load, rows))
 
 	def __getattr__(self, attr):
 		return getattr(self.cursor, attr)
@@ -504,8 +506,8 @@ class _Index:
 	def __setitem__(self, i=(), v=None):
 		"""Update the item in the database matching i
 		with the value v."""
-		if type(i) == ListType: i = tuple(i)
-		elif type(i) != TupleType: i = (i,)
+		if isinstance(i, list): i = tuple(i)
+		elif not isinstance(i, tuple): i = (i,)
 		if self.fields is not None:
 			w = sqlexpr.AND_EQUAL(zip(self.fields,i))
 		else: w=1
@@ -513,8 +515,8 @@ class _Index:
 
 	def __getitem__(self, i=()):
 		"""Select items in the database matching i."""
-		if type(i) == ListType: i = tuple(i)
-		elif type(i) != TupleType: i = (i,)
+		if isinstance(i, list): i = tuple(i)
+		elif not isinstance(i, tuple): i = (i,)
 		if self.fields is not None:
 			w = sqlexpr.AND_EQUAL(zip(self.fields,i))
 		else: w=1
@@ -522,8 +524,8 @@ class _Index:
 
 	def __delitem__(self, i):
 		"""Delete items in the database matching i."""
-		if type(i) == ListType: i = tuple(i)
-		elif type(i) != TupleType: i = (i,)
+		if isinstance(i, list): i = tuple(i)
+		elif not isinstance(i, tuple): i = (i,)
 		w = sqlexpr.AND_EQUAL(zip(self.fields,i))
 		return self.table.delete(i, WHERE=w)
 
@@ -695,7 +697,7 @@ class _multipleQueries:
 					## there could be columns that
 					## are no longer used
 					newdata.friendly_update(r)
-				except KeyError as e:
+				except KeyError:
 					raise
 
 				## add pending dbid for now, actual dbid
@@ -718,8 +720,6 @@ class _multipleQueries:
 		### already done
 		if root.dbid is not None:
 			return 
-
-		dbinfo = self.db.kwargs
 
 		needpath = []
 		for key,value in root.items(dereference=False):
@@ -838,16 +838,16 @@ class _createSQLTable:
 					# pymysql would try to add and gives duplicated column error.
 					# Avoid doing add if The field is in both definition and describe
 					not_to_add = True
-				if not not_to_add:
-					q = sqlexpr.AlterTable(self.table, column, 'ADD').sqlRepr()
-					queries.append(q)
-					# only add index if column is added
-					l = re.findall('^REF\%s' %(sep,),column['Field'])
-					if l:
-						q = sqlexpr.AlterTableIndex(self.table, column).sqlRepr()
-						if debug:
-							print('add index when adding a column', q)
+					if not not_to_add:
+						q = sqlexpr.AlterTable(self.table, column, 'ADD').sqlRepr()
 						queries.append(q)
+						# only add index if column is added
+						l = re.findall('^REF\\%s' %(sep,),column['Field'])
+						if l:
+							q = sqlexpr.AlterTableIndex(self.table, column).sqlRepr()
+							if debug:
+								print('add index when adding a column', q)
+							queries.append(q)
 				try:
 					for q in queries:
 						if debug:
@@ -982,7 +982,7 @@ class ObjectBuilder:
 		l = []
 		for k in self.columns:
 			l.append("%s=%s" % (k, repr(getattr(self, k))))
-		return ''.join([l0, join(l, ','), ')'])
+		return ''.join([l0, ','.join(l), ')'])
 
 	def __repr__(self):
 		r =  self.dumpdict()
@@ -1046,13 +1046,9 @@ def queryFormatOptimized(queryinfo,tableselect):
 	sqljoin = []
 	sqlwhere = []
 	optimizedjoinlist = []
-	optimizedjoinonlist = []
-	alljoin={}
 	joinon={}
 	onjoin={}
 	alljoinon={}
-	wherejoin={}
-	listselect=[]
 	for key,value in queryinfo.items():
 		if value['known']:
 			continue
@@ -1113,7 +1109,7 @@ def queryFormatOptimized(queryinfo,tableselect):
 	sqljoinstr = ' '.join(sqljoin)
 	### convert:	JOIN ... ON (), JOIN ... ON ()
 	###			to:		JOIN ( ... ) ON ( ... AND ...)
-	reg_ex = 'JOIN[ ]{1,}(.*)[ ]{1,}ON[ ]{1,}\((.*)[ ]{0,}\)'
+	reg_ex = r'JOIN[ ]{1,}(.*)[ ]{1,}ON[ ]{1,}\((.*)[ ]{0,}\)'
 	p	= re.compile(reg_ex, re.IGNORECASE)
 	refjoinlist = []
 	fieldjoinlist = []
@@ -1193,13 +1189,12 @@ def unflatDict(in_dict, join):
 	"""
 	items = {}
 	try:
-		keys = in_dict.keys()
-	
+		item_iter = in_dict.items()
 	except AttributeError:
-		raise TypeError("Must be a Dictionary") 
+		raise TypeError("Must be a Dictionary")
 
 	allsubdicts = {}
-	for key,value in in_dict.items():
+	for key,value in item_iter:
 		a = key.split(sep)
 		if a[0] == 'SUBD':
 			name = a[1]
@@ -1212,9 +1207,9 @@ def unflatDict(in_dict, join):
 	for subdict in allsubdicts:
 		dm={}
 		for key,value in in_dict.items():
-			l = re.findall('^SUBD\%s%s' %(sep,subdict,),key)
+			l = re.findall('^SUBD\\%s%s' %(sep,subdict,),key)
 			if l:
-				s = re.sub('^SUBD\%s%s\%s' %(sep,subdict,sep),'',key)
+				s = re.sub('^SUBD\\%s%s\\%s' %(sep,subdict,sep),'',key)
 				dm.update({s:value})
 
 		allsubdicts[subdict]=unflatDict(dm, join)
@@ -1246,17 +1241,16 @@ def dict2matrix(in_dict):
 	# Get the shape and size of the matrix
 	ij=[]
 	for m in in_dict:
-		i=eval(re.findall('\d+',m)[0])
-		j=eval(re.findall('\d+',m)[1])
+		i=eval(re.findall(r'\d+',m)[0])
+		j=eval(re.findall(r'\d+',m)[1])
 		ij.append((i,j))
 	shape = max(ij)
-	size  = shape[0]*shape[1]
 
 	# Build the matrix
 	matrix = numpy.zeros(shape, numpy.float64)
 	for m in in_dict:
-		i=eval(re.findall('\d+',m)[0])-1
-		j=eval(re.findall('\d+',m)[1])-1
+		i=eval(re.findall(r'\d+',m)[0])-1
+		j=eval(re.findall(r'\d+',m)[1])-1
 		matrix[i][j]=in_dict[m]
 
 	return matrix
@@ -1343,7 +1337,6 @@ def sql2data(in_dict, qikey=None, qinfo=None):
 	 'id': ('manager', 'corrector', 49)}
 	"""
 	content={}
-	allsubdicts={}
 
 	if None in (qikey,qinfo):
 		join = None
@@ -1460,7 +1453,7 @@ def datatype(in_dict, join=None, parentclass=None):
 	for matrix in allarrays:
 		dm={}
 		for key,value in in_dict.items():
-			l = re.findall('^ARRAY\%s%s' %(sep,matrix,),key)
+			l = re.findall('^ARRAY\\%s%s' %(sep,matrix,),key)
 			if l:
 				dm.update({key:value})
 		allarrays[matrix]=dict2matrix(dm)
@@ -1689,4 +1682,3 @@ if __name__ == '__main__':
 			continue
 		print(row[field])
 		print('')
-

@@ -428,8 +428,6 @@ class ColumnSpec(dict):
 				auto:  1 = AUTO_INCREMENT
 			"""
 
-			sqlIndex_str = ''
-
 			if name and type:
 				pieces = []
 				sql_args = []
@@ -762,7 +760,6 @@ def joinFormat(field, joinTable):
 	return sqljoin
 
 def whereFormat(in_dict):
-	first = True
 	whereDict = sqldict.flatDict(in_dict['where'])
 	alias = in_dict['alias']
 	wherelist = []
@@ -792,7 +789,6 @@ def whereFormat(in_dict):
 	return wherestr
 
 def whereFormatSimple(in_dict):
-	first = True
 	whereDict = sqldict.flatDict(in_dict)
 	wherelist = []
 	for key, value in whereDict.items():
@@ -854,4 +850,3 @@ if __name__ == "__main__":
 		if expr.startswith('>>> '):
 			expr = expr[4:]
 			print(repr(eval(expr)))
-

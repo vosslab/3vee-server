@@ -3,8 +3,6 @@ import math
 import os
 import re
 import sys
-import types
-import glob
 
 ####
 # This is a low-level file with NO database connections
@@ -112,14 +110,14 @@ def shortenImageName(imgname):
 	#remove path
 	shortimgname = os.path.basename(shortimgname)
 	#remove the altas name
-	shortimgname = re.sub("^(?P<ses>[0-9][0-9][a-z][a-z][a-z][0-9][0-9][^_]+)_.+(?P<gr>0[^0]gr)",
-		"\g<ses>_\g<gr>",shortimgname)
+	shortimgname = re.sub(r"^(?P<ses>[0-9][0-9][a-z][a-z][a-z][0-9][0-9][^_]+)_.+(?P<gr>0[^0]gr)",
+		r"\g<ses>_\g<gr>",shortimgname)
 	#remove the version tags
 	shortimgname = re.sub("_v[0-9][0-9]","",shortimgname)
 	#remove extra leading zeros, but leave one
-	shortimgname = re.sub("_00+(?P<num>0[^0])","_\g<num>",shortimgname)
+	shortimgname = re.sub(r"_00+(?P<num>0[^0])", r"_\g<num>",shortimgname)
 	#first RCT id, keep second
-	shortimgname = re.sub("_[0-9][0-9]_(?P<en>[0-9]+en)","_\g<en>",shortimgname)
+	shortimgname = re.sub(r"_[0-9][0-9]_(?P<en>[0-9]+en)", r"_\g<en>",shortimgname)
 	#remove double underscores
 	shortimgname = re.sub("__","_",shortimgname)
 	#remove orphaned underscores
@@ -452,5 +450,3 @@ class LeginonLogger(object):
 # This is a low-level file with NO database connections
 # Please keep it this way
 ####
-
-

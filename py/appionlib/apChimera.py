@@ -7,7 +7,6 @@ import math
 import time
 import glob
 import numpy
-import shutil
 import random
 import colorsys
 import subprocess
@@ -157,7 +156,6 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 		box = boxdims[0]
 	halfbox = int(box/2)
 	tmphed = density + '.hed'
-	tmpimg = density + '.img'
 	hedcmd = ('proc3d %s %s' % (tmpfile, tmphed))
 	if sym.lower()[:4] != 'icos':
 		hedcmd = hedcmd + " rot=90"
@@ -458,4 +456,3 @@ def getColorList():
 		rgbindex = [ i%6, (i/6)%6, (i/36)%6 ]
 		if isGoodColor(rgbindex):
 			colorlist.append(rgbindex)
-

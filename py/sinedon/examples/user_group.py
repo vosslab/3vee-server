@@ -48,12 +48,10 @@ if __name__ == "__main__":
 	groupq['group name'] = "ami"
 	groupdatas = groupq.query(results=1)
 	if not groupdatas:
-		apDisplay.printError("group not found")
+		print("group not found")
 	if len(groupdatas) > 1:
-		print "too many ami groups"
+		print("too many ami groups")
 	groupdata = groupdatas[0]
-
-
 
 
 

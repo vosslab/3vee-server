@@ -1,12 +1,10 @@
 import os
 import re
-import sys
 import time
 import glob
 import subprocess
 import shutil
 from appionlib import apDisplay
-from appionlib import apRelion
 from pyami import mrc
 from pyami import fileutil
 
@@ -98,7 +96,7 @@ def moveStack(filename1, filename2, warn=True):
 def removeFilePattern(pattern, warn=True):
 	files = glob.glob(pattern)
 	if warn is True:
-		apDisplay.printWarning("%d files with the patterns '%s' will be removed" 
+		apDisplay.printWarning("%d files with the patterns '%s' will be removed"
 			% (len(files), pattern))
 		time.sleep(3)
 	removed = 0
@@ -151,7 +149,7 @@ def getBoxSize(filename, msg=True):
 		headerdict = apImagicFile.readImagicHeader(headerfilename)
 		shape = (headerdict['rows'], headerdict['lines'], headerdict['nimg'])
 		return shape
-	if '.mrc' in filename[-5:]: 
+	if '.mrc' in filename[-5:]:
 		headerdict = mrc.readHeaderFromFile(filename)
 		shape = headerdict['shape']
 		if len(shape) == 2:
@@ -164,18 +162,18 @@ def getBoxSize(filename, msg=True):
 	for line in proc.stdout:
 		sline = line.strip()
 		lines += line
-		m = re.match("^Image\(s\) are ([0-9]+)x([0-9]+)x([0-9]+)", sline)	
+		m = re.match(r"^Image\(s\) are ([0-9]+)x([0-9]+)x([0-9]+)", sline)
 		if m and m.groups() and len(m.groups()) > 1:
 			xdim = int(m.groups()[0])
 			ydim = int(m.groups()[1])
 			zdim = int(m.groups()[2])
 			return (xdim,ydim,zdim)
-		m = re.match("^0\.\s+([0-9]+)x([0-9]+)\s+", sline)	
+		m = re.match(r"^0\.\s+([0-9]+)x([0-9]+)\s+", sline)
 		if m and m.groups() and len(m.groups()) > 1:
 			xdim = int(m.groups()[0])
 			ydim = int(m.groups()[1])
 			return (xdim,ydim,1)
-		m = re.match("^0\.\s+([0-9]+)x([0-9]+)x([0-9]+)\s+", sline)	
+		m = re.match(r"^0\.\s+([0-9]+)x([0-9]+)x([0-9]+)\s+", sline)
 		if m and m.groups() and len(m.groups()) > 1:
 			xdim = int(m.groups()[0])
 			ydim = int(m.groups()[1])
@@ -206,8 +204,6 @@ def numImagesInStack(imgfile, boxsize=None):
 			apDisplay.printError("boxsize is required for SPIDER stacks")
 		imgmem = boxsize*(boxsize+2)*4
 		numimg = int('%d' % (os.stat(imgfile)[6]/imgmem))
-	elif imgfile.endswith(".star"):
-		return len(apRelion.starParticleArray(imgfile))
 	elif 'mrc' in imgfile[-4:]:
 		numimg = mrc.readHeaderFromFile(imgfile)['nz']
 	else:
@@ -293,7 +289,6 @@ def compress_and_rsync(from_path, to_dir, remove_sent=False, delay=0):
 	time.sleep(delay)
 
 	if os.path.isdir(from_path):
-		basename = os.path.basename(from_path)
 		wild_card = '/*'
 		#bzip2 command need to modify from_path to allow directory
 		bzip2_from_path = from_path+wild_card
@@ -305,7 +300,7 @@ def compress_and_rsync(from_path, to_dir, remove_sent=False, delay=0):
 	cmd = 'pbzip2 -k -p1 %s' % (bzip2_from_path)
 	if to_dir:
 		rsync_cmd = makeRsyncCommand(rsync_from_path, to_dir, remove_sent)
-		cmd += '; '+rsync_cmd	
+		cmd += '; '+rsync_cmd
 	print(cmd)
 	proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 	(output, error) = proc.communicate()
@@ -314,5 +309,3 @@ def compress_and_rsync(from_path, to_dir, remove_sent=False, delay=0):
 # This is a low-level file with NO database connections
 # Please keep it this way
 ####
-
-

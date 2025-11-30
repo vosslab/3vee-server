@@ -6,15 +6,14 @@
 #       see  http://leginon.org
 #
 
-import sys
-from sinedon import data
 import pymysql
-pymysql.install_as_MySQLdb()
-from sinedon import sqldict
 import threading
-import logging
-import pymysql.err
+
+from sinedon import data
 from sinedon import dbconfig
+from sinedon import sqldict
+
+pymysql.install_as_MySQLdb()
 
 columns_created = {}
 
@@ -286,7 +285,6 @@ class DBDataKeeper(object):
 					self.recursiveInsert(dat)
 
 		## insert this object
-		dbinfo = self.connect_kwargs()
 		dbid = self.flatInsert(newdata, force=force)
 		newdata.setPersistent(dbid)
 
@@ -340,4 +338,3 @@ class DBDataKeeper(object):
 
 	def ids(self):
 		pass
-

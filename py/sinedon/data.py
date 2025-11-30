@@ -4,19 +4,13 @@
 # For terms of the license agreement
 # see http://leginon.org
 
-import numpy
-from sinedon import newdict
-import warnings
-import types
-import threading
-from sinedon import dbdatakeeper
-import copy
-from sinedon import tcptransport
-import weakref
-import os
-from sinedon import connections
-from pyami import weakattr
 import itertools
+import numpy
+import weakref
+
+from sinedon import connections
+from sinedon import newdict
+from sinedon import tcptransport
 
 class DataError(Exception):
 	pass
@@ -571,4 +565,3 @@ def NULL(dataclass):
 	d = dataclass()
 	d.setPersistent(0)
 	return d
-

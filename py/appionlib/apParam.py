@@ -16,8 +16,6 @@ import pickle
 ## appion
 from appionlib import apDisplay
 
-from contextlib import redirect_stdout
-
 ####
 # This is a low-level file with NO database connections
 # Please keep it this way
@@ -288,6 +286,7 @@ def writeFunctionLog(cmdlist, logfile=None, msg=True):
 def parseWrappedLines(lines):
 	goodlines=[]
 	add=False
+	newline=''
 	for i, line in enumerate(lines):
 		if line.count('\\') >0:
 			newline = newline+line.strip('\\\n')+' '
@@ -392,7 +391,6 @@ def splitMultipleSets(param_str,numiter):
 	fullparam = []
 	set_bits = param_upper.split(':')
 	position = 0
-	total_repeat = 0
 	for set in set_bits:
 		m_index = set.find('X')
 		if m_index == -1:
@@ -439,13 +437,13 @@ def getXversion():
 		if re.match("Build ID:", line):
 			sline = re.sub("Build ID:", "", line).strip()
 			sline = re.sub("xorg-x11-server", "", sline).strip()
-			m = re.search("\s*([0-9\.]+)", sline)
+			m = re.search(r"\s*([0-9\.]+)", sline)
 			if m:
 				version = m.groups()[0]
 				return versionToNumber(version)
 		elif re.match("xorg-server", line):
 			sline = re.sub("xorg-server [0-9]+:", "", line).strip()
-			m = re.search("\s*([0-9\.]+)", sline)
+			m = re.search(r"\s*([0-9\.]+)", sline)
 			if m:
 				version = m.groups()[0]
 				return versionToNumber(version)
@@ -499,10 +497,9 @@ def killVirtualFrameBuffer(port=None):
 		return
 
 	### find specific virtual frame buffer
-	xvfbcmd = "ps -ef | grep -i xvfb | grep %d"%(port)
-	proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	stdout = proc.stdout
-	proc.wait()
+		xvfbcmd = "ps -ef | grep -i xvfb | grep %d"%(port)
+		proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		proc.wait()
 	lines = proc.stdout.readlines()
 	for line in lines:
 		if 'Xvfb' in line:
@@ -725,15 +722,3 @@ def ts(key, value, usage_key):
 # This is a low-level file with NO database connections
 # Please keep it this way
 ####
-
-
-
-
-
-
-
-
-
-
-
-

@@ -47,7 +47,7 @@ class Server(socketstreamtransport.Server, SocketServer.ThreadingTCPServer):
 							# TODO can it reaches here?
 							pass
 					else:
-						raise TransportError(string)
+						raise TransportError(str(e))
 			if exception:
 				string = 'No ports in range %s available' % (portrange,)
 				raise TransportError(string)
@@ -74,14 +74,12 @@ class Client(socketstreamtransport.Client):
 			hostname = self.serverlocation['hostname']
 			port = self.serverlocation['port']
 		except KeyError:
-			raise TransportErrorr('invalid location')
+			raise TransportError('invalid location')
 		try:
 			s.connect((hostname, port))
 		except socket.error as e:
-			en, string = e
-			raise TransportError(string)
+			raise TransportError(str(e))
 		return s
 
 Server.clientclass = Client
 Client.serverclass = Server
-

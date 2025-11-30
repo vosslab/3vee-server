@@ -9,7 +9,6 @@
 import re
 import os
 import sys
-import time
 import math
 import numpy
 import shutil
@@ -32,7 +31,6 @@ try:
 	from VolumeViewer.volume import default_settings, open_volume_file
 	import Surface
 	from SurfaceColor import color_surface, Radial_Color, Color_Map, Height_Color, Cylinder_Color
-	from SurfaceCap import surfcaps
 	from _surface import SurfaceModel, connected_pieces
 	from chimera import openModels
 	from MeasureVolume import enclosed_volume
@@ -89,7 +87,7 @@ class ChimSnapShots(object):
 	# -----------------------------------------------------------------------------
 	def saveChimeraState(self):
 		from SimpleSession.save import saveSession
-		self.sessionname = re.sub("\.", "_", self.volumepath)+".py"
+		self.sessionname = re.sub(r"\.", "_", self.volumepath)+".py"
 		self.writeMessageToLog("Saving chimera session: %s"%(self.sessionname))
 		saveSession(self.sessionname)
 		if os.path.isfile(self.sessionname):
@@ -160,7 +158,7 @@ class ChimSnapShots(object):
 		self.setZoom()
 
 		### This does not work on CentOS and Chimera v1.2509, but does with Chimera v1.4
-		result = re.search("([0-9]\.[0-9]*)", chimera.version.release)
+		result = re.search(r"([0-9]\.[0-9]*)", chimera.version.release)
 		if not result or not result.groups():
 			self.writeMessageToLog("Failed to get numeric version of Chimera: %s"
 				%(chimera.version.release))
@@ -624,9 +622,6 @@ class ChimSnapShots(object):
 	# -----------------------------------------------------------------------------
 	def snapshot_icosahedral(self):
 		self.writeMessageToLog("snapshot_icosahedral")
-		image1 = self.volumepath+'.1.png'
-		image2 = self.volumepath+'.2.png'
-		image3 = self.volumepath+'.3.png'
 		self.hideDust(10)
 		for s in self.surfaces:
 			self.color_surface_radially(s)

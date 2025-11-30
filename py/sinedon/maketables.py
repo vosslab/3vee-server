@@ -5,7 +5,6 @@ import sys
 import sqldict
 import inspect
 import sinedon
-import pymysql.err
 
 from optparse import OptionParser
 
@@ -85,7 +84,7 @@ def makeTables(sinedonname,modulename,dbname=None,xmlfile=None,check_exist=False
 
 	### import desire module
 	module = __import__(modulename)
-	modbase = re.sub("^.*\.", "", modulename)
+	modbase = re.sub(r"^.*\.", "", modulename)
 	tableData = getattr(module, modbase) ## hope this works
 	
 	### get module members
@@ -116,8 +115,8 @@ def makeTables(sinedonname,modulename,dbname=None,xmlfile=None,check_exist=False
 		if check_exist:
 			try:
 				dbd.diffSQLTable(tablename,definition)
-			except:
-				errno = e.args[0]
+			except Exception as err:
+				errno = err.args[0]
 				## some version of mysqlpython parses the exception differently
 				if not isinstance(errno, int):
 					errno = errno.args[0]
