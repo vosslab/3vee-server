@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  db:
+    image: mariadb:10.6
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: threevdata
+      MARIADB_USER: vossman
+      MARIADB_PASSWORD: vossman
+    volumes:
+      - db-data:/var/lib/mysql
+
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      THREEV_DB_HOST: db
+      THREEV_DB_NAME: threevdata
+      THREEV_DB_USER: vossman
+      THREEV_DB_PASSWORD: vossman
+    volumes:
+      - ./output:/var/www/html/3vee/output
+    depends_on:
+      - db
+
+volumes:
+  db-data:
