@@ -10,6 +10,8 @@ services:
       MARIADB_PASSWORD: vossman
     volumes:
       - db-data:/var/lib/mysql
+    logging:
+      driver: "none"
 
   web:
     build: .

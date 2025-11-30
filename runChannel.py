@@ -1,4 +1,4 @@
-#!/usr/bin/python -O
+#!/usr/bin/env python3
 
 """
 Python program for running 3v FSV Calc

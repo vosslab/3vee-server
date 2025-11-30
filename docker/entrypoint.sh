@@ -11,9 +11,9 @@ THREEV_SKIP_DB_WAIT="${THREEV_SKIP_DB_WAIT:-0}"
 THREEV_SKIP_DB_INIT="${THREEV_SKIP_DB_INIT:-0}"
 
 update_sinedon_config() {
-	python <<'PYCODE'
+	python3 <<'PYCODE'
 import os
-import ConfigParser
+import configparser
 
 app_root = os.environ.get('APP_ROOT', '/var/www/html/3vee')
 cfg_path = os.path.join(app_root, 'sinedon', 'sinedon.cfg')
@@ -23,7 +23,7 @@ db_user = os.environ.get('THREEV_DB_USER', 'vossman')
 db_pass = os.environ.get('THREEV_DB_PASSWORD', 'vossman')
 db_name = os.environ.get('THREEV_DB_NAME', 'threevdata')
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 config.read(cfg_path)
 
 if not config.has_section('global'):
@@ -47,10 +47,12 @@ wait_for_db() {
 		return
 	fi
 
+	local attempt=0
 	until mysql -h "${THREEV_DB_HOST}" -u "${THREEV_DB_USER}" -p"${THREEV_DB_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1
 	do
-		echo "Waiting for MariaDB at ${THREEV_DB_HOST}..."
-		sleep 2
+		((attempt++))
+		echo "Waiting for MariaDB at ${THREEV_DB_HOST}…attempt ${attempt}"
+		sleep 30
 	done
 }
 
@@ -58,7 +60,7 @@ bootstrap_db() {
 	if [[ "${THREEV_SKIP_DB_INIT}" == "1" ]]; then
 		return
 	fi
-	python "${APP_ROOT}/sinedon/maketables.py" threevdata || true
+	python3 "${APP_ROOT}/sinedon/maketables.py" threevdata || true
 }
 
 prepare_fs() {

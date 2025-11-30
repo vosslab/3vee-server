@@ -1,4 +1,4 @@
-#!/usr/bin/python -O
+#!/usr/bin/env python3
 
 """
 Python library for running 3v programs
@@ -15,15 +15,14 @@ import random
 import shutil
 import locale
 import subprocess
-from pyami import quietscipy
 from scipy import ndimage
-from string import lowercase
+from string import ascii_lowercase
 #local
 from appionlib import apDisplay
 from appionlib import apParam
 from appionlib import apChimera
 from appionlib import apFile
-from pyami import mrc, imagefun, surfarea
+from pyami import mrc, surfarea
 
 class ThreeVLib(object):
 	#====================
@@ -34,17 +33,12 @@ class ThreeVLib(object):
 			self.jobid = jobid
 		else:
 			datestamp = time.strftime("%y%b%d").lower()
-			hourstamp = lowercase[time.localtime()[3]%26]
-			mins = time.localtime()[3]*12 + time.localtime()[4]
-			minstamp = lowercase[mins%26]
-			randstamp = ""
-			for i in range(3):
-				randstamp += lowercase[int(random.random()*25.9)]
+			randstamp = "".join(random.choice(ascii_lowercase) for _ in range(3))
 			self.jobid = datestamp+"."+randstamp
 		#self.rundir = "."
 		self.procdir = "/var/www/html/3vee"
 		self.datestamp = self.jobid[:7]
-		self.jobdir = re.sub('\.', '/', self.jobid)
+		self.jobdir = re.sub(r'\.', '/', self.jobid)
 		self.rundir = os.path.join(self.procdir, "output", self.jobdir)
 		if not os.path.isdir(self.rundir):
 			os.mkdir(self.rundir)
@@ -88,7 +82,7 @@ class ThreeVLib(object):
 		if tdiff > 20:
 			apDisplay.printMsg("completed in "+apDisplay.timeString(tdiff))
 		elif waited is True:
-			print ""
+			print("")
 
 	#====================
 	def checkSystemLoad(self):
@@ -197,7 +191,7 @@ class ThreeVLib(object):
 
 		convertexe = os.path.join(self.procdir, "sh/pdb_to_xyzr.sh") 
 		convertcmd = convertexe+" "+atomfile+" > "+xyzrfile
-		print os.getcwd()
+		print(os.getcwd())
 		os.chdir(self.rundir)
 		self.runCommand(convertcmd, verbose=True)
 
@@ -318,19 +312,19 @@ class ThreeVLib(object):
 					sys.exit(1)
 				percent = bits[1].strip()
 				fsvdata['fsv'] = float(re.sub("%","", percent))
-			if re.match("SOLVENT \(R = [0-9\.]+\) VOLUME:",line):
+		if re.match(r"SOLVENT \(R = [0-9\.]+\) VOLUME:",line):
 				bits = line.strip().split(":")
 				if len(bits) < 2:
 					self.writeToRunningLog("failed to get result from FSVCalc.exe", type="Cross")
 					sys.exit(1)
 				fsvdata['solventvol'] = float(bits[1].strip())
-			if re.match("BIG PROBE \(R = [0-9\.]+\) VOLUME:",line):
+		if re.match(r"BIG PROBE \(R = [0-9\.]+\) VOLUME:",line):
 				bits = line.strip().split(":")
 				if len(bits) < 2:
 					self.writeToRunningLog("failed to get result from FSVCalc.exe", type="Cross")
 					sys.exit(1)
 				fsvdata['shellvol'] = float(bits[1].strip())
-			if re.match("TRIMMED \(BY R = [0-9\.]+\) VOLUME:",line):
+		if re.match(r"TRIMMED \(BY R = [0-9\.]+\) VOLUME:",line):
 				bits = line.strip().split(":")
 				if len(bits) < 2:
 					self.writeToRunningLog("failed to get result from FSVCalc.exe", type="Cross")
@@ -366,9 +360,6 @@ class ThreeVLib(object):
 		channelcmd += " -s %.3f"%(smallprobe)
 		channelcmd += " -t %.3f"%(trimprobe)
 		channelcmd += " -g %.3f"%(gridsize)
-		channelcmd += " -x %.3f"%(xyzcoord[0])
-		channelcmd += " -y %.3f"%(xyzcoord[1])
-		channelcmd += " -z %.3f"%(xyzcoord[2])
 		channelcmd += " -m %s"%(mrcfile)
 		if self.script.params['waterpdb'] is True:
 			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
@@ -376,7 +367,7 @@ class ThreeVLib(object):
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to file: "+mrcfile
+			print("wrote to file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -462,7 +453,7 @@ class ThreeVLib(object):
 		self.runCommand(tunnelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to file: "+mrcfile
+			print("wrote to file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -498,7 +489,7 @@ class ThreeVLib(object):
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to file: "+mrcfile
+			print("wrote to file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -506,7 +497,7 @@ class ThreeVLib(object):
 
 	#====================
 	def runCavity(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
-		gridsize=0.5, mrcfile=None):
+		xyzcoord=(0.0,0.0,0.0), gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
 		./Channel.exe -i <file> -b <big_probe> -s <small_probe> 
@@ -527,9 +518,10 @@ class ThreeVLib(object):
 		channelcmd += " -s %.3f"%(smallprobe)
 		channelcmd += " -t %.3f"%(trimprobe)
 		channelcmd += " -g %.3f"%(gridsize)
-		channelcmd += " -x %.3f"%(xyzcoord[0])
-		channelcmd += " -y %.3f"%(xyzcoord[1])
-		channelcmd += " -z %.3f"%(xyzcoord[2])
+		if all(coord is not None for coord in xyzcoord):
+			channelcmd += " -x %.3f"%(xyzcoord[0])
+			channelcmd += " -y %.3f"%(xyzcoord[1])
+			channelcmd += " -z %.3f"%(xyzcoord[2])
 		channelcmd += " -m %s"%(mrcfile)
 		if self.script.params['waterpdb'] is True:
 			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
@@ -537,7 +529,7 @@ class ThreeVLib(object):
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to file: "+mrcfile
+			print("wrote to file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -571,7 +563,7 @@ class ThreeVLib(object):
 		self.runCommand(volumecmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to mrc file: "+mrcfile
+			print("wrote to mrc file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("unknown output for Volume.exe", type="Cross")
@@ -600,7 +592,7 @@ class ThreeVLib(object):
 		self.runCommand(volumecmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print "wrote to mrc file: "+mrcfile
+			print("wrote to mrc file: "+mrcfile)
 			return mrcfile
 		else:
 			self.writeToRunningLog("unknown output for VolumeNoCav.exe", type="Cross")
@@ -728,15 +720,15 @@ by Neil Voss
 
 	#===========
 	def getProgramPath(self, programname):
-		unames = os.uname()
 		programpath = os.path.join(apParam.getAppionDirectory(), 'bin', programname)
-		if not os.path.isfile(findempath):
-			programpath = subprocess.Popen("which "+programname, shell=True, stdout=subprocess.PIPE).stdout.read().strip()
-		if not os.path.isfile(findempath):
+		if not os.path.isfile(programpath):
+			result = subprocess.run(["which", programname], capture_output=True, text=True)
+			path = result.stdout.strip()
+			if path:
+				programpath = path
+		if not os.path.isfile(programpath):
 			apDisplay.printWarning(programname+" was not found")
-			path = os.getenv("PATH")
-			paths = path.split(":")
-			for path in paths:
+			for path in os.getenv("PATH", "").split(":"):
 				apDisplay.printMsg("PATH: "+str(path))
 			programpath = programname
 		return programpath
@@ -851,7 +843,7 @@ by Neil Voss
 		self.checkSystemLoad()
 		if pymol is True:
 			header = mrc.readHeaderFromFile(fname)
-			for key in header.keys():
+			for key in list(header.keys()):
 				xyz = ('x', 'y', 'z')
 				if (key[0] in xyz or key[-1] in xyz) and not key.startswith('am'):
 					#print key, header[key]
@@ -877,7 +869,7 @@ by Neil Voss
 
 	#====================
 	def writeToRunningLog(self, msg, type="Check"):
-		print "Message: ", msg
+		print("Message: ", msg)
 		f = open(self.runlogfile, "a")
 		f.write("<li class='"+type+"'>\n")
 		f.write(str(msg)+"\n")
@@ -1093,7 +1085,7 @@ by Neil Voss
 
 	#====================
 	def webJmolSection(self, objfile, website, webf, pdbfile=None):
-		print "OBJFILE", objfile
+		print("OBJFILE", objfile)
 		if not objfile or not os.path.isfile(objfile):
 			return
 		objlink = os.path.join(website, os.path.basename(objfile))
@@ -1127,10 +1119,4 @@ if __name__ == "__main__":
 	pngfiles = threev.makeImages(mrcfile)
 	#os.remove(mrcfile)
 	threev.gzipFile(mrcfile)
-	print "SUCCESS"
-
-
-
-
-
-
+	print("SUCCESS")

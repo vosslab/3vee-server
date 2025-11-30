@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sinedon.data
 Data = sinedon.data.Data
 

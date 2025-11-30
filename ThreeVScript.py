@@ -1,17 +1,14 @@
-#!/usr/bin/python -O
+#!/usr/bin/env python3
 
 #builtin
 import sys
 import os
 import re
 import time
-import math
 import shutil
-import random
-import cPickle
+import socket
 from appionlib import apDisplay
 from appionlib import apParam
-from string import lowercase
 from optparse import OptionParser
 import ThreeVLib
 import threevdata
@@ -32,7 +29,7 @@ class ThreeVScript(object):
 		self.setupParserOptions()
 		self.params = self.convertParserToParams(self.parser)
 		self.datestamp = self.params['jobid'][:7]
-		self.jobdir = re.sub('\.', '/', self.params['jobid'])
+		self.jobdir = re.sub(r'\.', '/', self.params['jobid'])
 
 		#init threev
 		self.threev = ThreeVLib.ThreeVLib(jobid=self.params['jobid'])
@@ -75,7 +72,7 @@ class ThreeVScript(object):
 		"""
 		if len(self.argdict) == 0:
 			for opt in self.parser.option_list:
-				arg = str(opt.get_opt_string.im_self)
+				arg = str(opt.get_opt_string.__self__)
 				if '/' in arg:
 					args = arg.split('/')
 					arg = args[-1:][0]
@@ -100,7 +97,6 @@ class ThreeVScript(object):
 			return None
 		optaction = self.optdict[dest].action
 		if optaction == 'store':
-			opttype = self.optdict[dest].type
 			value = str(value)
 			if not ' ' in value:
 				usage = argument+"="+value
@@ -110,7 +106,7 @@ class ThreeVScript(object):
 			storage = 'store_'+str(value).lower()
 			for opt in self.parser.option_list:
 				if opt.dest == dest and opt.action == storage:
-					arg = str(opt.get_opt_string.im_self)
+					arg = str(opt.get_opt_string.__self__)
 					if '/' in arg:
 						args = arg.split('/')
 						arg = args[-1:][0]
@@ -161,7 +157,7 @@ class ThreeVScript(object):
 		progrunq['path'] = pathq
 		progrunq.insert()
 
-		for paramname in self.params.keys():
+		for paramname in list(self.params.keys()):
 			paramnameq = threevdata.ParamName()
 			paramnameq['name'] = paramname
 			paramnameq['progname'] = prognameq
@@ -178,9 +174,9 @@ class ThreeVScript(object):
 	def checkGlobalConflicts(self):
 		self.params['gridsize'] = self.convertGridResToGridSize(self.params['gridres'])
 		if self.params['jobid'] is None:
-			threev.writeToRunningLog("Please specify a jobid, e.g. --jobid=08jun04b", "Cross")
+			self.threev.writeToRunningLog("Please specify a jobid, e.g. --jobid=08jun04b", "Cross")
 		if self.params['pdbfile'] is not None and self.params['pdbid'] is not None:
-			threev.writeToRunningLog("Both pdbid and pdbfile were specified", "Cross")
+			self.threev.writeToRunningLog("Both pdbid and pdbfile were specified", "Cross")
 
 	#=====================
 	def setupGlobalParserOptions(self):
@@ -319,6 +315,3 @@ class ThreeVScript(object):
 	#=====================
 	def onClose(self):
 		return
-
-
-

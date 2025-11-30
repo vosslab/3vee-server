@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -41,13 +41,13 @@ if __name__ == "__main__":
 
 	filename = options.mrcfile
 	if filename is None or not os.path.isfile(filename):
-		print "Usage mrcBisect.py -f file.mrc <options>"
+		print("Usage mrcBisect.py -f file.mrc <options>")
 		parser.print_help()
 		sys.exit(1)
 	percentcut = options.percentcut
 	axes = options.axes
 
-	print "Axes", axes
+	print("Axes", axes)
 
 	orig = mrc.read(filename)
 	rootname = os.path.splitext(filename)[0]
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	if 'x' in axes:
 		if axes == 'x':
 			label = ('xmin', 'xmax',)
-		print "checking X-axis"
+		print("checking X-axis")
 		linedensity = orig.sum(1).sum(1)
 		maxi, mini = getPercentCut(linedensity, percentcut)
 		xmin = orig.copy()
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 	if 'y' in axes:
 		if axes == 'y':
 			label = ('ymin', 'ymax',)
-		print "Y-axis"
+		print("Y-axis")
 		linedensity = orig.sum(0).sum(1)
 		maxi, mini = getPercentCut(linedensity, percentcut)
 		ymin = orig.copy()
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 	if 'z' in axes:
 		if axes == 'z':
 			label = ('zmin', 'zmax',)
-		print "Z-axis"
+		print("Z-axis")
 		linedensity = orig.sum(0).sum(0)
 		maxi, mini = getPercentCut(linedensity, percentcut)
 		zmin = orig.copy()
@@ -121,11 +121,11 @@ if __name__ == "__main__":
 		scores.append(score)
 		#percut = area
 		#print label, areas, vols, scores
-		print "%s: area:%d  vol:%d  score:%d"%(label[i], areas[i], vols[i], scores[i])
+		print("%s: area:%d  vol:%d  score:%d"%(label[i], areas[i], vols[i], scores[i]))
 
 	ratios = numpy.array(scores, dtype=numpy.float)
 	m = numpy.argmax(ratios)
-	print "Writing %s to file"%(label[m])
+	print("Writing %s to file"%(label[m]))
 	header = mrc.readHeaderFromFile(filename)
 	mrc.write(data[m], rootname+"-trim.mrc", header)
 

@@ -1,9 +1,11 @@
-#!/usr/bin/python -O
+#!/usr/bin/env python3
 
 """
 Python program for running 3v FSV Calc
 """
 
+import os
+import shutil
 import ThreeVScript
 
 #=====================
@@ -58,7 +60,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		### Statistics of your 
 		f.write("<br/><h3>Statistics of your internal solvent:</h3>\n")
 		f.write("<table><tr><td><h4><ul>\n")
-		for key in fsvdata.keys():
+		for key in list(fsvdata.keys()):
 			if key != 'ezdfile':
 				f.write("<li>"+str(key)+":&nbsp;\t"+str(fsvdata[key])+"</li>\n")
 		f.write("</ul></h4></td></tr></table>\n")
@@ -108,7 +110,6 @@ if __name__ == "__main__":
 	runFSVCalc = RunFSVCalcScript()
 	runFSVCalc.start()
 	runFSVCalc.close()	
-
 
 
 

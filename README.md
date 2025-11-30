@@ -5,18 +5,13 @@ For a deep technical walkthrough of the stack (PHP UI, Python job layer, vossvol
 
 ## Containerized Web Server
 
-You can spin up the full stack (Apache + PHP UI, Python job runners, MariaDB, and the freshly built `vossvolvox` binaries) with Docker or Podman.
+You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, and the freshly built `vossvolvox` binaries) with Docker or Podman. The container builds on Debian 13 “trixie”, installs Python 3.11 from the distro, and pulls the required scientific/DB bindings from the Debian packages (`python3-numpy`, `python3-scipy`, `python3-mysqldb`, `python3-pil`, etc.).
 
 ### Prerequisites
 - Docker Engine 24+ **or** Podman 4+ with Compose support.
 - Enough RAM/disk to compile `vossvolvox` and run MariaDB (2 GiB free is plenty).
 
 ### Build & Run
-Ensure the VossVolvox sources are checked out inside this repository (the Dockerfile calls `make -C vossvolvox/src all`):
-```bash
-git clone https://github.com/vosslab/vossvolvox.git vossvolvox
-```
-
 ```bash
 # from the repo root
 mkdir -p output                      # persist job artifacts on the host
@@ -26,7 +21,7 @@ docker compose up --build            # or: podman compose up --build
 The compose file exposes Apache on port `8080`, so the UI is available at `http://localhost:8080/php/volumeCalc.php` (and the other PHP entry points under `/php`). Jobs write into `output/` which is bind-mounted so logs/results survive container rebuilds.
 
 ### What the containers do
-- `web`: built from the included `Dockerfile`. It installs Apache + PHP, Python 2 with `numpy/scipy/MySQLdb`, builds the bundled `vossvolvox` sources, installs the helper scripts/data expected by `ThreeVLib`, rewrites `sinedon/sinedon.cfg` based on `THREEV_DB_*` variables, boots Apache, and automatically runs `sinedon/maketables.py threevdata` against the DB on startup.
+- `web`: built from the included `Dockerfile`. It installs Apache + PHP, Python 3 with `numpy/scipy/MySQLdb`, builds the bundled `vossvolvox` sources, installs the helper scripts/data expected by `ThreeVLib`, rewrites `sinedon/sinedon.cfg` based on `THREEV_DB_*` variables, boots Apache, and automatically runs `sinedon/maketables.py threevdata` against the DB on startup.
 - `db`: vanilla `mariadb:10.6` with credentials defined in `docker-compose.yml`. Data lives in the named volume `db-data`.
 
 ### Environment overrides
@@ -43,4 +38,7 @@ You can control how the web container connects to MariaDB via the following envi
 
 Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible.
 
-> **Note:** The Docker build automatically downloads and installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` and exports `CHIMERA=/opt/chimera` so the Python imaging helpers can find it. Make sure you are licensed/permitted to use Chimera in this manner in your environment. EMAN/`proc3d` is still not bundled; mount or install it separately if you need those features.
+> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN` (`EMANDIR=/usr/local/EMAN`, with `PATH`, `LD_LIBRARY_PATH`, and `PYTHONPATH` updated accordingly). Non-amd64 builds skip both installers (they are x86-only), so plan accordingly if you need those tools. Ensure you are licensed/permitted to use these packages in your environment.
+
+Useful build arguments:
+- `VOSSVOLVOX_REF` (default `master`) and `VOSSVOLVOX_REPO` to check out a specific vossvolvox branch/tag/fork.

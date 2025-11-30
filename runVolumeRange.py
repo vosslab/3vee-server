@@ -1,4 +1,4 @@
-#!/usr/bin/python -O
+#!/usr/bin/env python3
 
 """
 Python program for running 3v Volume
@@ -34,7 +34,6 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		c = self.params['probestep']
 
 		f = open("results-"+self.params['jobid']+".html", "w")
-		pnglist = []
 		mrclist = []
 		for probe in numpy.arange(a,b,c):
 			self.threev.writeToRunningLog("starting probe size %.3f"%(probe))
@@ -73,7 +72,6 @@ if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
 	runthreev.close()	
-
 
 
 
