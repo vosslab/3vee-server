@@ -1,0 +1,6 @@
+numpy
+scipy
+six
+sqldict
+DateTime
+egenix-mx-base
