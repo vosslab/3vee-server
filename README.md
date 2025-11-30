@@ -21,7 +21,7 @@ docker compose up --build            # or: podman compose up --build
 The compose file exposes Apache on port `8080`, so the UI is available at `http://localhost:8080/php/volumeCalc.php` (and the other PHP entry points under `/php`). Jobs write into `output/` which is bind-mounted so logs/results survive container rebuilds.
 
 ### What the containers do
-- `web`: built from the included `Dockerfile`. It installs Apache + PHP, Python 3 with `numpy/scipy/MySQLdb`, builds the bundled `vossvolvox` sources, installs the helper scripts/data expected by `ThreeVLib`, rewrites `sinedon/sinedon.cfg` based on `THREEV_DB_*` variables, boots Apache, and automatically runs `sinedon/maketables.py threevdata` against the DB on startup.
+- `web`: built from the included `Dockerfile`. It installs Apache + PHP, Python 3 with `numpy/scipy/MySQLdb`, builds the bundled `vossvolvox` sources, installs the helper scripts/data expected by `ThreeVLib`, rewrites `py/sinedon/sinedon.cfg` based on `THREEV_DB_*` variables, boots Apache, and automatically runs `py/sinedon/maketables.py threevdata` against the DB on startup.
 - `db`: vanilla `mariadb:10.6` with credentials defined in `docker-compose.yml`. Data lives in the named volume `db-data`.
 
 ### Environment overrides
@@ -37,6 +37,8 @@ You can control how the web container connects to MariaDB via the following envi
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `maketables.py` on boot |
 
 Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible.
+
+The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
 
 > **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN` (`EMANDIR=/usr/local/EMAN`, with `PATH`, `LD_LIBRARY_PATH`, and `PYTHONPATH` updated accordingly). Non-amd64 builds skip both installers (they are x86-only), so plan accordingly if you need those tools. Ensure you are licensed/permitted to use these packages in your environment.
 

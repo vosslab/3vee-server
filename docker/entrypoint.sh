@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_ROOT="/var/www/html/3vee"
+PY_ROOT="${APP_ROOT}/py"
 
 THREEV_DB_HOST="${THREEV_DB_HOST:-db}"
 THREEV_DB_USER="${THREEV_DB_USER:-vossman}"
@@ -16,7 +17,7 @@ import os
 import configparser
 
 app_root = os.environ.get('APP_ROOT', '/var/www/html/3vee')
-cfg_path = os.path.join(app_root, 'sinedon', 'sinedon.cfg')
+cfg_path = os.path.join(app_root, 'py', 'sinedon', 'sinedon.cfg')
 
 db_host = os.environ.get('THREEV_DB_HOST', 'db')
 db_user = os.environ.get('THREEV_DB_USER', 'vossman')
@@ -43,24 +44,40 @@ PYCODE
 }
 
 wait_for_db() {
-	if [[ "${THREEV_SKIP_DB_WAIT}" == "1" ]]; then
-		return
-	fi
+  if [[ "${THREEV_SKIP_DB_WAIT:-0}" == "1" ]]; then
+    echo "THREEV_SKIP_DB_WAIT=1, skipping DB wait"
+    return 0
+  fi
 
-	local attempt=0
-	until mysql -h "${THREEV_DB_HOST}" -u "${THREEV_DB_USER}" -p"${THREEV_DB_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1
-	do
-		((attempt++))
-		echo "Waiting for MariaDB at ${THREEV_DB_HOST}…attempt ${attempt}"
-		sleep 30
-	done
+  local host="${THREEV_DB_HOST:-db}"
+  local user="${THREEV_DB_USER:-vossman}"
+  local pass="${THREEV_DB_PASSWORD:-vossman}"
+  local max_attempts=6
+  local attempt=0
+
+  echo "Waiting for MariaDB at ${host} as ${user}..."
+
+  # Use a loop so failures do not trigger set -e
+  while ! mysql --skip-ssl --ssl-verify-server-cert=0 \
+                -h "${host}" -u "${user}" -p"${pass}" \
+                -e "SELECT 1" >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if (( attempt >= max_attempts )); then
+      echo "ERROR: MariaDB still not ready after ${max_attempts} attempts" >&2
+      return 1
+    fi
+    echo "  attempt ${attempt} failed, sleeping 20s..."
+    sleep 20
+  done
+
+  echo "MariaDB is ready."
 }
 
 bootstrap_db() {
 	if [[ "${THREEV_SKIP_DB_INIT}" == "1" ]]; then
 		return
 	fi
-	python3 "${APP_ROOT}/sinedon/maketables.py" threevdata || true
+	python3 "${PY_ROOT}/sinedon/maketables.py" threevdata || true
 }
 
 prepare_fs() {

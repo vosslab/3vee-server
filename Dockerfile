@@ -61,9 +61,6 @@ RUN git clone --depth 1 --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossv
 WORKDIR ${APP_ROOT}
 COPY . ${APP_ROOT}
 
-# mirror historical layout: /var/www/html/3vee/py -> project root
-RUN ln -sfn ${APP_ROOT} ${APP_ROOT}/py
-
 # build vossvolvox binaries and install helper data
 RUN make -C /tmp/vossvolvox/src all && \
     mkdir -p ${APP_ROOT}/bin ${APP_ROOT}/dat ${APP_ROOT}/sh ${APP_ROOT}/output && \

@@ -11,14 +11,8 @@ This document explains how the 3V (Voss Volume Voxelator) server works end-to-en
 6. **PHP delivers status/results** via `php/viewResults.php`. It polls the HTML logs, colors terminal output, and, once the job finishes, wraps the generated result page with the global chrome.
 
 ## Repository Layout
-- `php/` – Web entry points for each tool (`volumeCalc.php`, `channelFinder.php`, `viewResults.php`, etc.) plus supporting assets referenced through `processing.inc`.
-- `run*.py` – Python jobs invoked directly from PHP. Each maps to one UI page (volume calculation, channel extraction, tunnel finder, etc.).
-- `ThreeVScript.py` – Shared runner that handles CLI parsing, filesystem setup, metadata upload, and PDB preparation.
-- `ThreeVLib.py` – Library of domain-specific helpers responsible for calling the C++ binaries, converting file formats, imaging, and logging.
-- `threevdata.py` – Sinedon ORM definitions for MariaDB tables (`ProgramRun`, `ParamValue`, etc.).
-- `appionlib/`, `pyami/` – External dependencies that provide utilities for logging (`apDisplay`), parameter handling (`apParam`), Chimera rendering, MRC IO, etc.
-- `sinedon/` – Lightweight ORM and DB connection helpers plus `sinedon.cfg` for the MariaDB DSN.
-- Utility scripts (`mrcTrim.py`, `mrcBisect.py`, etc.) – invoked by `ThreeVLib` for optional post-processing.
+- `php/` – Web entry points for each tool (`volumeCalc.php`, `channelFinder.php`, `viewResults.php`, etc.) plus supporting assets referenced through `processing.inc` and PHP-side smoke helpers under `php/tests/`.
+- `py/` – Python job layer containing `ThreeVScript.py`, `ThreeVLib.py`, `threevdata.py`, all runner scripts (`run*.py`), helper utilities (`mrcTrim.py`, `mrcBisect.py`, etc.), shared libraries (`appionlib/`, `pyami/`, `sinedon/`), and smoke scripts under `py/tests/`.
 
 All binaries and static assets live under `/var/www/html/3vee` at runtime (`ThreeVLib.procdir`). That directory is expected to contain `bin/` (vossvolvox executables), `dat/` (lookup tables such as `atmtypenumbers.dat`), `sh/` (wrappers like `pdb_to_xyzr.sh`), `output/` (job data), and `py/` (the checked-in Python scripts).
 
@@ -73,7 +67,7 @@ Python defines the schema used to persist job metadata in `threevdata.py`. Class
 - `ParamName`/`ParamValue` rows capturing the exact CLI as submitted (including usage strings for reproducibility).
 - `Path`, `ProgramName`, `UserName`, and `HostName` rows used by the PHP layer when it augments the results page.
 
-DB connectivity is configured via `sinedon/sinedon.cfg`. PHP uses a parallel include (`inc/threevdata.inc`) to read the same tables, which is why both layers see identical job metadata without hitting the filesystem.
+DB connectivity is configured via `py/sinedon/sinedon.cfg`. PHP uses a parallel include (`inc/threevdata.inc`) to read the same tables, which is why both layers see identical job metadata without hitting the filesystem.
 
 ## Output, Logs, and Static Files
 Given a job id `YYmmddx.zz`, both PHP and Python agree on the following conventions:
@@ -96,7 +90,7 @@ Because job metadata is abstracted through Sinedon, new parameters will automati
 
 ## Key Dependencies and Assumptions
 - UCSF Chimera, EMAN’s `proc3d`, Meshlab, and ImageMagick must be installed on the host for imaging and 3D conversion steps.
-- MariaDB credentials are stored in `sinedon/sinedon.cfg`; both PHP and Python components expect this file to be configured.
+- MariaDB credentials are stored in `py/sinedon/sinedon.cfg`; both PHP and Python components expect this file to be configured.
 - The filesystem layout referenced by `$PROCDIR`/`ThreeVLib.procdir` must match the production deployment (`/var/www/html/3vee`).
 - Some PHP includes (`inc/processing.inc`, `inc/threevdata.inc`) are not part of this repo; they are required for the site to run.
 

@@ -1,18 +1,17 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `php/`: Web UI entry points and result viewers.
-- `run*.py`, `ThreeVLib.py`, `ThreeVScript.py`, `threevdata.py`: Python job runners, core library, and ORM definitions.
+- `php/`: Web UI entry points and result viewers (with `php/tests/` for ad hoc diagnostics).
+- `py/`: Python job runners (`run*.py`, `ThreeVLib.py`, `ThreeVScript.py`, `threevdata.py`), shared libraries (`appionlib`, `pyami`, `sinedon`), and smoke scripts under `py/tests/`.
 - `vossvolvox/`: C++ tools built into `bin/*.exe` inside the image.
 - `docker/`, `Dockerfile`, `docker-compose.yml`: Container build and orchestration.
-- `appionlib/`, `pyami/`, `sinedon/`: Shared Python 3 libraries (port-in-progress from legacy Appion stack).
 - `output/`: Job artifacts/logs (bind-mounted in containers; kept out of Git).
 
 ## Build, Test, and Development Commands
 - Build & run with Podman/Docker: `podman compose up --build` (or `docker compose up --build`). Opens UI at `http://localhost:8080/php/volumeCalc.php`.
 - Start the Podman VM (macOS) before `compose up`: `podman machine start podman-machine-default` (see `CONTAINER.md` for the full Podman workflow and port-forwarding tips).
 - Exec into web container: `podman compose exec web bash`.
-- Lint compile Python locally: `python3 -m py_compile *.py ThreeV*.py run*.py`.
+- Lint compile Python locally: `(cd py && python3 -m py_compile *.py run*.py ThreeV*.py)`.
 - Build vossvolvox natively (if needed): `make -C vossvolvox/src all`.
 
 ## Coding Style & Naming Conventions
@@ -32,7 +31,7 @@
 - Keep unrelated formatting churn out of functional changes; avoid rewriting vendorized libs unless required.
 
 ## Security & Configuration Tips
-- Database config is templated via `sinedon/sinedon.cfg` at container start; override with `THREEV_DB_*`.
+- Database config is templated via `py/sinedon/sinedon.cfg` at container start; override with `THREEV_DB_*`.
 - Chimera installer only runs on amd64; arm64 builds skip it by design.
 - User input flows into shell commands in PHP → Python; sanitize and escape if introducing new parameters.
-- The MariaDB wait loop now polls every 30 s and logs each attempt; keep following the status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache’s startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.
+- The MariaDB wait loop now retries every 20 s (6 attempts total), forces `mysql` to use `--skip-ssl --ssl-verify-server-cert=0`, and logs each probe; follow status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache’s startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.

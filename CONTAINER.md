@@ -9,7 +9,8 @@ This document captures every gory detail required to build, run, and hack on the
 ├── docker-compose.yml      # Orchestrates the web + MariaDB services
 ├── docker/entrypoint.sh    # Web container bootstrap (DB wait, sinedon config, maketables)
 ├── output/                 # Recommended host bind mount (job artifacts/logs)
-├── php/, run*.py, ...      # The actual application code
+├── php/                    # Web entry points + php/tests smoke scripts
+├── py/                     # Python job runners, libs, and tests
 └── vossvolvox/             # (optional) Only needed if you want to hack on the C++ sources locally
 ```
 
@@ -103,12 +104,14 @@ The web container honors these variables (set them in Compose or via `docker run
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `THREEV_DB_HOST` | `db` | MariaDB hostname/IP. The entrypoint rewrites `sinedon/sinedon.cfg` accordingly. |
+| `THREEV_DB_HOST` | `db` | MariaDB hostname/IP. The entrypoint rewrites `py/sinedon/sinedon.cfg` accordingly. |
 | `THREEV_DB_NAME` | `threevdata` | Database to use/create. |
 | `THREEV_DB_USER` | `vossman` | DB user. Must match the credentials configured on the DB service. |
 | `THREEV_DB_PASSWORD` | `vossman` | DB password. |
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip waiting for the DB at startup. |
-| `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `python sinedon/maketables.py threevdata`. |
+| `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `python py/sinedon/maketables.py threevdata`. |
+
+By default the entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, waiting ~20 s between six attempts. This avoids SSL handshake hiccups commonly seen in Podman/Docker-for-mac environments; monitor `compose logs web` if you need to confirm the wait loop’s status.
 
 The MariaDB service uses the standard `MARIADB_*` env vars to create the same database/user at first boot. Change both sides in tandem.
 
