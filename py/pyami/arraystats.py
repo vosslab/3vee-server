@@ -11,7 +11,6 @@ then you must specify force=True.
 
 
 from pyami import weakattr
-import numpy
 
 debug = False
 def dprint(s):

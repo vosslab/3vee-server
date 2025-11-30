@@ -15,7 +15,6 @@ import os
 import sys
 import time
 import numpy
-from . import quietscipy
 from scipy import ndimage
 
 ### these are the weight for the different types of surface voxels
@@ -250,16 +249,15 @@ def testSurface():
 	print("Surface area by ints = %.3f pixels"%(surfareabyints))
 	fints = time.time()
 
-	import apDisplay
 	size = float(array.shape[0]*array.shape[1]*array.shape[2])
 	print("")
 	print("*** Surface area by ifs = %.3f pixels"%(surfareabyifs))
-	print(apDisplay.timeString((fifs-tifs)), "total time")
-	print(apDisplay.timeString((fifs-tifs)/size), "per voxel")
+	print("Time: %.3fs total" % (fifs - tifs))
+	print("Time per voxel: %.6fs" % ((fifs - tifs) / size))
 	print("")
 	print("*** Surface area by ints = %.3f pixels"%(surfareabyints))
-	print(apDisplay.timeString((fints-tints)), "total time")
-	print(apDisplay.timeString((fints-tints)/size), "per voxel")	
+	print("Time: %.3fs total" % (fints - tints))
+	print("Time per voxel: %.6fs" % ((fints - tints) / size))
 	print("")
 
 #======================
@@ -268,5 +266,3 @@ def testSurface():
 if __name__ == "__main__":
 	#findValues()
 	testSurface()
-
-

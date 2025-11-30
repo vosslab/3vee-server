@@ -13,7 +13,6 @@ import copy
 import sys
 import configparser
 import os
-import imp
 import pyami.fileutil
 
 class ModuleConfigParser(object):

@@ -29,9 +29,7 @@ import numpy
 import sys
 from pyami import arraystats
 from pyami import weakattr
-import weakref
 from pyami import resultcache
-import types
 
 cache_enabled = False
 # 10 * 4kx4k float images = 640 MB
@@ -988,8 +986,8 @@ def appendFileLabel(filename,labelstring):
 	nextlabelname = 'label%d' % nlabels
 	if nlabels == 10:
 		raise ValueError('All labels are used')
-	if h[nextlabelname]:
-		raise RunTimeError('Next label indicated by NLABL is not empty')
+		if h[nextlabelname]:
+			raise RuntimeError('Next label indicated by NLABL is not empty')
 	if len(labelstring) > 80:
 		raise ValueError('Input string too long to fit in one label. Max length=80')
 	update_file_header(filename,
