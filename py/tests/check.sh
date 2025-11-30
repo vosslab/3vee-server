@@ -5,6 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PY_ROOT}"
 
+source "${SCRIPT_DIR}/prepare_local_env.sh"
+prepare_local_env "${PY_ROOT}"
+
 find "${PY_ROOT}" \( -name "*.pyo" -o -name "*.pyc" \) -delete
 
 echo ""

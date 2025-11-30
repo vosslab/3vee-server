@@ -97,8 +97,7 @@ Because job metadata is abstracted through Sinedon, new parameters will automati
 This repo also includes helper defaults so the Python side can be exercised even without a live MariaDB stack:
 
 1. `py/requirements.txt` lists the key third-party packages (`numpy`, `scipy`, `six`, `sqldict`, `DateTime`, `egenix-mx-base`) imported outside the repo tree; install them with `pip3 install -r py/requirements.txt`.
-2. `py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg` are stub configs used by `py/tests/check.sh` and the `pyami` helpers so the smoke scripts can run without a configured database.
-3. A lightweight `pymysql.py` stub sits in the repo so `sinedon` imports succeed without the real driver; it only offers the minimal interfaces needed by the job layer.
+2. `tests/check.sh` and `tests/run_pyflakes.sh` automatically create temporary copies of `py/sinedon/sinedon.cfg`, `py/pyami/pyami.cfg`, and `py/pymysql.py` before executing so the smoke scripts can succeed without a configured database. They delete the files when the script ends, so production installs don’t ship these stubs.
 
 The Chimera install supplies `chimera`, `VolumeViewer`, `_surface`, `Surface`, `SurfaceCap`, `SurfaceColor`, `SimpleSession`, `ScaleBar`, `HideDust`, `MeasureVolume`, `numextension`, `mx.DateTime`, and `DateTime.ISO`, so those are not pip dependencies here.
 
