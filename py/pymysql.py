@@ -79,5 +79,4 @@ class err:
     InternalError = InternalError
 
 
-import sys
 sys.modules.setdefault('pymysql.err', err)

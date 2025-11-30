@@ -94,4 +94,14 @@ Because job metadata is abstracted through Sinedon, new parameters will automati
 - The filesystem layout referenced by `$PROCDIR`/`ThreeVLib.procdir` must match the production deployment (`/var/www/html/3vee`).
 - Some PHP includes (`inc/processing.inc`, `inc/threevdata.inc`) are not part of this repo; they are required for the site to run.
 
+This repo also includes helper defaults so the Python side can be exercised even without a live MariaDB stack:
+
+1. `py/requirements.txt` lists the key third-party packages (`numpy`, `scipy`, `six`, `sqldict`, `DateTime`, `egenix-mx-base`) imported outside the repo tree; install them with `pip3 install -r py/requirements.txt`.
+2. `py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg` are stub configs used by `py/tests/check.sh` and the `pyami` helpers so the smoke scripts can run without a configured database.
+3. A lightweight `pymysql.py` stub sits in the repo so `sinedon` imports succeed without the real driver; it only offers the minimal interfaces needed by the job layer.
+
+The Chimera install supplies `chimera`, `VolumeViewer`, `_surface`, `Surface`, `SurfaceCap`, `SurfaceColor`, `SimpleSession`, `ScaleBar`, `HideDust`, `MeasureVolume`, `numextension`, `mx.DateTime`, and `DateTime.ISO`, so those are not pip dependencies here.
+
+We purposely trimmed `pyami/` to the small surface the runners currently use and avoided the rest of the legacy tree so linting (`py/tests/run_pyflakes.sh`) and import checks do not have to contend with unused modules.
+
 This overview should give new contributors enough context to trace a job from the browser, through the Python orchestrators, down to the native executables, and back to the rendered output.

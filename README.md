@@ -18,6 +18,8 @@ mkdir -p output                      # persist job artifacts on the host
 docker compose up --build            # or: podman compose up --build
 ```
 
+When you want to rebuild the web image via Podman (e.g., on macOS where the VM is already running) there is also `build_podman_image.sh` in the repo root; it tears down the existing containers, starts MariaDB in the background, and builds/runs the `web` container while streaming logs to `logs/podman-compose-<timestamp>.log`. See [CONTAINER.md](CONTAINER.md) for the full Podman workflow, including VM setup and port-forwarding tips.
+
 The compose file exposes Apache on port `8080`, so the UI is available at `http://localhost:8080/php/volumeCalc.php` (and the other PHP entry points under `/php`). Jobs write into `output/` which is bind-mounted so logs/results survive container rebuilds.
 
 ### What the containers do
@@ -39,6 +41,26 @@ You can control how the web container connects to MariaDB via the following envi
 Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible.
 
 The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
+
+## Local Python tooling
+
+If you run the Python job layer on a host (for linting, debugging, or manual runs), install the dependencies listed in `py/requirements.txt`. The explicit Python packages this repo imports (outside of standard library modules and our own helpers) are:
+
+```
+numpy
+scipy          # provides scipy.ndimage
+six
+sqldict
+DateTime
+egenix-mx-base
+```
+
+```bash
+cd py
+pip3 install -r requirements.txt
+```
+
+The repo also provides lightweight defaults for the Python-side configs (`py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg`) so you can execute `tests/run_pyflakes.sh` and `tests/check.sh` without a real database. Feel free to replace those config stubs with your own credentials if you want to point at an actual MariaDB or instrument configuration.
 
 > **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN` (`EMANDIR=/usr/local/EMAN`, with `PATH`, `LD_LIBRARY_PATH`, and `PYTHONPATH` updated accordingly). Non-amd64 builds skip both installers (they are x86-only), so plan accordingly if you need those tools. Ensure you are licensed/permitted to use these packages in your environment.
 

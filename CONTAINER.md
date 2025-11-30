@@ -27,6 +27,7 @@ During the image build we automatically clone `https://github.com/vosslab/vossvo
 - On Linux, Podman can run rootless natively. On macOS/Windows, Podman spins up a VM; check with `podman machine ls`, start it via `podman machine start <name>` if it is stopped, and only run `podman machine init --now --user-mode-networking` when creating a new VM to ensure host ports forward into the guest.
 - Rootless Podman cannot bind privileged ports (<1024). We expose Apache on 8080 by default, so rootless setups are fine.
 - Compose plugin: install via `brew install podman podman-compose` (macOS) or the distro package (`dnf install podman-compose`, etc.).
+- The repo ships `build_podman_image.sh` at the root. It wraps the common steps (stop the current stack, start the DB, rebuild/run the `web` container, and tee the logs to `logs/podman-compose-<timestamp>.log`), so use it when you want the rebuild workflow described later without typing the long compose command. See `CONTAINER.md` for the rest of the Podman guidance.
 
 ## 2.1 Quick Commands
 Want the shortest path? Copy/paste the following (adjust for Docker vs Podman):

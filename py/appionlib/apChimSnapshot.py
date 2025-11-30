@@ -29,7 +29,6 @@ try:
 	from VolumeViewer.volume import default_settings, open_volume_file
 	import Surface
 	from SurfaceColor import color_surface, Radial_Color, Color_Map, Height_Color, Cylinder_Color
-	from SurfaceCap import surfcaps
 	from _surface import SurfaceModel, connected_pieces
 	from chimera import openModels
 	from MeasureVolume import enclosed_volume
