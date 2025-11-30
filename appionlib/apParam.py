@@ -1,16 +1,22 @@
 ## python
 import os
+import shutil
 import re
 import math
 import sys
+import pwd
 import time
 import random
 import socket
 import string
+import inspect
 import subprocess
+import pickle
 
 ## appion
 from appionlib import apDisplay
+
+from contextlib import redirect_stdout
 
 ####
 # This is a low-level file with NO database connections
@@ -21,11 +27,11 @@ from appionlib import apDisplay
 #=====================
 def getAppionDirectory():
 	"""
-	Used by appionLoop
+	Used by appionLoop and ScriptProgramRun logging in all appionScript
 	"""
 	appiondir = None
-
-	libdir = os.path.dirname(__file__)
+	this_file = inspect.currentframe().f_code.co_filename
+	libdir = os.path.dirname(this_file)
 	libdir = os.path.abspath(libdir)
 	trypath = os.path.dirname(libdir)
 	if os.path.isdir(trypath):
@@ -50,12 +56,12 @@ def getAppionDirectory():
 #=====================
 def makeTimestamp():
 	datestamp = time.strftime("%y%b%d").lower()
-	hourstamp = string.lowercase[(time.localtime()[3])%26]
+	hourstamp = string.ascii_lowercase[(time.localtime()[3])%26]
 	if hourstamp == "x":
 		### SPIDER does not like x's
 		hourstamp = "z"
 	#mins = time.localtime()[3]*12 + time.localtime()[4]
-	#minstamp = string.lowercase[mins%26]
+	#minstamp = string.ascii_lowercase[mins%26]
 	minstamp = "%02d"%(time.localtime()[4])
 	timestamp = datestamp+hourstamp+minstamp
 	return timestamp
@@ -74,11 +80,28 @@ def getFunctionName(arg=None):
 
 #=====================
 def getUsername():
-	try:
-		user = os.getlogin() #os.environ.get('USER')
-	except:
-		user = "unknown"
-	return user
+	userdict = getUserDict()
+	if not userdict:
+		return "unknown"
+	return userdict['username']
+
+#=====================
+def getUserDict():
+	uid = os.getuid()
+	if not uid:
+		return None
+	userinfo = pwd.getpwuid(uid)
+	if not userinfo or len(userinfo) < 6:
+		return None
+	userdict = {
+		'username': userinfo[0],
+		'uid': int(userinfo[2]),
+		'gid': int(userinfo[3]),
+		'fullname': userinfo[4],
+		'homedir': userinfo[5],
+		'unixshell': os.path.basename(userinfo[6]),
+	}
+	return userdict
 
 #=====================
 def getHostname():
@@ -94,6 +117,11 @@ def getHostname():
 	return host
 
 #=====================
+def getTotalMemory():
+	from pyami import mem
+	return mem.total()
+
+#=====================
 def getSystemName():
 	try:
 		system = os.uname()[0].lower()
@@ -102,15 +130,86 @@ def getSystemName():
 	return system
 
 #=====================
+def getCPUVendor():
+	if not os.path.exists('/proc/cpuinfo'):
+		return None
+	f = open('/proc/cpuinfo', 'r')
+	vendor = None
+	for line in f:
+		if 'vendor_id' in line:
+			if 'Intel' in line:
+				vendor = 'Intel'
+				break
+			elif 'AMD' in line:
+				vendor = 'AMD'
+				break
+			elif ':' in line:
+				bits = line.split(':')
+				vendor = bits[1].strip()
+	f.close()
+	return vendor
+
+#=====================
+def getGPUVendor():
+	pciexe = getExecPath("lspci")	
+	if not pciexe: pciexe = getExecPath("/sbin/lspci")
+	if pciexe is None:
+		return None
+	
+	proc = subprocess.Popen(pciexe, shell=True, stdout=subprocess.PIPE)
+	proc.wait()
+	lines = proc.stdout.readlines()
+	lines = list(map(str, lines)) # abonham edit 19-04-2022 convert to list[str] to avoid type error 
+	vendor = None
+	for line in lines:
+		if 'VGA compatible controller:' in line: 
+			sline = line.strip()
+			bits = sline.split(':')
+			if len(bits) < 3:
+				continue
+			vendor = bits[2].strip()
+			if vendor.lower().startswith('nvidia'):
+				vendor = 'nVidia'
+			elif vendor.lower().startswith('ati'):
+				vendor = 'ATI'
+			elif vendor.lower().startswith('matrox'):
+				vendor = 'Matrox'
+			elif vendor.lower().startswith('intel'):
+				vendor = 'Intel'
+			else:
+				vendor = re.sub(' .*', '', vendor)
+	return vendor
+
+#=====================
 def getLinuxDistro():
+	### redhat only
 	flavfile = "/etc/redhat-release"
-	try:
+	if os.path.exists(flavfile):
 		f = open(flavfile, "r")
 		flavor = f.readline().strip()
 		f.close()
-	except:
-		flavor = None
-	return flavor
+		return flavor
+
+	### more general at least ubuntu/redhat
+	flavfile = "/etc/issue"
+	if os.path.exists(flavfile):
+		f = open(flavfile, "r")
+		flavor = f.readline().strip()
+		f.close()
+		return flavor
+
+	### more general at least ubuntu/redhat
+	cmd = "lsb_release -d"
+	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	proc.wait()
+	descript = proc.stdout.readline().strip()
+	if descript:
+		bits = descript.split('\t')
+		if len(bits) > 1:
+			return bits[1].strip()
+
+	### fall back
+	return None
 
 #=====================
 def getMachineArch():
@@ -137,6 +236,23 @@ def getLogHeader():
 	host = getHostname()
 	logheader = "[ "+user+"@"+host+": "+time.asctime()+" ]\n"
 	return logheader
+
+#=====================
+def dumpParameters(parameters, paramfile):
+	''' uses cPickle to dump parameters (as a dictionary) to file '''
+	pf = open(paramfile, "w")
+	pickle.dump(parameters, pf)
+	pf.close()
+	return 
+
+#=====================
+def readRunParameters(paramfile):
+	if not os.path.isfile(paramfile):
+		apDisplay.printError("Could not find run parameters file: "+paramfile)
+	pf = open(paramfile, "r")
+	runparams = pickle.load(pf)
+	pf.close()
+	return runparams
 
 #=====================
 def writeFunctionLog(cmdlist, logfile=None, msg=True):
@@ -225,7 +341,7 @@ def closeFunctionLog(functionname=None, logfile=None, msg=True, stats=None):
 	f.close()
 
 #=====================
-def createDirectory(path, mode=0777, warning=True):
+def createDirectory(path, mode=0o775, warning=True):
 	"""
 	Used by appionLoop
 	"""
@@ -241,12 +357,26 @@ def createDirectory(path, mode=0777, warning=True):
 	return True
 
 #=====================
-def convertParserToParams(parser):
+def removeDirectory(path, warning=True):
+	"""
+	Used by appionLoop
+	"""
+	if os.path.isdir(path):
+		apDisplay.printWarning("directory \'"+path+"\' will be removed.")
+		try:
+			shutil.rmtree(path, ignore_errors=not warning)
+		except:
+			apDisplay.printError("Could not remove directory, '"+path+"'\nCheck the folder write permissions")
+			return False
+	return True
+
+#=====================
+def convertParserToParams(parser,optargs=sys.argv[1:]):
 	parser.disable_interspersed_args()
-	(options, args) = parser.parse_args()
+	(options, args) = parser.parse_args(optargs)
 	if len(args) > 0:
 		apDisplay.printError("Unknown commandline options: "+str(args))
-	if len(sys.argv) < 2:
+	if len(optargs) < 1 or (len(optargs) == 1 and '--jobtype=' in optargs[0]):
 		parser.print_help()
 		parser.error("no options defined")
 
@@ -257,6 +387,50 @@ def convertParserToParams(parser):
 	return params
 
 #=====================
+def splitMultipleSets(param_str,numiter):
+	param_upper = param_str.upper()
+	fullparam = []
+	set_bits = param_upper.split(':')
+	position = 0
+	total_repeat = 0
+	for set in set_bits:
+		m_index = set.find('X')
+		if m_index == -1:
+			# no multiple
+			fullparam.append(tc(set))
+		else:
+			try:
+				repeat = int(set[:m_index])
+				fullparam.extend(list(map((lambda x:tc(param_str[position+m_index+1:position+len(set)])),list(range(repeat)))))	
+			except:
+				raise
+				fullparam = list(map((lambda x: tc(param_str)),list(range(numiter))))
+		position += len(set)+1
+	return fullparam
+
+def convertIterationParams(iterparams,params,numiter):
+	"""
+	Used by 3D refinement to specify iteration parameters
+	in format of xmipp i.e. 3x5:3x4:3:3
+	':','x','X' are used for splitting, not allowed in the values
+	"""
+	for name in iterparams:
+		param_str = str(params[name]).strip()
+		param_upper = param_str.upper()
+		multiple_bits = param_upper.split('X')
+		set_bits = param_upper.split(':')
+		if len(multiple_bits) <= 1 and len(set_bits) <= 1:
+			params[name] = list(map((lambda x: tc(param_str)),list(range(numiter))))
+		else:
+			params[name] = splitMultipleSets(param_str,numiter)
+		if len(params[name]) < numiter:
+			addons = list(map((lambda x: params[name][len(params[name])-1]),list(range(numiter - len(params[name])+1))))
+			params[name].extend(addons)
+		elif len(params[name]) > numiter:
+			params[name] = params[name][:numiter]
+	return params
+
+#=====================
 def getXversion():
 	xcmd = "X -version"
 	proc = subprocess.Popen(xcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -264,12 +438,18 @@ def getXversion():
 	for line in proc.stderr:
 		if re.match("Build ID:", line):
 			sline = re.sub("Build ID:", "", line).strip()
-			m = re.search("\s([0-9\.]+)", sline)
+			sline = re.sub("xorg-x11-server", "", sline).strip()
+			m = re.search("\s*([0-9\.]+)", sline)
 			if m:
 				version = m.groups()[0]
-				return versionToNumber(version)	
+				return versionToNumber(version)
+		elif re.match("xorg-server", line):
+			sline = re.sub("xorg-server [0-9]+:", "", line).strip()
+			m = re.search("\s*([0-9\.]+)", sline)
+			if m:
+				version = m.groups()[0]
+				return versionToNumber(version)
 	return None
-
 
 #=====================
 def versionToNumber(version):
@@ -291,7 +471,7 @@ def resetVirtualFrameBuffer(killall=False):
 	port = 1
 	fontpath = getFontPath()
 	securfile = getSecureFile()
-	rgbfile = "" #getRgbFile()
+	rgbfile = getRgbFile()
 	#random 4 digit port
 	port = int(random.random()*9000+1000)
 	portstr = str(port)
@@ -334,7 +514,7 @@ def killVirtualFrameBuffer(port=None):
 				proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 				proc.wait()
 				### delete this file can cause problems with user permissions
-				rmxfile = "rm -fv /tmp/.X11-unix/X%d"%(port)
+				rmxfile = "/bin/rm -fv /tmp/.X11-unix/X%d"%(port)
 				proc = subprocess.Popen(rmxfile, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 				proc.wait()
 				apDisplay.printMsg("Killed Xvfb on port %d"%(port))
@@ -381,14 +561,14 @@ def getRgbFile(msg=True):
 	This file comes with xorg-x11-server-Xorg in Fedora 7,8
 	missing in Fedora 9
 	"""
-	#return " "
 	filelist = [
 		"/usr/share/X11/rgb",
 		"/usr/X11R6/lib64/X11/rgb",
 		"/usr/X11R6/lib/X11/rgb",
 	]
 	xversion = getXversion()
-	if xversion > 1.02:
+	print("X version", xversion)
+	if xversion is None or xversion > 1.0109:
 		return " "
 	for rgbfile in filelist:
 		if os.path.isfile(rgbfile+".txt"):
@@ -398,26 +578,32 @@ def getRgbFile(msg=True):
 
 #=====================
 def getNumProcessors(msg=True):
-	proc = subprocess.Popen("cat /proc/cpuinfo | grep processor", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	proc.wait()
-	nproc = len(proc.stdout.readlines())
+	# First see if on a PBS cluster:
+	if 'PBS_NODEFILE' in os.environ:
+		cmd = "wc -l $PBS_NODEFILE"# | awk '{print $1}'"
+		nproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().strip()
+		nproc = int(nproc)
+
+	else:
+		if not os.path.exists('/proc/cpuinfo'):
+			return None
+		f = open('/proc/cpuinfo', 'r')
+		nproc = 0
+		for line in f:
+			if line.startswith('processor'):
+				nproc += 1
+		f.close()
 	if msg is True:
-		apDisplay.printMsg("Found "+str(nproc)+" processors on this machine")
+		apDisplay.printMsg("Found %i processors on this machine"%nproc)
 	return nproc
 
 #=====================
 def setUmask(msg=False):
-	os.umask(0)
-	os.umask(0)
-	return
-	if os.getgid() == 773:
-		prev = os.umask(002)
-		curr = os.umask(002)
-	else:
-		prev = os.umask(000)
-		curr = os.umask(000)
+	newUmask = 0o02
+	prev = os.umask(newUmask)
 	if msg is True:
-		apDisplay.printMsg("Umask changed from "+str(prev)+" to "+str(curr))
+		apDisplay.printMsg("Umask changed from "+str(prev)+" to "+str(newUmask))
+	return
 
 #=====================
 def getExecPath(exefile, die=False):
@@ -454,7 +640,7 @@ def runCmd(cmd, package="", verbose=False, showcmd=True, logfile=None, fail=Fals
 		if verbose is True:
 			out, err = proc.communicate()
 			if out is not None and err is not None:
-				print "error", out, err
+				print("error", out, err)
 		else:
 			out, err = proc.communicate()
 			### continuous check
@@ -472,7 +658,7 @@ def runCmd(cmd, package="", verbose=False, showcmd=True, logfile=None, fail=Fals
 	if tdiff > 20:
 		apDisplay.printMsg("completed in "+apDisplay.timeString(tdiff))
 	elif waited is True:
-		print ""
+		print("")
 
 
 #================
@@ -487,6 +673,54 @@ def randomString(length):
 		mystr += random.choice(chars)
 	return mystr
 
+#================
+def tc(string):
+	"""
+	return in python type from according to string format
+	"""
+	try:
+		out = eval(string)
+	except:
+		string = string.strip()
+		if string.upper() in ('T','TRUE'):
+			out = True
+		elif string.upper() in ('F','FALSE'):
+			out = False
+		else:
+			out = string
+	return out
+
+#================
+def ts(key, value, usage_key):
+	"""
+	return command substring according to python key value pair and the
+	key used in constructing the command
+	"""
+	if value == '' or value == None:
+		# None means not defined or default. No need to convert
+		return ''
+	if key == 'wait':
+		# wait usage_key is only used on False case
+		if  value == True:
+			# there is no --wait option, only --no-wait
+			return ''
+		else:
+			return '--no-wait'
+	if type(value) == type(True):
+		# usage_key is the flag for boolean type value
+		return '--%s' % usage_key
+	if key != usage_key:
+		apDisplay.printDebug('using %s instead of %s' % (usage_key, key))
+	# value conversion
+	if type(value) == type(all):
+		output = '--%s=%s' % (usage_key, value.__name__)
+	elif type(value) in (type([]),type(())):
+		output = '--%s=%s' % (usage_key, value)
+	else:
+		if ' ' in '%s' % value:
+			value = '"%s"' % value
+		output = '--%s=%s' % (usage_key, value)
+	return output
 ####
 # This is a low-level file with NO database connections
 # Please keep it this way

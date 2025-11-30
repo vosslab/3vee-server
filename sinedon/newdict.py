@@ -2,6 +2,7 @@ import numpy
 import os
 from pyami.ordereddict import OrderedDict 
 from pyami import weakattr
+import array
 
 class FileReference(object):
 	'''
@@ -25,9 +26,20 @@ class FileReference(object):
 		d = self.loader(fullname)
 		return d
 
+	def exists(self):
+		if self.path is None:
+			raise RuntimeError('no path set for %s' % (self.filename,))
+		fullname = os.path.join(self.path, self.filename)
+		return os.path.exists(fullname)
+
 	def setPath(self, path):
 		self.path = path
 
+	def __str__(self):
+		return 'FileReference(path=%s,filename=%s)' % (self.path, self.filename)
+
+	def __repr__(self):
+		return 'FileReference(path=%s,filename=%s)' % (self.path, self.filename)
 
 ### types used in TypedDict must have valicators
 ### Two ways to register a validator for a given type:
@@ -77,8 +89,18 @@ class TypedDict(OrderedDict):
 			except KeyError:
 				pass
 
+def validateStr(obj):
+	if isinstance(obj, str):
+		return obj
+	elif isinstance(obj, array.array):
+		return obj.tostring()
+	else:
+		return str(obj)
+
+registerValidator(str, validateStr)
+
 ## most common types are their own validator
-for t in (bool, complex, dict, float, int, list, long, type(None), str, tuple):
+for t in (bool, complex, dict, float, int, list, type(None), tuple):
 	registerValidator(t, t)
 
 ## other types we define here, and validators too
@@ -129,3 +151,10 @@ def validateCallable(obj):
 registerValidator(MRCArrayType, validateArrayType)
 registerValidator(DatabaseArrayType, validateArrayType)
 registerValidator(CallableType, validateCallable)
+
+import datetime
+def validateDatetime(obj):
+	if isinstance(obj, datetime.datetime):
+		return obj
+	raise TypeError(obj)
+registerValidator(datetime.datetime, validateDatetime)

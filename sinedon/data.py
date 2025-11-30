@@ -1,21 +1,22 @@
 # COPYRIGHT:
-# The Leginon software is Copyright 2003
-# The Scripps Research Institute, La Jolla, CA
+# The Leginon software is Copyright under
+# Apache License, Version 2.0
 # For terms of the license agreement
-# see http://ami.scripps.edu/software/leginon-license
+# see http://leginon.org
 
 import numpy
-import newdict
+from sinedon import newdict
 import warnings
 import types
 import threading
-import dbdatakeeper
+from sinedon import dbdatakeeper
 import copy
-import tcptransport
+from sinedon import tcptransport
 import weakref
 import os
-import connections
+from sinedon import connections
 from pyami import weakattr
+import itertools
 
 class DataError(Exception):
 	pass
@@ -53,32 +54,18 @@ If iii and sss are in the database, and iii is queried, only iii is returned.
 sss will be queried automatically when accessing iii['session']
 '''
 
-## manages weak references between data instances
-## DataManager holds strong references to every Data instance that
-## is created.  The memory size is restricted such that the first instances
-## to be created are the first to be deleted from DataManager.
+## manages references between data instances
+## References between Data objects are strong until an object is inserted
+## to the DB.  Then the strong reference is converted to weak ref.
 class DataManager(object):
 	def __init__(self):
-		## will connect to database before first query
-		self.db = {}
-		### maybe dblock will fix some suspicious errors comming
-		### from database access
-		self.dbcachelock = threading.RLock()
-		self.location = None
-		self.server = None
+		self.startServer()
 
-		## this lock should be used on access to everything below
-		self.lock = threading.RLock()
-		self.datadict = newdict.OrderedDict()
-		self.sizedict = {}
+		self.weakcache = weakref.WeakValueDictionary()
 		self.dbcache = weakref.WeakValueDictionary()
-		self.dmid = 0
-		self.size = 0
-		### end of things that need to be locked
 
-		self.limitreached = False
-		megs = 300
-		self.maxsize = megs * 1024 * 1024
+		self.nextdmid = itertools.chain(zip(itertools.repeat(self.location), itertools.count()))
+
 		self.holdimages = True
 
 	def holdImages(self, value):
@@ -96,91 +83,13 @@ class DataManager(object):
 		hostname = self.server.hostname
 		self.location = (hostname, port)
 
-	def newid(self):
-		self.lock.acquire()
-		try:
-			self.dmid += 1
-			new_dmid = (self.location, self.dmid)
-			return new_dmid
-		finally:
-			self.lock.release()
+	def cacheInsert(self, datainstance):
+		## if datainstance has no dmid, give it one
+		if not hasattr(datainstance, 'dmid') or datainstance.dmid is None:
+			datainstance.dmid = next(self.nextdmid)
 
-	def insert(self, datainstance):
-		self.lock.acquire()
-		try:
-			if self.server is None:
-				self.startServer()
-
-			## if datainstance has no dmid, give it one
-			dmid = datainstance.dmid
-			if dmid is None:
-				dmid = self.newid()
-				datainstance.dmid = dmid
-
-			### if already managing this, then return
-			if dmid in self.datadict:
-				return
-
-			## insert into datadict and sizedict
-			self.datadict[dmid] = datainstance
-			self.sizedict[dmid] = 0
-
-			self.resize(datainstance)
-		finally:
-			self.lock.release()
-
-	def remove(self, dmid):
-		self.lock.acquire()
-		try:
-			if dmid not in self.datadict:
-				return
-			del self.datadict[dmid]
-			self.size -= self.sizedict[dmid]
-			del self.sizedict[dmid]
-		finally:
-			self.lock.release()
-
-	def resize(self, datainstance):
-		self.lock.acquire()
-		try:
-			dmid = datainstance.dmid
-			dsize = datainstance.size()
-			if dsize > self.maxsize:
-				raise DataManagerOverflowError('new size is too big for DataManager')
-			## check previous size
-			if dmid in self.sizedict:
-				oldsize = self.sizedict[dmid]
-			else:
-				oldsize = 0
-			self.size = self.size - oldsize + dsize
-			self.sizedict[dmid] = dsize
-			if self.size > self.maxsize:
-				self.clean()
-		finally:
-			self.lock.release()
-
-	def clean(self):
-		self.lock.acquire()
-		try:
-			for key in self.datadict.keys():
-				if self.size <= self.maxsize/2:
-					break
-				if not self.limitreached:
-					self.limitreached = True
-					#print '************************************************************************'
-					#print '***** DataManager size reached, removing data as needed ******'
-					#print '************************************************************************'
-				self.remove(key)
-		finally:
-			self.lock.release()
-
-	def getDataFromDBCache(self, dataclass, dbid):
-		self.dbcachelock.acquire()
-		try:
-			dat = self.dbcache[dataclass, dbid]
-		finally:
-			self.dbcachelock.release()
-		return dat
+		## keep in the weak cache
+		self.weakcache[datainstance.dmid] = datainstance
 
 	def getDataFromDB(self, dataclass, dbid, **kwargs):
 		dbmodulename = dataclass.__module__
@@ -188,7 +97,7 @@ class DataManager(object):
 
 		### try to get data from dbcache before doing query
 		try:
-			dat = self.getDataFromDBCache(dataclass, dbid)
+			dat = self.dbcache[dataclass, dbid]
 		except KeyError:
 			dat = db.direct_query(dataclass, dbid, **kwargs)
 		return dat
@@ -198,11 +107,7 @@ class DataManager(object):
 			return
 		dbid = datainstance.dbid
 		dataclass = datainstance.__class__
-		self.dbcachelock.acquire()
-		try:
-			self.dbcache[dataclass, dbid] = datainstance
-		finally:
-			self.dbcachelock.release()
+		self.dbcache[dataclass, dbid] = datainstance
 
 	def getRemoteData(self, datareference):
 		dmid = datareference.dmid
@@ -211,62 +116,65 @@ class DataManager(object):
 		datainstance = client.send(datareference)
 		### this is a new instance from a pickle
 		### now register it locally
-		self.insert(datainstance)
+		self.cacheInsert(datainstance)
 		datainstance.sync()
 		return datainstance
+
+	def getRemoteFile(self, filereference, dmid):
+		location = {'hostname': dmid[0][0], 'port': dmid[0][1]}
+		client = tcptransport.Client(location)
+		readobject = client.send(filereference)
+		return readobject
 
 	def getData(self, datareference, **kwargs):
 		dataclass = datareference.dataclass
 		referent = None
 		dmid = datareference.dmid
+		dbid = datareference.dbid
 
-		#### attempt to find referent in local datadict
-		self.lock.acquire()
+		#### try local weakrefs
 		try:
-			if dmid in self.datadict:
-				## in local memory
-				referent = self.datadict[dmid]
-				# access to datadict causes move to front
-				del self.datadict[dmid]
-				self.datadict[dmid] = referent
-		finally:
-			self.lock.release()
+			referent = self.weakcache[dmid]
+			return referent
+		except:
+			pass
 
-		#### not found locally, try external locations
-		if referent is None:
-			### try DB
-			dbid = datareference.dbid
-			if dbid is not None:
-				## in database
+		#### try DB
+		if dbid is not None:
+			## in database
+			try:
 				referent = self.getDataFromDB(dataclass, dbid, **kwargs)
-			if referent is None:
-				### try remote location
-				if dmid is not None and dmid[0] != self.location:
-					## in remote memory
-					# TODO: kwargs
-					referent = self.getRemoteData(datareference)
+				return referent
+			except:
+				pass
 
-		## if sill None, then must not exist anymore
-		if referent is None:
-			raise DataAccessError('referenced data can not be found: %s' % (datareference,))
+		### if dmid indicates, try remote location
+		if dmid is not None and dmid[0] != self.location:
+			## in remote memory
+			# TODO: kwargs
+			referent = self.getRemoteData(datareference)
+			return referent
 
-		return referent
+		## must not exist anymore
+		raise DataAccessError('referenced data can not be found: %s' % (datareference,))
 
 	def query(self, datareference):
 		# this is how socketstreamtransport server accesses this data manager
 		datainstance = self.getData(datareference)
-		### in case of getData returning new DataReference:
-		### or should we just return new DataReference and let
-		### remote caller try again?
-		if isinstance(datainstance, DataReference):
-			datainstance = datainstance.getData()
 		return datainstance
+
+	def readFile(self, filereference):
+		return filereference.read()
 
 	def handle(self, request):
 		if isinstance(request, Data):
-			return self.insert(request)
-		else:
+			return self.cacheInsert(request)
+		elif isinstance(request, DataReference):
 			return self.query(request)
+		elif isinstance(request, newdict.FileReference):
+			return self.readFile(request)
+		else:
+			print('bad request:', request)
 
 datamanager = DataManager()
 
@@ -282,8 +190,10 @@ class DataReference(object):
 	if using dataclass, also specify either a dmid or a dbid
 	'''
 	def __init__(self, datareference=None, referent=None, dataclass=None, dmid=None, dbid=None):
-		self.datahandler = False
-		self.wr = None
+		self.dataclass = None
+		self.referent = None
+		self.dmid = None
+		self.dbid = None
 		if datareference is not None:
 			self.dataclass = datareference.dataclass
 			self.dmid = datareference.dmid
@@ -301,13 +211,15 @@ class DataReference(object):
 			self.dataclass = dataclass
 			self.dmid = dmid
 			self.dbid = dbid
+		elif dmid is not None:
+			self.dmid = dmid
 		else:
-			raise DataError('DataReference needs either DataReference, Data class, or Data instance for initialization')
+			raise DataError('DataReference needs more info for initialization')
 
 	def __getstate__(self):
-		## for pickling, do not include weak ref attribute
+		## for pickling, do not include referent
 		state = dict(self.__dict__)
-		state['wr'] = None
+		state['referent'] = None
 		return state
 
 	def sync(self, o=None):
@@ -317,45 +229,45 @@ class DataReference(object):
 		or through a weak reference to the referent
 		'''
 		if o is None:
-			if self.wr is None:
+			if self.referent is None:
 				return
-			o = self.wr()
+			o = self.referent()
 		if o is not None:
-			self.wr = weakref.ref(o)
+			if o.dbid is None:
+				self.referent = o
+			else:
+				self.referent = weakref.ref(o)
 			self.dmid = o.dmid
 			self.dbid = o.dbid
+			o.references[id(self)] = self
 
 	def getData(self, **kwargs):
 		referent = None
-		#### Try weak reference, return referent if found
-		if self.wr is not None:
-			referent = self.wr()
+		#### Try strong and weak reference
+		if isinstance(self.referent, weakref.ref):
+			referent = self.referent()
+		elif isinstance(self.referent, Data):
+			referent = self.referent
 
+		#### Try DataManager, update me with ref to new data
 		if referent is None:
-			#### Try DataManager but do not return referent
-			#### instead, return new reference to referent
-			#### to signify that this reference is defunct
-			goodref = False
 			referent = datamanager.getData(self, **kwargs)
-		else:
-			goodref = True
+			self.sync(referent)
 
-		### now we have a referent, or an excpetion was raised
-
-		### if this was a bad reference, return a new one
-		if goodref or self.datahandler:
-			return referent
-		else:
-			return referent.reference()
+		return referent
 
 	def __str__(self):
-		s = 'DataReference(%s), class: %s, dmid: %s, dbid: %s' % (id(self), self.dataclass, self.dmid, self.dbid)
-		if self.datahandler:
-			s = s + ' (datahandler)'
-		if self.wr is not None:
-			o = self.wr()
-			if o is not None:
-				s = s + ' (weak ref to %s)' % (id(o),)
+		if isinstance(self.referent, weakref.ref):
+			ref = 'weak'
+		elif isinstance(self.referent, Data):
+			ref = 'strong'
+		else:
+			ref = 'None'
+		if self.dataclass is None:
+			cls = 'unknown'
+		else:
+			cls = self.dataclass.__name__
+		s = 'DataReference[class: %s, dmid: %s, dbid: %s, referent: %s]' % (cls, self.dmid, self.dbid, ref)
 		return s
 
 class UnknownData(object):
@@ -379,9 +291,9 @@ def data2dict(idata, noNone=False, dereference=False):
 
 def dict2data(d, datatype):
 	instance = datatype()
+	if d is None:
+		return instance
 	for key, subtype in datatype.typemap():
-		if d is None:
-			continue
 		try:
 			if issubclass(subtype, Data):
 				instance[key] = dict2data(d[key], subtype)
@@ -431,6 +343,9 @@ class Data(newdict.TypedDict):
 		## been inserted into the database
 		self.dbid = None
 
+		## Set timestamp to None to have the DB automatically set it
+		self.timestamp = None
+
 		## DataManager ID
 		## this is None, then this data has not
 		## been inserted into the DataManager
@@ -438,16 +353,13 @@ class Data(newdict.TypedDict):
 
 		newdict.TypedDict.__init__(self)
 
-		self._reference = DataReference(referent=self)
-		
-		self.__size = 2500
-		k = self.keys()
-		self.__sizedict = dict(zip(k, [0 for key in k]))
+		self.references = weakref.WeakValueDictionary()
 
 		### insert into datamanager and sync my reference
 		### this also needs to be done in cases where this
 		### method is not called, like unpickling
-		datamanager.insert(self)
+		datamanager.cacheInsert(self)
+
 		self.sync()
 
 		# if initializer was given, update my values
@@ -461,9 +373,10 @@ class Data(newdict.TypedDict):
 	## definining __reduce__ allows unpickler to call __init__ 	 
 	## which is necessary to register data with datamanager 	 
 	## This overrides OrderedDict.__reduce__ with the only difference
-	## being that we don't wan to dereference the items
+	## being that we don't want to dereference the items
 	def __reduce__(self): 	 
 		state = dict(self.__dict__) 	 
+		del state['references']
 		## giving the new object an initializer has a lot of 	 
 		## duplicate information to what is given in the 	 
 		## state dict, but it is necessary to get the dict 	 
@@ -481,6 +394,28 @@ class Data(newdict.TypedDict):
 		db = connections.getConnection(modulename)
 		results = db.query(self, **kwargs)
 		return results
+
+	@classmethod
+	def is_deletable(cls):
+		'''
+		Check if this class was defined as "deletable".
+		This is true only if there is a class attribute "__deletable" and it
+		is set to True.
+		'''
+		# have to generate mangled name of the "__deletable" attribute
+		cls_name = cls.__name__
+		deletable_attr = '_' + cls_name + '__deletable'
+		if hasattr(cls, deletable_attr) and getattr(cls, deletable_attr):
+			return True
+		else:
+			return False
+
+	def delete(self, **kwargs):
+		if not self.is_deletable():
+			raise RuntimeError('Attempting to delete object that is not deletable')
+		modulename = self.__module__
+		db = connections.getConnection(modulename)
+		db.delete(self, **kwargs)
 
 	def close(self):
 		modulename = self.__module__
@@ -535,14 +470,6 @@ class Data(newdict.TypedDict):
 		for key,value in original:
 			if isinstance(value, DataReference):
 				val = value.getData()
-				### if got new DataReference, first was bad
-				if isinstance(val, DataReference):
-					# replace my reference with new one
-					#self[key] = val
-					# !!! is this ok?
-					self.__setitem__(key, value, force=True)
-					# use new reference
-					val = val.getData()
 			else:
 				val = value
 			deref.append((key,val))
@@ -557,14 +484,6 @@ class Data(newdict.TypedDict):
 		for key, value in originalitems:
 			if isinstance(value, DataReference):
 				val = value.getData()
-				### if got new DataReference, first was bad
-				if isinstance(val, DataReference):
-					# replace my reference with new one
-					#self[key] = val
-					# !!! is this ok?
-					self.__setitem__(key, value, force=True)
-					# use new reference
-					val = val.getData()
 			else:
 				val = value
 			deref.append(val)
@@ -581,15 +500,12 @@ class Data(newdict.TypedDict):
 			return value
 		if isinstance(value, DataReference):
 			value = value.getData(**kwargs)
-			### if got new DataReference, replace existing one
-			if isinstance(value, DataReference):
-				# replace my reference with new one
-				self.__setitem__(key, value, force=True)
-				# use new reference
-				value = value.getData(**kwargs)
 		if isinstance(value, newdict.FileReference):
-			fileref = value
-			value = value.read()
+			try:
+				value = value.read()
+			except:
+				print('Could not read file: %s' % (value,))
+				value = None
 			# This gives the option of keeping the FileReference rather
 			# than the image data, for memory vs. speed tradeoff
 			if datamanager.holdimages:
@@ -608,8 +524,6 @@ class Data(newdict.TypedDict):
 		if isinstance(value,Data):
 			value = value.reference()
 		super(Data, self).__setitem__(key, value)
-		if self.resize(key, value):
-			datamanager.resize(self)
 
 	def toDict(self, noNone=False, dereference=False):
 		return data2dict(self, noNone, dereference)
@@ -619,45 +533,18 @@ class Data(newdict.TypedDict):
 
 	fromDict = classmethod(fromDict)
 
-	def size(self):
-		return self.__size
-
-	def resize(self, key, newvalue):
-		oldsize = self.__sizedict[key]
-		newsize = self.sizeof(newvalue)
-		self.__sizedict[key] = newsize
-		self.__size = self.__size - oldsize + newsize
-		if oldsize == newsize:
-			return False
-		return True
-
-	def sizeof(self, value):
-		if value is None:
-			## there is only one None object
-			return 0
-		elif type(value) is numpy.ndarray:
-			return value.size * value.itemsize
-		else:
-			## this is my stupid estimate of size for other objects
-			## We could also check for int, str, float, etc.
-			## but this is easier
-			## This should be something other than 0, but
-			## for now it is 0 because otherwise we call 
-			## datamanager.resize more often, especially 
-			## if update() is called.  Maybe we need a better 
-			## update() and friendly_update() that only
-			## call datamanager.resize() once.
-			return 0
-
 	def reference(self):
-		return self._reference
+		dr = DataReference(referent=self)
+		self.references[id(dr)] = dr
+		return dr
 
 	def sync(self):
 		'''
-		synchronize my reference with me
+		synchronize my references with me
 		becuase either dmid or dbid changed
 		'''
-		self._reference.sync(self)
+		for dr in self.references.values():
+			dr.sync(self)
 
 	def nstr(self, value):
 		if type(value) is numpy.ndarray:

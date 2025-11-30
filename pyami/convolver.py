@@ -2,14 +2,14 @@
 
 #
 # COPYRIGHT:
-#       The Leginon software is Copyright 2003
-#       The Scripps Research Institute, La Jolla, CA
+#       The Leginon software is Copyright under
+#       Apache License, Version 2.0
 #       For terms of the license agreement
-#       see  http://ami.scripps.edu/software/leginon-license
+#       see  http://leginon.org
 #
 
 import numpy
-import fftengine
+from . import fftengine
 
 class Convolver(object):
 	'''
@@ -176,9 +176,9 @@ sobel_col_kernel.shape = (3,3)
 
 
 if __name__ == '__main__':
-	import Mrc
+	from . import Mrc
 	import sys
-	import imagefun
+	from . import imagefun
 
 	filename = sys.argv[1]
 

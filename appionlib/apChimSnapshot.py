@@ -24,6 +24,8 @@ if __name__ == "__main__":
 	sys.stderr.write("\nusage: chimera python:apChimSnapshot.py\n\n")
 	sys.exit(1)
 try:
+	cmd = os.popen("csh -c 'modulecmd python load chimera'")
+	exec(cmd)
 	import chimera
 	import chimera.printer
 	from chimera.colorTable import getColorByName
@@ -33,13 +35,16 @@ try:
 	from SurfaceCap import surfcaps
 	from _surface import SurfaceModel, connected_pieces
 	from chimera import openModels
-	from chimera.replyobj import nogui_message
 	from MeasureVolume import enclosed_volume
 	import ScaleBar.session
-	from chimera import exports
 except ImportError:
-	print "Failed to import chimera modules"
+	print("Failed to import chimera modules")
 	pass
+
+#from chimera-1.2.5/share/chimera/replyobj.py
+def nogui_message(s):
+	"""Show a message"""
+	sys.stdout.write(s)
 
 class ChimSnapShots(object):
 	# -----------------------------------------------------------------------------
@@ -48,11 +53,7 @@ class ChimSnapShots(object):
 		chimera.viewer.windowSize = self.imgsize
 		self.openPDBData()
 		self.openVolumeData()
-		if self.print3d is not None:
-			self.saveX3Dscene()
-		else:
-			self.saveOBJfile()
-
+		self.saveOBJfile()
 		### select proper function
 		if self.type == 'animate':
 			if self.symmetry[:4] == 'icos':
@@ -106,27 +107,11 @@ class ChimSnapShots(object):
 		self.writeMessageToLog("Saving OBJ file: %s"%(self.objfilename))
 		chimcmd = "export format OBJ %s"%(self.objfilename)
 		self.runChimCommand(chimcmd)
-		if os.path.isfile(self.objfilename) and os.stat(self.objfilename)[6] > 0:
+		if os.path.isfile(self.objfilename):
 			self.writeMessageToLog("Saved OBJ file: %s"%(self.objfilename))
 			self.convertOBJfile(self.objfilename)
 		else:
 			self.writeMessageToLog("Failed to write OBJ file: %s"%(self.objfilename))
-
-	# -----------------------------------------------------------------------------
-	def saveX3Dscene(self):
-		"""
-		save X3D file for 3D printer use
-		"""
-		self.x3dfilename = os.path.splitext(self.volumepath)[0]+".x3d"
-		self.writeMessageToLog("Saving X3D file: %s"%(self.x3dfilename))
-		#chimcmd = "export format X3D %s"%(self.x3dfilename)
-		#self.runChimCommand(chimcmd)
-		exports.doExportCommand('X3D', self.x3dfilename)
-		if os.path.isfile(self.x3dfilename) and os.stat(self.x3dfilename)[6] > 0:
-			self.writeMessageToLog("Saved X3D file: %s (size %d bytes)"
-				%(self.x3dfilename, os.stat(self.x3dfilename)[6]))
-		else:
-			self.writeMessageToLog("Failed to write X3D file: %s"%(self.x3dfilename))
 
 	# -----------------------------------------------------------------------------
 	def convertOBJfile(self, objfile):
@@ -193,7 +178,7 @@ class ChimSnapShots(object):
 		"""
 		open PDB file
 		"""
-		if self.pdbfilepath is None or self.pdbfilepath == "None":
+		if self.pdbfilepath is None:
 			return
 		self.writeMessageToLog("Opening PDB file: %s"%(self.pdbfilepath))
 		chimera.openModels.open(self.pdbfilepath, type="PDB")
@@ -381,9 +366,9 @@ class ChimSnapShots(object):
 			self.writeMessageToLog("Error restoring scale bar")
 
 	# -----------------------------------------------------------------------------
-	def hideDust(self, size=100):
+	def hideDust(self, size=10):
 		self.writeMessageToLog("Hide all dust particles less than %d voxels in size"%(size))
-		native = False
+		native = True
 		#try:
 		if True:
 			if native is True:
@@ -709,7 +694,7 @@ class ChimSnapShots(object):
 	# -----------------------------------------------------------------------------
 	def snapshot_asymmetric(self):
 		self.writeMessageToLog("snapshot_asymmetric")
-		self.hideDust(150)
+		self.hideDust()
 		for s in self.surfaces:
 			self.color_surface_height(s)
 		#self.writeMessageToLog("turn: get front view")
@@ -836,13 +821,9 @@ class ChimSnapShots(object):
 	def __init__(self):
 		### Volume name
 		self.volumepath = os.environ.get('CHIMVOL')
-		print self.volumepath
+		print(self.volumepath)
 		if self.volumepath is None:
 			sys.exit(1)
-		if not os.path.isfile(self.volumepath):
-			print "CHIMVOL not found: "+self.volumepath
-			sys.exit(1)
-
 		self.rundir = os.path.dirname(self.volumepath)
 		self.chimlog = os.path.join(self.rundir, "apChimSnapshot.log")
 
@@ -858,7 +839,6 @@ class ChimSnapShots(object):
 			self.tmpfilepath = self.volumepath
 		### PDB structure
 		self.pdbfilepath = os.environ.get('CHIMPDBFILE')
-		self.print3d = os.environ.get('CHIMPRINT3D')
 		### High resolution rendering
 		voxellimit = os.environ.get('CHIMVOXELLIMIT')
 		if voxellimit is not None and bool(voxellimit) is True:
@@ -928,7 +908,7 @@ class ChimSnapShots(object):
 		### write to log
 		self.writeMessageToLog("Chimera version: %s"%(chimera.version.version))
 		self.writeMessageToLog("Environmental data: ")
-		for var in os.environ.keys():
+		for var in list(os.environ.keys()):
 			if var[:4] == "CHIM":
 				if os.environ.get(var) is not None:
 					self.writeMessageToLog("export %s=%s"%(var, os.environ.get(var)))		

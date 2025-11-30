@@ -1,14 +1,15 @@
 #
 # COPYRIGHT:
-#       The Leginon software is Copyright 2003
-#       The Scripps Research Institute, La Jolla, CA
+#       The Leginon software is Copyright under
+#       Apache License, Version 2.0
 #       For terms of the license agreement
-#       see  http://ami.scripps.edu/software/leginon-license
+#       see  http://leginon.org
 #
-import SocketServer
+import socketserver as SocketServer
 import socket
-import socketstreamtransport
+from sinedon import socketstreamtransport
 import errno
+from pyami import mysocket
 
 locationkey = 'TCP transport'
 
@@ -24,9 +25,8 @@ class Server(socketstreamtransport.Server, SocketServer.ThreadingTCPServer):
 			try:
 				SocketServer.ThreadingTCPServer.__init__(self, ('', port),
 																									socketstreamtransport.Handler)
-			except socket.error, e:
-				en, string = e
-				raise TransportError(string)
+			except socket.error as e:
+				raise TransportError(e)
 		else:
 			exception = True
 			# range define by IANA as dynamic/private or so says Jim
@@ -38,10 +38,14 @@ class Server(socketstreamtransport.Server, SocketServer.ThreadingTCPServer):
 																									socketstreamtransport.Handler)
 					exception = False
 					break
-				except socket.error, e:
-					en, string = e
-					if en == errno.EADDRINUSE:
-						port += 1
+				except socket.error as e:
+					if hasattr(e, 'errno'):
+						en = e.errno
+						if en == errno.EADDRINUSE:
+							port += 1
+						else:
+							# TODO can it reaches here?
+							pass
 					else:
 						raise TransportError(string)
 			if exception:
@@ -52,7 +56,7 @@ class Server(socketstreamtransport.Server, SocketServer.ThreadingTCPServer):
 
 	def location(self):
 		location = socketstreamtransport.Server.location(self)
-		location['hostname'] = socket.gethostname().lower()
+		location['hostname'] = mysocket.gethostname().lower()
 		location['port'] = self.port
 		return location
 
@@ -73,7 +77,7 @@ class Client(socketstreamtransport.Client):
 			raise TransportErrorr('invalid location')
 		try:
 			s.connect((hostname, port))
-		except socket.error, e:
+		except socket.error as e:
 			en, string = e
 			raise TransportError(string)
 		return s

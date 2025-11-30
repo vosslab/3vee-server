@@ -1,9 +1,9 @@
 #
 # COPYRIGHT:
-#	   The Leginon software is Copyright 2003
-#	   The Scripps Research Institute, La Jolla, CA
+#	   The Leginon software is Copyright under
+#	   Apache License, Version 2.0
 #	   For terms of the license agreement
-#	   see  http://ami.scripps.edu/software/leginon-license
+#	   see  http://leginon.org
 #
 debug = False
 """
@@ -148,21 +148,24 @@ OR
 
 
 import sys
-import sqlexpr
+from sinedon import sqlexpr
 import copy
-import sqldb
-import string
+from sinedon import sqldb
+import datetime
 import re
 import numpy
-import MySQLdb.cursors
+import math
+import pymysql
+import pymysql.err
 from types import *
-import newdict
-import data
+from sinedon import newdict
+from sinedon import data
 import sinedon
 import pyami.mrc
 import os
-import dbconfig
-import cPickle
+from sinedon import dbconfig
+import pickle as cPickle # python3
+import time
 from pyami import weakattr
 
 class SQLDict(object):
@@ -180,19 +183,40 @@ class SQLDict(object):
 			db	= "DB_NAME"
 			passwd	= "DB_PASS"
 		"""
-
+		if 'port' in kwargs:
+			kwargs['port'] = int(kwargs['port'])
+		self.kwargs = kwargs
 		try:
 			self.db = sqldb.connect(**kwargs)
 			self.connected = True
-		except Exception,e:
+		except Exception as e:
 			self.db = None
 			self.connected = False
 			self.sqlexception = e
 			raise
+		if 'engine' in kwargs:
+			self.engine = kwargs['engine']
+		else:
+			self.engine = None
 
 	def ping(self):
-		if self.db.stat() == 'MySQL server has gone away':
-			self.db = sqldb.connect(**self.db.kwargs)
+		try:
+			self.db.ping(reconnect=True)
+		except (pymysql.err.ProgrammingError, pymysql.err.OperationalError) as e:
+			### FIX ME.  These reconnection may not be needed for pymysql. See directq.py
+			# and Issue #9527.  There are other ping call in this module of unknown effect.
+			# this function gives error when connection is not available.
+			errno = e.args[0]
+			## some version of mysqlpython parses the exception differently
+			if not isinstance(errno, int):
+				errno = errno.args[0]
+			## 2006:  MySQL server has gone away
+			if errno in (2006,):
+				ctime = time.strftime("%H:%M:%S")
+				print("reconnecting at %s after MySQL server has gone away error" % (ctime,))
+				self.db = sqldb.connect(**self.kwargs)
+			else:
+				raise
 
 	def connect_kwargs(self):
 		return self.db.kwargs
@@ -228,7 +252,7 @@ class SQLDict(object):
 		[{'Field': 'id', 'Type': 'int(16)', 'Key': 'PRIMARY', 'Extra':'auto_increment'},
 		{'Field': 'Name', 'Type': 'VARCHAR(50)'}])
 		"""
-		return _createSQLTable(self.db, table, definition)
+		return _createSQLTable(self.db, table, definition, self.engine)
 
 	def diffSQLTable(self, table, data_definition):
 		"""
@@ -242,6 +266,22 @@ class SQLDict(object):
 		Execute a list of queries, it will return a list of dictionaries
 		"""
 		return _multipleQueries(self.db, queryinfo, readimages)
+
+	def delete(self, queryinfo):
+		# should be just a single object for now
+		info = queryinfo.popitem()[1]
+		print('INFO', info)
+		tablename = info['class'].__name__
+		print('TABLENAME', tablename)
+		where = info['where'].popitem()
+		where = '%s = %d' % where
+		print('WHERE', where)
+		query = str(sqlexpr.Delete(tablename, where))
+		print('QUERY', query)
+		self.db.ping()
+		cur = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+		cur.execute(query)
+		cur.close()
 
 class _Table:
 
@@ -306,7 +346,6 @@ class _Table:
 
 			whereFormat = sqlexpr.AND_EQUAL(equalpairs)
 			whereFormatNULL = sqlexpr.AND_IS(nullfields)
-
 			if whereFormatNULL:
 				if whereFormat:
 					whereFormat = sqlexpr.AND(whereFormatNULL,whereFormat)
@@ -314,7 +353,6 @@ class _Table:
 					whereFormat = whereFormatNULL
 
 			qsel = sqlexpr.SelectAll(self.table, where=whereFormat).sqlRepr()
-			## print qsel
 			try:
 				c.execute(qsel)
 				result=c.fetchone()
@@ -324,7 +362,7 @@ class _Table:
 		if force or not result:
 			q = sqlexpr.Insert(self.table, v).sqlRepr()
 			if debug:
-				print q
+				print('insert q',q)
 			c.execute(q)
 			## try the new lastrowid attribute first,
 			## then try the old insert_id() method
@@ -413,7 +451,7 @@ class _Cursor:
 
 	def __init__(self, db, load, columns):
 		db.ping()
-		self.cursor = db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+		self.cursor = db.cursor(cursor=pymysql.cursors.DictCursor)
 		self.columns = columns
 		self.load = load
 		self.db = db
@@ -495,16 +533,16 @@ class _multipleQueries:
 		self.db = db
 		self.queryinfo = queryinfo
 		self.readimages = readimages
-		#print 'querinfo ', self.queryinfo
+		#print('querinfo ', self.queryinfo)
 		self.queries = setQueries(queryinfo)
 		if debug:
-			print 'queries ', self.queries
+			print('queries ', self.queries)
 		self.cursors = {}
 		self.execute()
 
 	def _cursor(self):
 		self.db.ping()
-		return self.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+		return self.db.cursor(cursor=pymysql.cursors.DictCursor)
 
 	def execute(self):
 		for key,query in self.queries.items():
@@ -515,16 +553,19 @@ class _multipleQueries:
 				continue
 			c = self._cursor()
 			try:
-				## print '-----------------------------------------------'
-				## print 'query =', query
+				## print('-----------------------------------------------')
+				## print('query =', query)
 				c.execute(query)
-			except (MySQLdb.ProgrammingError, MySQLdb.OperationalError), e:
+			except (pymysql.err.InternalError, pymysql.err.ProgrammingError, pymysql.err.OperationalError) as e:
 				errno = e.args[0]
-				## 1146:  table does not exist
-				## 1054:  column does not exist
+				## some version of mysqlpython parses the exception differently
+				if not isinstance(errno, int):
+					errno = errno.args[0]
+				## ProgrammingError 1146:  table does not exist
+				## InternalError 1054:  column does not exist
 				if errno in (1146, 1054):
 					pass
-					#print 'non-fatal query error:', e
+					#print('non-fatal query error:', e)
 				else:
 					raise
 			else:
@@ -592,13 +633,17 @@ class _multipleQueries:
 		def test(obj):
 			return not isinstance(obj, (data.Data,data.DataReference))
 		actualresults = filter(test, cursorresults.values())
-		if actualresults:
-			numrows = len(actualresults[0])
-		else:
-			numrows = 0
-		all = [{} for i in range(numrows)]
+		# Have to convert to list to access single item in dataview.
+		# Is there a better way ?
+		actualr_list = list(actualresults)
+		# may not have data object left.
+		if not actualr_list:
+			return []
+		numrow = len(actualr_list[0])
+		all = []
 
-		for i in range(numrows):
+		for i in range(numrow):
+			all.append({})
 			for qikey, cursorresult in cursorresults.items():
 				if isinstance(cursorresult, (data.Data,data.DataReference)):
 					## cursorresult was known before query
@@ -650,7 +695,7 @@ class _multipleQueries:
 					## there could be columns that
 					## are no longer used
 					newdata.friendly_update(r)
-				except KeyError, e:
+				except KeyError as e:
 					raise
 
 				## add pending dbid for now, actual dbid
@@ -707,36 +752,43 @@ class _multipleQueries:
 
 class _createSQLTable:
 
-		def __init__(self, db, table, definition):
+		def __init__(self, db, table, definition, engine=None):
 			self.db = db
 			self.table = table
 			self.definition = definition
+			self.engine = engine
 			self.create()
 
 		def _cursor(self):
 			self.db.ping()
-			return self.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+			return self.db.cursor(cursor=pymysql.cursors.DictCursor)
 
 		def create(self):
-			q = sqlexpr.CreateTable(self.table, self.definition).sqlRepr()
+			table_exist = self.hasTable()
+			if table_exist:
+				# Check if new field added
+				self._checkTable()
+				return
+			q = sqlexpr.CreateTable(self.table, self.definition, self.engine).sqlRepr()
 			c = self._cursor()
 			if debug:
-				print q
+				print(q)
 			c.execute(q)
 			c.close()
 			self._checkTable()
 
+		def hasTable(self):
+			q = sqlexpr.HasTable(self.table).sqlRepr()
+			if debug:
+				print(q)
+			c = self._cursor()
+			c.execute(q)
+			results = c.fetchall()
+			c.close()
+			return bool(results)
+
 		def formatDescription(self, description):
 			newdict = {}
-			newdict['Field'] = description['Field']
-			if description.has_key('Default'):
-				newdict['Default'] = description['Default']
-				if description['Default']=='CURRENT_TIMESTAMP':
-					newdict['Default'] = None
-				elif description['Default']=='NULL':
-					newdict['Default'] = None
-			else:
-				newdict['Default'] = None
 			typestr = description['Type'].upper()
 			try:
 				if re.findall('^TIMESTAMP', typestr):
@@ -745,6 +797,21 @@ class _createSQLTable:
 			except ValueError:
 				pass
 			newdict['Type'] = typestr
+			if newdict['Type'] == 'TIMESTAMP':
+				if not 'Default' in description.keys():
+					# Fixing Issue #7798 by force timestamp default
+					# to current_timestamp().
+					# This way it matches with what is described
+					# in the database and prevent it from altering
+					# the table
+					description['Default']='current_timestamp()'
+			newdict['Field'] = description['Field']
+			if 'Default' in description.keys():
+				newdict['Default'] = description['Default']
+				if description['Default']=='NULL':
+					newdict['Default'] = None
+			else:
+				newdict['Default'] = None
 			return newdict
 
 		def _checkTable(self):
@@ -760,22 +827,35 @@ class _createSQLTable:
 				definition.append(self.formatDescription(col))
 
 			addcolumns = [col for col in definition if col not in describe]
-
+			extracolumns = [col for col in describe if col not in definition]
 			for column in addcolumns:
+				not_to_add = False
 				queries = []
 				column['Null'] = 'YES'
-				q = sqlexpr.AlterTable(self.table, column, 'ADD').sqlRepr()
-				queries.append(q)
-				l = re.findall('^REF\%s' %(sep,),column['Field'])
-				if l:
-					q = sqlexpr.AlterTableIndex(self.table, column).sqlRepr()
+				if extracolumns and column['Field'] in map((lambda x: x['Field']),extracolumns):
+					# description is the existing db schema.
+					# #7752 handle the case when the sinedon definition has changed.
+					# pymysql would try to add and gives duplicated column error.
+					# Avoid doing add if The field is in both definition and describe
+					not_to_add = True
+				if not not_to_add:
+					q = sqlexpr.AlterTable(self.table, column, 'ADD').sqlRepr()
 					queries.append(q)
+					# only add index if column is added
+					l = re.findall('^REF\%s' %(sep,),column['Field'])
+					if l:
+						q = sqlexpr.AlterTableIndex(self.table, column).sqlRepr()
+						if debug:
+							print('add index when adding a column', q)
+						queries.append(q)
 				try:
 					for q in queries:
 						if debug:
-							print q
+							print(q)
 						c.execute(q)
-				except MySQLdb.OperationalError, e:
+				except pymysql.err.OperationalError as e:
+					if debug:
+						print(e)
 					pass
 			c.close()
 
@@ -800,11 +880,11 @@ class _diffSQLTable(_createSQLTable):
 				definition.append(self.formatDescription(col))
 
 			## -------- display description from data and from DB -------- ##
-			##print '--------------------'
-			##print 'describe\n%s' % (describe,)
-			##print '--------------------'
-			##print 'definition\n%s' % (definition,)
-			##print '--------------------'
+			##print('--------------------')
+			##print('describe\n%s' % (describe,))
+			##print('--------------------')
+			##print('definition\n%s' % (definition,))
+			##print('--------------------')
 
 
 			for d in definition:
@@ -833,6 +913,8 @@ class _diffSQLTable(_createSQLTable):
 				column['Null']='YES'
 				altertype = 'ADD'
 				if [col for col in describe if col['Field']==column['Field']]:
+					if column['Type'] == 'timestamp':
+						print('TODO: time stamp default might cause problem with pymysql')
 					altertype = 'CHANGE'
 				q = sqlexpr.AlterTable(self.table, column, altertype).sqlRepr()
 				queries.append(q)
@@ -887,7 +969,7 @@ class ObjectBuilder:
 		"""
 		for k, v in dict.items():
 			if k in self.columns: setattr(self, k, v)
-			elif not skim: raise AttributeError, k
+			elif not skim: raise AttributeError(k)
 
 	def __setattr__(self, key, value):
 		try:
@@ -900,7 +982,7 @@ class ObjectBuilder:
 		l = []
 		for k in self.columns:
 			l.append("%s=%s" % (k, repr(getattr(self, k))))
-		return string.join([l0, join(l, ','), ')'],'')
+		return ''.join([l0, join(l, ','), ')'])
 
 	def __repr__(self):
 		r =  self.dumpdict()
@@ -1019,12 +1101,12 @@ def queryFormatOptimized(queryinfo,tableselect):
 		optimizedjoinlist.append(tableselect)
 
 	for l in optimizedjoinlist:
-		if joinon.has_key(l):
+		if l in joinon.keys():
 			if not joinon[l] in optimizedjoinlist:
 				optimizedjoinlist.append(joinon[l])
 			if not alljoinon[l] in sqljoin:
 				sqljoin.append(alljoinon[l])
-		if onjoin.has_key(l):
+		if l in onjoin.keys():
 			if not alljoinon[onjoin[l]] in sqljoin:
 				sqljoin.append(alljoinon[onjoin[l]])
 
@@ -1092,6 +1174,12 @@ def flatDict(in_dict):
 
 			items.update(nd)
 		else:
+			if issubclass(type(value), float):
+				# handle numpy float type. numpy2.0 default to output with np type.
+				value = float(value)
+			if issubclass(type(value), int):
+				# handle numpy float type. numpy2.0 default to output with np type.
+				value = int(value)
 			items[key] = value	
 	return items
 
@@ -1115,7 +1203,7 @@ def unflatDict(in_dict, join):
 		a = key.split(sep)
 		if a[0] == 'SUBD':
 			name = a[1]
-			if not allsubdicts.has_key(name):
+			if not name in allsubdicts.keys():
 				allsubdicts[a[1]]=None
 		
 		elif a[0] != 'ARRAY':
@@ -1199,6 +1287,9 @@ def matrix2dict(matrix, name=None):
 			raise ValueError("Wrong shape: must be at least 2x1 or 1x2")
 	except AttributeError:
 		raise TypeError("Must be numpy array") 
+	# force numpy.matrix to numpy.ndarray
+	matrix = numpy.array(matrix)
+
 	d={}
 	i=0
 	for row in matrix:
@@ -1207,6 +1298,9 @@ def matrix2dict(matrix, name=None):
 		for col in row:
 			k = sep.join(['ARRAY',name,'%s_%s'%(i,j)])
 			v = float(matrix[i-1,j-1])
+			if hasattr(math,'isnan') and math.isnan(v):
+				# isnan is only an attribute of math at python 2.6 and above
+				v = None
 			d[k]=v
 			j+=1
 	return d
@@ -1257,27 +1351,35 @@ def sql2data(in_dict, qikey=None, qinfo=None):
 		join = qinfo[qikey]['join']
 		parentclass = qinfo[qikey]['class']
 	content = datatype(in_dict, join=join, parentclass=parentclass)
-
 	return content
 
-modules = {}
-def findDataClass(modulename, classname):
-	'''
-	find the module and class as specified
-	'''
-	### quickest if we already know the module
-	try:
-		return getattr(modules[modulename], classname)
-	except:
-		pass
+## get rid of this function when field names are converted to have full
+## absolute module name
+wrong_names = {}
+def findWrongName(modulename):
+	## try cache of wrong names
+	if modulename in wrong_names:
+		return wrong_names[modulename]
+	## try sys.modules (last component of each name)
+	for sysmodname,sysmod in sys.modules.items():
+		if sysmodname.split('.')[-1] == modulename:
+			wrong_names[modulename] = sysmod
+			return sysmod
+	return None
 
-	### search for the module
-	for name,module in sys.modules.items():
-		if name.split('.')[-1] == modulename:
-			if hasattr(module, classname):
-				cls = getattr(module, classname)
-				modules[modulename] = module
-				return cls
+def findDataClass(modulename, classname):
+	if modulename in sys.modules:
+		mod = sys.modules[modulename]
+	else:
+		# remove findWrongName when DB is converted
+		mod = findWrongName(modulename)
+		if mod is None:
+			raise RuntimeError('Cannot find class %s. Module %s not loaded.' % (classname, modulename))
+	try:
+		cls = getattr(mod, classname)
+	except:
+		return None
+	return cls
 
 def datatype(in_dict, join=None, parentclass=None):
 	"""
@@ -1292,7 +1394,7 @@ def datatype(in_dict, join=None, parentclass=None):
 		a0 = a[0]
 		if a0 == 'ARRAY':
 			name = a[1]
-			if not allarrays.has_key(name):
+			if not name in allarrays.keys():
 				allarrays[name]=None
 		elif a0 == 'SEQ':
 			if value is None:
@@ -1341,6 +1443,7 @@ def datatype(in_dict, join=None, parentclass=None):
 				## not in result, but create reference
 				dclassname = tablename
 				dclass = findDataClass(modulename, dclassname)
+				## If the data class does not exist, then this column should be ignored
 				if dclass is None:
 					continue
 				# host and name should come from parent object
@@ -1378,15 +1481,26 @@ def _sqltype(t):
 		return "DOUBLE"
 	elif t is bool:
 		return "TINYINT(1)"
-	elif issubclass(t, (int,long)):
+	elif issubclass(t, int):
 		return "INT(20)"
+	elif t is datetime.datetime:
+		return "TIMESTAMP"
+	elif t is datetime.date:
+		return "DATE"
 	else:
 		return None
 
 def refFieldName(tableclass, refclass, key):
 	refmodule = refclass.__module__
+
+	#### XXX remove the following line when absolute modules names are
+	#### considered final:
+	refmodule = refmodule.split('.')[-1]
+
 	tablename = refclass.__name__
-	tablemodule = tableclass.__module__
+	#### XXX fix following when absolute modules names are
+	#### considered final:
+	tablemodule = tableclass.__module__.split('.')[-1]
 	parts = ['REF']
 	if tablemodule != refmodule:
 		parts.append(refmodule)
@@ -1408,7 +1522,7 @@ def saveMRC(object, name, path, filename, thumb=False):
 		## either there is no image data, or it is already saved
 		pass
 	else:
-		#print 'saving MRC', fullname
+		#print('saving MRC', fullname)
 		pyami.mrc.write(object, fullname)
 
 	d[k] = filename
@@ -1448,8 +1562,13 @@ def dataSQLColumns(data_instance, fail=True):
 			'Field': 'DEF_timestamp',
 			'Type': 'timestamp',
 			'Key': 'INDEX',
+			#refs #8387 mysql 8 does not default this to current_timestamp
+			'Default': 'current_timestamp()',
 			'Index': ['DEF_timestamp']
 	})
+
+	if hasattr(data_instance, "timestamp") and data_instance.timestamp is not None:
+		row['DEF_timestamp'] = data_instance.timestamp
 
 	type_dict = dict(data_instance.typemap())
 
@@ -1457,7 +1576,7 @@ def dataSQLColumns(data_instance, fail=True):
 		try:
 			value_type = type_dict[key]
 		except KeyError:
-			raise ValueError, value_type.__name__
+			raise ValueError(value_type.__name__)
 
 		result = type2column(key, value, value_type, data_instance)
 		if result is not None:
@@ -1472,9 +1591,9 @@ def dataSQLColumns(data_instance, fail=True):
 			continue
 
 		if fail is True:
-			raise ValueError, value_type.__name__
+			raise ValueError(value_type.__name__)
 		else:
-			print "ERROR", value_type.__name__
+			print("ERROR", value_type.__name__)
 
 	return columns, row
 
@@ -1486,6 +1605,9 @@ def type2column(key, value, value_type, parentdata):
 		# simple types
 		column['Field'] = key
 		column['Type'] = sql_type
+		### index all bools
+		if column['Type'] == 'TINYINT(1)':
+			column['Key'] = 'INDEX'
 		row[key] = value
 	else:
 		try:
@@ -1514,6 +1636,8 @@ def type2column(key, value, value_type, parentdata):
 	column['Null'] = 'YES'
 	if not ('TEXT' in column['Type'] or 'BLOB' in column['Type']):
 		column['Default'] = 'NULL'
+	if column['Type'] == 'TINYINT(1)':
+		column['Default'] = '0'
 	return column, row
 
 def type2columns(key, value, value_type, parentdata):
@@ -1545,21 +1669,24 @@ def type2columns(key, value, value_type, parentdata):
 	else:
 		return None
 	columns, row = subSQLColumns(column_dict, parentdata)
-	columns.sort()
+	# Not sure why we need to sort
+	# the items in columns are dictionary, so sort does nothing in python2
+	# and raise TypeError in python3
+	#columns.sort()
 	row.update(value_dict)
 	return columns, row
 
 
 if __name__ == '__main__':
-	data_instance = data.AcquisitionImageData()
+	data_instance = data.AcquisitionData()
 	columns, row = dataSQLColumns(data_instance)
 	for column in columns:
 		field = column['Field']
-		print field
-		print column
+		print(field)
+		print(column)
 		if field in ('DEF_id', 'DEF_timestamp'):
 			print
 			continue
-		print row[field]
-		print
+		print(row[field])
+		print('')
 

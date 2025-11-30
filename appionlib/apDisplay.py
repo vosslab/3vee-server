@@ -4,17 +4,22 @@ import os
 import re
 import sys
 import types
+import glob
 
 ####
 # This is a low-level file with NO database connections
 # Please keep it this way
 ####
 
+debug = False
 writeOut = False
 try:
 	outFile = os.path.basename(sys.argv[0]).split(".")[0]+".out"
 except:
 	outFile = "function.out"
+
+def isDebugOn():
+	return debug
 
 def printWarning(text):
 	"""
@@ -26,7 +31,7 @@ def printWarning(text):
 			f.write(" !!! WARNING: "+text+"\n")
 			f.close()
 		except:
-			print "write error"
+			print("write error")
 	sys.stderr.write(colorString("!!! WARNING: "+text,"yellow")+"\n")
 
 def printMsg(text, colorstr=None):
@@ -39,21 +44,51 @@ def printMsg(text, colorstr=None):
 			f.write(" ... "+text+"\n")
 			f.close()
 		except:
-			print "write error"
+			print("write error")
 	sys.stderr.write(" ... "+colorString(text, colorstr)+"\n")
 	
-def printError(text):
+def printError(text,raised=True):
 	"""
 	standardized error message
 	"""
+	# TODO: need a better way to release appionLoop image locks
+	# from only this appion command so that it can be reprocessed
+	'''
+	for lockfile in glob.glob('_lock*'):
+		# This would unlock images other parallel run is processing.
+		# Bad idea.
+		printWarning('removing %s' % lockfile)
+		try:
+			os.remove(lockfile)
+		except OSError as e:
+			printWarning('unlock %s failed: %s.' % (lockfile, e))
+	'''
 	if writeOut is True:
 		try:
 			f = open(outFile, "a")
 			f.write(" *** ERROR: "+text+"\n")
 			f.close()
 		except:
-			print "write error"
-	raise Exception, colorString("\n *** FATAL ERROR ***\n"+text+"\n\a","red")
+			print("write error")
+	if raised:
+		raise Exception(colorString("\n *** FATAL ERROR ***\n"+text+"\n\a","red"))
+	else:
+		sys.stderr.write(colorString("\n *** FATAL ERROR ***\n"+text+"\n\a","red"))
+
+def printDebug(text):
+	"""
+	standardized debug message
+	"""
+	if not debug:
+		return
+	if writeOut is True:
+		try:
+			f = open(outFile, "a")
+			f.write(" !!! DEBUG: "+text+"\n")
+			f.close()
+		except:
+			print("write error")
+	sys.stderr.write(colorString("!!! DEBUG: "+text,"yellow")+"\n")
 
 def printColor(text, colorstr):
 	"""
@@ -65,7 +100,7 @@ def printColor(text, colorstr):
 			f.write(" ... "+text+"\n")
 			f.close()
 		except:
-			print "write error"
+			print("write error")
 	sys.stderr.write(colorString(text, colorstr)+"\n")
 	
 
@@ -210,16 +245,16 @@ def printDataBox(labellist,numlist,typelist=None):
 	"""
 	if( len(labellist) != len(numlist) 
 	 or ( typelist!=None and len(typelist) != len(numlist) ) ):
-		print len(labellist)," != ",len(numlist)," != ",len(typelist)
+		print(len(labellist)," != ",len(numlist)," != ",len(typelist))
 		printError("printDataBox() list lengths are off")
-	print _headerStr(labellist)
+	sys.stderr.write(_headerStr(labellist)+"\n")
 	labelstr = " "
 	for lab in labellist:
 		labelstr += "| "+lab+" "
 		if len(lab) < 5:
 			for i in range(5-len(lab)):
 				labelstr += " "
-	print labelstr+"|"
+	sys.stderr.write(labelstr+"|\n")
 
 	datastr = " "
 	for i in range(len(labellist)):
@@ -243,11 +278,9 @@ def printDataBox(labellist,numlist,typelist=None):
 			for i in range(pad):
 				datastr += " "
 		datastr += " "
-	print datastr+"|"
+	sys.stderr.write(datastr+"|\n")
+	sys.stderr.write(_headerStr(labellist)+"\n")
 
-	print _headerStr(labellist)
-
-	
 def _headerStr(labellist):
 	headstr = " "
 	for lab in labellist:
@@ -333,18 +366,18 @@ def colorString(text, fg=None, bg=None):
 	be (fg, bg). Both colors may be 'None'.
 	"""
 	colors = {
-		"black" :"30",
-		"red"   :"31",
-		"green" :"32",
-		"brown" :"33",
-		"orange" :"33",
-		"blue"  :"34",
-		"violet":"35",
-		"purple":"35",
-		"magenta":"35",
-		"maroon":"35",
-		"cyan"  :"36",
-		"lgray" :"37",
+		"black" :"0;30",
+		"red"   :"0;31",
+		"green" :"0;32",
+		"brown" :"0;33",
+		"orange":"0;33",
+		"blue"  :"0;34",
+		"violet":"0;35",
+		"purple":"0;35",
+		"magenta":"0;35",
+		"maroon":"0;35",
+		"cyan"  :"0;36",
+		"lgray" :"0;37",
 		"gray"  :"1;30",
 		"lred"  :"1;31",
 		"lgreen":"1;32",
@@ -356,7 +389,7 @@ def colorString(text, fg=None, bg=None):
 	}
 	if fg is None:
 		return text
-	if type(fg) in (types.TupleType, types.ListType):
+	if type(fg) in (tuple, list):
 		fg, bg = fg
 	if not fg:
 		return text
@@ -392,14 +425,28 @@ def environmentError():
 	env.append('PYTHONPATH')
 	env.append('LD_LIBRARY_PATH')
 	env.append('LM_LICENSE_FILE')
-	print colorString("Check your environmental variables and the Appion documentation.\nThese are your current environment values:","red")
+	print(colorString("Check your environmental variables and the Appion documentation.\nThese are your current environment values:","red"))
 	for name in env:
 		if name in os.environ:
 			value = os.environ[name]
 		else:
 			value = '*** NOT SET ***'
-		print colorString("%-20s -> %s" % (name, value), "red")
+		print(colorString("%-20s -> %s" % (name, value), "red"))
 
+class LeginonLogger(object):
+	'''
+	fake leginon-style logger that uses apDisplay function
+	so that leginon classes can be used in appion.
+	'''
+	def info(self,msg):
+		printMsg(msg)
+	def debug(self,msg):
+		if isDebugOn():
+			printDebug(msg)
+	def warning(self,msg):
+		printWarning(msg)
+	def error(self,msg):
+		printWarning('Leginon ERROR: %s' % msg)
 
 ####
 # This is a low-level file with NO database connections

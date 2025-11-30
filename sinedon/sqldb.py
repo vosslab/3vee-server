@@ -1,21 +1,27 @@
 #
 # COPYRIGHT:
-#       The Leginon software is Copyright 2003
-#       The Scripps Research Institute, La Jolla, CA
+#       The Leginon software is Copyright under
+#       Apache License, Version 2.0
 #       For terms of the license agreement
-#       see  http://ami.scripps.edu/software/leginon-license
+#       see  http://leginon.org
 #
 "MySQL module for pyLeginon"
-import MySQLdb
+import pymysql as pymysql
 
 def connect(**kwargs):
-	c = MySQLdb.connect(**kwargs)
+	newkwargs = kwargs.copy()
+	if 'engine' in newkwargs:
+		del newkwargs['engine']
+	if 'port' in newkwargs:
+		newkwargs['port']=int(newkwargs['port'])
+	c = pymysql.connect(**newkwargs)
+	c.autocommit(True)
 	c.kwargs = dict(kwargs)
 	return c
 
 def escape(anystring):
 	'addslashes to any quotes if necessary'
-	return MySQLdb.escape_string(anystring)
+	return pymysql.converters.escape_string(anystring)
 
 def addbackquotes(anystring):
 	return "`%s`" % (anystring,)
@@ -28,7 +34,7 @@ class sqlDB(object):
 	"""
 	def __init__(self, **kwargs):
 		self.dbConnection = connect(**kwargs)
-		self.c = self.dbConnection.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+		self.c = self.dbConnection.cursor(cursor=pymysql.cursors.DictCursor)
 
 	def selectone(self, strSQL, param=None):
 		'Execute a query and return the first row.'
@@ -49,7 +55,7 @@ class sqlDB(object):
 		## then try the old insert_id() method
 		try:
 			insert_id = self.c.lastrowid
-		except Exception, e:
+		except Exception as e:
 			insert_id = self.c.insert_id()
 		return insert_id
 

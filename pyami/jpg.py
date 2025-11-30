@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-import Image
+from pyami import numpil
+Image = numpil.Image2
 import numpy
-import arraystats
+from pyami import arraystats
 
-def write(a, filename, min=None, max=None, quality=80, newsize=None):
+def write(a, filename, min=None, max=None, quality=80, newsize=None, stdval=5):
 	'''
 Write a 2-D numpy array to a JPEG file.
 Usage:
@@ -26,22 +27,30 @@ Optional argument 'newsize' is used for scaling the image.
 	if min is None:
 		mean = arraystats.mean(a)
 		std = arraystats.std(a)
-		min = mean - 5 * std
+		min = mean - stdval * std
 	if max is None:
 		mean = arraystats.mean(a)
 		std = arraystats.std(a)
-		max = mean + 5 * std
+		max = mean + stdval * std
 
-	## scale to 8 bit
-	a = numpy.clip(a, min, max)
-	scale = 255.0 / (max - min)
+	if min != max:
+		## scale to 8 bit
+		a = numpy.clip(a, min, max)
+		scale = 255.0 / (max - min)
+	else:
+		# scale to 8 bit if outside
+		if mean > 255.0 or mean < 0:
+			scale = 255.0 / mean
+		else:
+			# avoid scaling
+			scale = 1
 	a = scale * (a - min)
 	a = a.astype(numpy.uint8)
 
 	## use PIL to write JPEG
 	imsize = a.shape[1], a.shape[0]
-	nstr = a.tostring()
-	image = Image.fromstring('L', imsize, nstr, 'raw', 'L', 0, 1)
+	nstr = a.tobytes()
+	image = Image.frombuffer('L', imsize, nstr, 'raw', 'L', 0, 1)
 	image.convert('L').save(filename, "JPEG", quality=quality)
 	if newsize is None:
 		image.convert('L').save(filename, "JPEG", quality=quality)

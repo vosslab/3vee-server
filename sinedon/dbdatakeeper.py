@@ -1,18 +1,20 @@
 #
 # COPYRIGHT:
-#       The Leginon software is Copyright 2003
-#       The Scripps Research Institute, La Jolla, CA
+#       The Leginon software is Copyright under
+#       Apache License, Version 2.0
 #       For terms of the license agreement
-#       see  http://ami.scripps.edu/software/leginon-license
+#       see  http://leginon.org
 #
 
-import data
-import sqldict
+import sys
+from sinedon import data
+import pymysql
+pymysql.install_as_MySQLdb()
+from sinedon import sqldict
 import threading
 import logging
-import _mysql_exceptions
-import MySQLdb.constants.CR
-import dbconfig
+import pymysql.err
+from sinedon import dbconfig
 
 columns_created = {}
 
@@ -33,10 +35,17 @@ class DBDataKeeper(object):
 		self.logger = logger
 		try:
 			self.dbd = sqldict.SQLDict(**kwargs)
-		except _mysql_exceptions.OperationalError, e:
+		except pymysql.err.OperationalError as e:
 			raise DatabaseError(e.args[-1])
 		#self.mysqldb = self.dbd.db
 		self.lock = threading.RLock()
+
+	def getErrorNumber(self, e):
+			errno = e.args[0]
+			## some version of mysqlpython parses the exception differently
+			if not isinstance(errno, int):
+				errno = errno.args[0]
+			return errno
 
 	def connect_kwargs(self):
 		return self.dbd.connect_kwargs()
@@ -47,7 +56,9 @@ class DBDataKeeper(object):
 	def close(self):
 		self.dbd.close()
 
-	def direct_query(self, dataclass, id, readimages=True):
+	def direct_query(self, dataclass, id, readimages=False):
+		if id is None:
+			raise ValueError('id must be specified, not None')
 		dummy = dataclass()
 		dummy.isRoot = True
 		datainfo = self.datainfo(dummy, dbid=id)
@@ -65,13 +76,23 @@ class DBDataKeeper(object):
 		else:
 			raise RuntimeError('direct_query should only return a single result')
 
+	def delete(self, dataobject):
+		datainfo = self.datainfo(dataobject)
+		print('DATAINFO', datainfo)
+		queryinfo = datainfo[0]
+		self.lock.acquire()
+		try:
+			self.dbd.delete(queryinfo)
+		finally:
+			self.lock.release()
+
 	def _reconnect(self):
 		try:
 			self.dbd = sqldict.SQLDict()
-		except _mysql_exceptions.OperationalError, e:
+		except pymysql.err.OperationalError as e:
 			raise DatabaseError(e.args[-1])
 
-	def query(self, idata, results=None, readimages=True, timelimit=None):
+	def query(self, idata, results=None, readimages=False, timelimit=None):
 		if self.logger is not None:
 			self.logger.info('query %s' % idata)
 		self.lock.acquire()
@@ -98,8 +119,9 @@ class DBDataKeeper(object):
 		self.dbd.ping()
 		try:
 			result  = self.dbd.multipleQueries(queryinfo, readimages=readimages)
-		except _mysql_exceptions.OperationalError, e:
-			if e.args[0] == MySQLdb.constants.CR.SERVER_LOST:
+		except pymysql.err.OperationalError as e:
+			errno = self.getErrorNumber(e)
+			if errno in (2006,):
 				raise Reconnect(e.args[-1])
 			raise QueryError(e.args[-1])
 
@@ -130,8 +152,6 @@ class DBDataKeeper(object):
 				myid = myclassname+str(mydata.dbid)
 			else:
 				mydata = mydata.getData()
-				if isinstance(mydata, data.DataReference):
-					raise RuntimeError('I was not expecting this to happen, so we need to implement handling a replaced DataReference')
 				myid = id(mydata)
 		elif isinstance(mydata, data.Data):
 			myid = id(mydata)
@@ -205,7 +225,7 @@ class DBDataKeeper(object):
 
 		if memo is None:
 			memo = {}
-		if memo.has_key(d):
+		if d in memo.keys():
 			return None
 
 		myresult = []
@@ -215,8 +235,6 @@ class DBDataKeeper(object):
 				if isinstance(value, data.DataReference):
 					if value.dbid is None:
 						value = value.getData()
-						if isinstance(value, data.DataReference):
-							value = value.getData()
 					childresult = self.accumulateData(value, memo=memo, timelimit=timelimit, limit=limit)
 					if childresult is not None:
 						myresult += childresult
@@ -265,9 +283,6 @@ class DBDataKeeper(object):
 			if isinstance(value, data.DataReference):
 				if value.dbid is None:
 					dat = value.getData()
-					## check if DataReference replaced
-					if isinstance(dat, data.DataReference):
-						dat = dat.getData()
 					self.recursiveInsert(dat)
 
 		## insert this object
@@ -280,8 +295,8 @@ class DBDataKeeper(object):
 		self.dbd.ping()
 		try:
 			return self.recursiveInsert(newdata, force=force)
-		except _mysql_exceptions.OperationalError, e:
-			if e.args[0] == MySQLdb.constants.CR.SERVER_LOST:
+		except pymysql.err.OperationalError as e:
+			if int(e.args[0]) in (2006, ): # server_gone
 				raise Reconnect(e.args[-1])
 			raise InsertError(e.args[-1])
 
@@ -289,14 +304,17 @@ class DBDataKeeper(object):
 		dbname = dbconfig.getConfig(newdata.__module__)['db']
 		tablename = newdata.__class__.__name__
 		table = (dbname, tablename)
-		definition, formatedData = sqldict.dataSQLColumns(newdata, fail)
+		definition, _formatedData = sqldict.dataSQLColumns(newdata, fail)
 		## check for any new columns that have not been created
+		# FIX ME: columns_created need to be initializaed. Otherwise the
+		# first time this is called will always want to create table
+		# even though the table does exist.
 		if table not in columns_created:
 			columns_created[table] = {}
 		fields = [d['Field'] for d in definition]
-		for field in formatedData.keys():
-			if field not in fields:
-				del formatedData[field]
+		# ignore items not in fields.
+		formatedData = {k:v for k, v in _formatedData.items() if k in fields}
+
 		create_table = False
 		for field in fields:
 			if field not in columns_created[table]:

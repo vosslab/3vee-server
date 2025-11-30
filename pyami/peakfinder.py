@@ -2,19 +2,20 @@
 
 #
 # COPYRIGHT:
-# The Leginon software is Copyright 2003
-# The Scripps Research Institute, La Jolla, CA
+# The Leginon software is Copyright under
+# Apache License, Version 2.0
 # For terms of the license agreement
-# see  http://ami.scripps.edu/software/leginon-license
+# see  http://leginon.org
 #
 
-import convolver
-import imagefun
+from . import convolver
+from . import imagefun
 
 import numpy
-import quietscipy
+from . import quietscipy
 import scipy.ndimage as nd_image
 from scipy.linalg import lstsq as linear_least_squares
+import warnings
 
 class FindPeakError(Exception):
 	pass
@@ -104,7 +105,7 @@ class PeakFinder(object):
 				self.results['snr'] = self.results['signal'] / self.results['noise']
 			else:
 				self.results['snr'] = self.results['pixel peak value']
-			#print self.results['noise'],self.results['mean'],self.results['signal'],self.results['snr']
+			#print(self.results['noise'],self.results['mean'],self.results['signal'],self.results['snr'])
 
 		return self.results['pixel peak']
 	"""
@@ -133,17 +134,24 @@ class PeakFinder(object):
 				v[i] = a[row,col]
 				i += 1
 
-		## fit quadratic
-		fit = linear_least_squares(dm, v)
-		coeffs = fit[0]
-		minsum = fit[1]
-
-		## find root
 		try:
-			row0 = -coeffs[1] / 2.0 / coeffs[0]
-			col0 = -coeffs[3] / 2.0 / coeffs[2]
+			## find root
+			## fit quadratic
+			fit = linear_least_squares(dm, v)
+			coeffs = fit[0]
+			minsum = fit[1]
+			with warnings.catch_warnings():
+				# turn RuntimeWarning of bad coefficient to error to catch
+				warnings.simplefilter("error")
+
+				row0 = -coeffs[1] / 2.0 / coeffs[0]
+				col0 = -coeffs[3] / 2.0 / coeffs[2]
 		except ZeroDivisionError:
 			raise FindPeakError('peak least squares fit has zero coefficient')
+		except ValueError:
+			raise FindPeakError('peak least squares fit has bad coefficient')
+		except RuntimeWarning:
+			raise FindPeakError('peak least squares fit has bad coefficient')
 
 		## find peak value
 		peak = coeffs[0] * row0**2 + coeffs[1] * row0 + coeffs[2] * col0**2 + coeffs[3] * col0 + coeffs[4]
@@ -228,11 +236,11 @@ def test1():
 	p.pixelPeak()
 	p.subpixelPeak(npix=3)
 	res = p.getResults()
-	print 'results', res
+	print('results', res)
 
 def test2(mrc1, mrc2):
-	import Mrc
-	import correlator
+	from . import Mrc
+	from . import correlator
 	cor = correlator.Correlator()
 	im1 = Mrc.mrc_to_numeric(mrc1)
 	im2 = Mrc.mrc_to_numeric(mrc2)
@@ -246,7 +254,7 @@ def test2(mrc1, mrc2):
 	cor.insertImage(im2)
 	pc = cor.phaseCorrelate()
 	Mrc.numeric_to_mrc(pc, 'pc.mrc')
-	print findSubpixelPeak(pc, npix=7, lpf=1.0)
+	print(findSubpixelPeak(pc, npix=7, lpf=1.0))
 
 if __name__ == '__main__':
 	import sys

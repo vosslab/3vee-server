@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 import os
-import ConfigParser
+import configparser
+import pyami.fileutil
 
 debug = False
 
 HOME = os.path.expanduser('~')
-modulepath = os.path.abspath(os.path.dirname(__file__))
+modulepath = os.path.dirname(__file__)
 
 configfilename = 'sinedon.cfg'
 
-config_locations = [
-	os.path.join(modulepath, configfilename),
-	os.path.join(HOME, configfilename),
-]
+confdirs = pyami.fileutil.get_config_dirs(None,'sinedon')
+config_locations = [os.path.join(confdir, configfilename) for confdir in confdirs]
+pyami.fileutil.check_exist_one_file(config_locations)
 
-configparser = ConfigParser.SafeConfigParser()
-configfiles = configparser.read(config_locations)
+cparser = configparser.ConfigParser()
+# Combine sections of the same name from all existing files in conf_files
+configfiles = cparser.read(config_locations)
 
 def tail(modulename):
 	return modulename.split('.')[-1]
@@ -24,27 +25,27 @@ def printConfigFiles():
 	'''
 	print config files loaded for debugging purposes
 	'''
-	print "Config files used: "
+	print("Config files used: ")
 	for configfile in configfiles:
-		print '\t%s' % (configfile,)
+		print('\t%s' % (configfile,))
 
-allsections = configparser.sections()
+allsections = cparser.sections()
 configs = {}
 globals = {}
 windowsdrives = {}
 for section in allsections:
-	options = configparser.options(section)
+	options = cparser.options(section)
 	if section == 'global':
 		for key in options:
-			globals[key] = configparser.get(section, key)
+			globals[key] = cparser.get(section, key)
 	elif section == 'Windows Drives':
 		for key in options:
 			drivepath = key.upper() + ':'
-			windowsdrives[drivepath] = configparser.get(section, key)
+			windowsdrives[drivepath] = cparser.get(section, key)
 	else:
 		configs[section] = {}
 		for key in options:
-			configs[section][key] = configparser.get(section, key)
+			configs[section][key] = cparser.get(section, key)
 
 ## combine globals with specifics
 for section in configs:
@@ -57,7 +58,6 @@ def getConfig(modulename):
 	return a copy of the named configuration dict
 	'''
 	modulename = tail(modulename)
-	#printConfigFiles()
 	return dict(configs[modulename])
 
 def setConfig(modulename, **kwargs):
@@ -95,10 +95,10 @@ def printConfigs():
 	'''
 	print all configs for debugging purposes
 	'''
-	print 'Configs:'
+	print('Configs:')
 	for name,config in configs.items():
-		print '\t%s' % (name,)
-		print '\t\t%s' % (config,)
+		print('\t%s' % (name,))
+		print('\t\t%s' % (config,))
 
 if __name__ == '__main__':
 	printConfigFiles()

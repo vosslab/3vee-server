@@ -1,15 +1,15 @@
 #
 # COPYRIGHT:
-#       The Leginon software is Copyright 2003
-#       The Scripps Research Institute, La Jolla, CA
+#       The Leginon software is Copyright under
+#       Apache License, Version 2.0
 #       For terms of the license agreement
-#       see  http://ami.scripps.edu/software/leginon-license
+#       see  http://leginon.org
 #
 
-import cPickle as pickle
-import socket
-import SocketServer
+import pickle
+import socketserver as SocketServer
 import threading
+from pyami import mysocket
 
 class ExitException(Exception):
 	pass
@@ -25,7 +25,7 @@ class Handler(SocketServer.StreamRequestHandler):
 	def handle(self):
 		try:
 			request = pickle.load(self.rfile)
-		except Exception, e:
+		except Exception as e:
 			estr = 'error reading request, %s' % e
 			try:
 				self.server.datamanager.logger.exception(estr)
@@ -38,7 +38,7 @@ class Handler(SocketServer.StreamRequestHandler):
 		else:
 			try:
 				result = self.server.datamanager.handle(request)
-			except Exception, e:
+			except Exception as e:
 				estr = 'error handling request, %s' % e
 				try:
 					self.server.datamanager.logger.exception(estr)
@@ -49,7 +49,7 @@ class Handler(SocketServer.StreamRequestHandler):
 		try:
 			pickle.dump(result, self.wfile, pickle.HIGHEST_PROTOCOL)
 			self.wfile.flush()
-		except Exception, e:
+		except Exception as e:
 			estr = 'error responding to request, %s' % e
 			try:
 				self.server.datamanager.logger.exception(estr)
@@ -62,7 +62,7 @@ class Server(object):
 		self.exitevent = threading.Event()
 		self.exitedevent = threading.Event()
 		self.datamanager = datamanager
-		self.hostname = socket.gethostname().lower()
+		self.hostname = mysocket.gethostname().lower()
 
 	def start(self):
 		self.thread = threading.Thread(name='socket server thread',
@@ -92,23 +92,20 @@ class Client(object):
 		s = self.connect()
 		try:
 			sfile = s.makefile('rwb')
-		except Exception, e:
+		except Exception as e:
 			raise TransportError('error creating socket file, %s' % e)
 			
 		try:
 			pickle.dump(request, sfile, pickle.HIGHEST_PROTOCOL)
-		except Exception, e:
+		except Exception as e:
 			raise TransportError('error pickling request, %s' % e)
 
 		try:
 			sfile.flush()
-		except Exception, e:
+		except Exception as e:
 			raise TransportError('error flushing socket file buffer, %s' % e)
 
-		try:
-			result = pickle.load(sfile)
-		except Exception, e:
-			raise TransportError('error unpickling response, %s' % e)
+		result = pickle.load(sfile)
 
 		try:
 			sfile.close()

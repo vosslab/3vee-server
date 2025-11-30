@@ -2,10 +2,10 @@
 
 #
 # COPYRIGHT:
-#	   The Leginon software is Copyright 2003
-#	   The Scripps Research Institute, La Jolla, CA
+#	   The Leginon software is Copyright under
+#	   Apache License, Version 2.0
 #	   For terms of the license agreement
-#	   see  http://ami.scripps.edu/software/leginon-license
+#	   see  http://leginon.org
 #
 
 """
@@ -20,7 +20,7 @@ sqlexpr.py: Build SQL expressions
 class VersionError(Exception):
 	pass
 
-True, False = (1==1), (0==1)
+#True, False = (1==1), (0==1)
 
 ########################################
 ## Quoting
@@ -49,13 +49,13 @@ except ImportError:
 	origISOStr = None
 	DateTimeType = None
 
+import datetime
 import re
-import string
-import sqldict
-import MySQLdb
-import newdict
-import cPickle
-import dbconfig
+import six
+from sinedon import sqldict
+from sinedon import newdict
+import pickle
+from sinedon import dbconfig
 
 def backquote(inputstr):
 		"""
@@ -74,25 +74,27 @@ def isoStr(val):
 def sqlRepr(obj):
 	if isinstance(obj, SQLExpression):
 		return obj.sqlRepr()
-	elif isinstance(obj, basestring):
+	elif isinstance(obj, six.string_types):
 		for orig, repl in sqlStringReplace:
 			obj = str(obj.replace(orig, repl))
 		return "'%s'" % obj
 	elif isinstance(obj, bool):
 		return repr(int(obj))
-	elif isinstance(obj, (int,long)):
+	elif isinstance(obj, (int)):
 		return repr(int(obj))
 	elif isinstance(obj, float):
 		return repr(obj)
 	elif DateTimeType is not None and isinstance(obj, DateTimeType):
 		return "'%s'" % isoStr(obj)
+	elif isinstance(obj, datetime.datetime):
+		return "'%s'" % obj.isoformat()
 	elif obj is None:
 		return "NULL"
 	elif isinstance(obj, (tuple, list)):
 		return "(%s)" % ", ".join(map(sqlRepr, obj))
 	else:
-		raise ValueError, "Unknown SQL builtin type: %s for %s" % \
-			  (type(obj), obj)
+		raise ValueError("Unknown SQL builtin type: %s for %s" % \
+			  (type(obj), obj))
 
 
 ########################################
@@ -164,9 +166,9 @@ class SQLExpression:
 		return self.sqlRepr()
 
 	def __cmp__(self, other):
-		raise VersionError, "Python 2.1+ required"
+		raise VersionError("Python 2.1+ required")
 	def __rcmp__(self, other):
-		raise VersionError, "Python 2.1+ required"
+		raise VersionError("Python 2.1+ required")
 
 	def startswith(self, s):
 		return STARTSWITH(self, s)
@@ -320,9 +322,9 @@ class Select(SQLExpression):
 		if self.orderBy is not None:
 			fields = self.orderBy['fields']
 			sort = 'ASC'
-			if self.orderBy.has_key('sort'):
+			if 'sort' in self.orderBy.keys():
 				sort = self.orderBy['sort']
-			fields = string.join(map(lambda id: sqlRepr(id), fields), ', ')
+			fields = ", ".join(map(lambda id: sqlRepr(id), fields))
 			select += " ORDER BY %s %s" % (fields, sort,)
 		if self.limit is not None:
 			select += " LIMIT %s" % sqlRepr(self.limit)
@@ -352,9 +354,9 @@ class SelectAll(SQLExpression):
 		if self.orderBy is not None:
 			fields = self.orderBy['fields']
 			sort = 'ASC'
-			if self.orderBy.has_key('sort'):
+			if 'sort' in self.orderBy.keys():
 				sort = self.orderBy['sort']
-			fields = string.join(map(lambda id: sqlRepr(id), fields), ', ')
+			fields = ", ".join(map(lambda id: sqlRepr(id), fields))
 			select += " ORDER BY %s %s" % (fields, sort,)
 		if self.limit is not None:
 			select += " LIMIT %s" % sqlRepr(self.limit)
@@ -443,7 +445,7 @@ class ColumnSpec(dict):
 					sql_args.append(default)
 				if auto:
 					pieces.append('AUTO_INCREMENT')
-				sql_str = string.join(pieces)
+				sql_str = " ".join(pieces)
 				return sql_str
 			else:
 				keys = []
@@ -459,13 +461,13 @@ class ColumnSpec(dict):
 					indexes = []
 					for indexName in index:
 						indexes.append(indexName)
-					index_str = string.join(indexes, ',')
+					index_str = ",".join(indexes)
 					keys.append(key_str+' '+backquote(name) +' (' + backquote(index_str) + ')')
 
 				if primary:
 					keys.append('PRIMARY KEY '+'('+ backquote(name) +')' )
 
-				return string.join(keys)
+				return " ".join(keys)
 
 class AlterTable(SQLExpression):
 	''' ALTER TABLE `particle` ADD `fieldname` TEXT NOT NULL ;
@@ -479,12 +481,15 @@ class AlterTable(SQLExpression):
 
 	def sqlRepr(self):
 		str_null = "NOT NULL"
-		if self.column.has_key('Null') and self.column['Null']=='YES':
+		if 'Null' in self.column.keys() and self.column['Null']=='YES':
 			str_null = "NULL"
 		default = ""
-		if self.column.has_key('Default') and self.column['Default'] is not None:
-			default = "DEFAULT '%s'" % (self.column['Default'])
-
+		if 'Default' in self.column.keys() and self.column['Default'] is not None:
+			# current_timestamp should not be quoted
+			if self.column['Default'] == 'current_timestamp()':
+				default = "DEFAULT %s" % (self.column['Default'])
+			else:
+				default = "DEFAULT '%s'" % (self.column['Default'])
 		if not self.column:
 			return ''
 		elif self.operation=='DROP':
@@ -513,21 +518,33 @@ class AlterTableIndex(SQLExpression):
 			alter = "ALTER TABLE %s ADD INDEX (%s) " % (tableStr(self.table), backquote(self.column['Field']))
 		return alter
 
+class HasTable(SQLExpression):
+	def __init__(self, table):
+		self.db = table[0]
+		self.tablename = table[1]
+
+	def sqlRepr(self):
+		q = "SELECT * FROM information_schema.tables WHERE table_schema = '%s' and table_name= '%s'" % (self.db, self.tablename)
+		return q
 
 class CreateTable(SQLExpression):
 	def __init__(self, table, columns, type=None):
 		self.table = table
 		self.columns = columns
 		self.type = type
+
 	def sqlRepr(self):
 		if not self.columns:
 			return ''
 		if self.type in ('BDB', 'HEAP', 'ISAM', 'InnoDB', 'MERGE', 'MRG_MyISAM', 'MyISAM'):
 			type_str = " ENGINE=%s " % self.type
 		else:
-			type_str = " ENGINE=MyISAM" 
+			type_str = " ENGINE=MyISAM "
 
-		create = "CREATE TABLE IF NOT EXISTS %s " % (tableStr(self.table),)
+		# For InnoDB implementation, CREATE TABLE IF NOT EXISTS
+		# is replaced with CREATE TABLE, and a seperate query 
+		# is made to find out if the table exists.
+		create = "CREATE TABLE %s " % (tableStr(self.table),)
 		keys = []
 		fields = []
 
@@ -537,7 +554,7 @@ class CreateTable(SQLExpression):
 				keys.append(ColumnSpec(column).create_key())
 
 		l = fields + keys
-		create += '(' + string.join(l, ', ') + ')' + type_str
+		create += '(' + ", ".join(l) + ')' + type_str
 		return create
 
 class Insert(SQLExpression):
@@ -546,7 +563,7 @@ class Insert(SQLExpression):
 		self.table = table
 		if valueList:
 			if values:
-				raise TypeError, "You may only give valueList *or* values"
+				raise TypeError("You may only give valueList *or* values")
 			self.valueList = valueList
 		else:
 			self.valueList = [values]
@@ -571,10 +588,10 @@ class Insert(SQLExpression):
 				insert += ", "
 			if type(value) is type({}):
 				if template is None:
-					raise TypeError, "You can't mix non-dictionaries with dictionaries in an INSERT if you don't provide a template (%s)" % repr(value)
+					raise TypeError("You can't mix non-dictionaries with dictionaries in an INSERT if you don't provide a template (%s)" % repr(value))
 				value = dictToList(template, value)
 			elif not allowNonDict:
-				raise TypeError, "You can't mix non-dictionaries with dictionaries in an INSERT if you don't provide a template (%s)" % repr(value)
+				raise TypeError("You can't mix non-dictionaries with dictionaries in an INSERT if you don't provide a template (%s)" % repr(value))
 			insert += "(%s)" % ", ".join(map(sqlRepr, value))
 		return insert
 
@@ -583,7 +600,7 @@ def dictToList(template, dict):
 	for key in template:
 		list.append(dict[key])
 	if len(dict.keys()) > len(template):
-		raise TypeError, "Extra entries in dictionary that aren't asked for in template (template=%s, dict=%s)" % (repr(template), repr(dict))
+		raise TypeError( "Extra entries in dictionary that aren't asked for in template (template=%s, dict=%s)" % (repr(template), repr(dict)))
 	return list
 
 class Update(SQLExpression):
@@ -623,13 +640,13 @@ class Delete(SQLExpression):
 	def __init__(self, table, where=None):
 		self.table = table
 		if where is None:
-			raise TypeError, "You must give a where clause or pass in None to indicate no where clause"
+			raise TypeError("You must give a where clause or pass in None to indicate no where clause")
 		self.whereClause = where
 	def sqlRepr(self):
 		if self.whereClause is None:
 			return "DELETE FROM %s" % self.table
 		return "DELETE FROM %s WHERE %s" \
-			   % (self.table, sqlRepr(self.whereClause))
+			   % (self.table, self.whereClause)
 
 class Replace(Update):
 	def sqlName(self):
@@ -756,12 +773,18 @@ def whereFormat(in_dict):
 			value = int(value)
 		elif isinstance(value,newdict.AnyObject):
 			key = sqldict.object2sqlColumn(key)
-			value = cPickle.dumps(value.o, cPickle.HIGHEST_PROTOCOL)
+			value = pickle.dumps(value.o, pickle.HIGHEST_PROTOCOL)
 		evalue = str(value)
 		if key=="DEF_timelimit":
 		#	For MySQL 4.1.1 or greater
 		#	sqlwhere = ''' %s.%s >= ADDTIME(NOW(), '%s') ''' % (backquote(alias), backquote('DEF_timestamp'), evalue)
-			sqlwhere = ''' %s.%s >= DATE_ADD(now(), INTERVAL '%s' DAY_SECOND) ''' % (backquote(alias), backquote('DEF_timestamp'), evalue)
+			parts = evalue.split('\t')
+			if len(parts) == 1:
+				evalue = parts[0]
+				sqlwhere = '''%s.%s >= DATE_ADD(now(), INTERVAL '%s' DAY_SECOND) ''' % (backquote(alias), backquote('DEF_timestamp'), evalue)
+			elif len(parts) == 2:
+				mintime,maxtime = parts
+				sqlwhere = '''%s.%s BETWEEN %s AND %s''' % (backquote(alias), backquote('DEF_timestamp'), mintime, maxtime)
 		else:
 			sqlwhere = ''' %s.%s="%s" ''' % (backquote(alias), backquote(key), evalue)
 		wherelist.append(sqlwhere)
@@ -828,8 +851,7 @@ if __name__ == "__main__":
 """
 	for expr in tests.split('\n'):
 		if not expr.strip(): continue
-		print expr
 		if expr.startswith('>>> '):
 			expr = expr[4:]
-			print repr(eval(expr))
+			print(repr(eval(expr)))
 
