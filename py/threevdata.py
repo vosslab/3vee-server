@@ -2,6 +2,10 @@
 import sinedon.data
 Data = sinedon.data.Data
 
+# Expose module under its own name so sinedon.maketables can import it by string
+import sys
+threevdata = sys.modules[__name__]
+
 class Path(Data):
 	def typemap(cls):
 		return Data.typemap() + (
@@ -65,4 +69,3 @@ class HostName(Data):
 			('arch', str),
 		)
 	typemap = classmethod(typemap)
-

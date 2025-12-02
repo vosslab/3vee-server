@@ -2,6 +2,4 @@ numpy
 pymysql
 scipy
 six
-sqldict
 DateTime
-egenix-mx-base

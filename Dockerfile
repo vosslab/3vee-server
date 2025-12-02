@@ -10,7 +10,7 @@ ARG TARGETARCH
 RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
     apache2 \
     libapache2-mod-php php php-cli php-mysql php-xml php-gd php-curl \
-    python3 python3-dev python3-pip python3-numpy python3-scipy python3-mysqldb python3-pil python3-setuptools python3-wheel \
+    python3 python3-dev python3-pip python3-numpy python3-scipy python3-mysqldb python3-pymysql python3-pil python3-setuptools python3-wheel \
     build-essential g++ make git wget curl ca-certificates \
     libssl-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
     libffi-dev libreadline-dev libgdbm-dev tk-dev uuid-dev \
@@ -60,6 +60,13 @@ RUN git clone --depth 1 --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossv
 
 WORKDIR ${APP_ROOT}
 COPY . ${APP_ROOT}
+
+# Remove local pymysql stub so the image uses the real driver package
+RUN rm -f ${APP_ROOT}/py/pymysql.py
+
+ENV PYTHONPATH=${APP_ROOT}/py:${PYTHONPATH}
+
+RUN pip3 install --break-system-packages --no-cache-dir -r py/requirements.txt
 
 # build vossvolvox binaries and install helper data
 RUN make -C /tmp/vossvolvox/src all && \

@@ -11,6 +11,9 @@ THREEV_DB_NAME="${THREEV_DB_NAME:-threevdata}"
 THREEV_SKIP_DB_WAIT="${THREEV_SKIP_DB_WAIT:-0}"
 THREEV_SKIP_DB_INIT="${THREEV_SKIP_DB_INIT:-0}"
 
+PYTHONPATH="${PY_ROOT}:${PYTHONPATH:-}"
+export PYTHONPATH
+
 update_sinedon_config() {
 	python3 <<'PYCODE'
 import os
@@ -77,7 +80,10 @@ bootstrap_db() {
 	if [[ "${THREEV_SKIP_DB_INIT}" == "1" ]]; then
 		return
 	fi
-	python3 "${PY_ROOT}/sinedon/maketables.py" threevdata || true
+	PYTHONPATH="${PY_ROOT}:${PYTHONPATH:-}" python3 "${PY_ROOT}/sinedon/maketables.py" \
+		--sinedon-name=threevdata \
+		--module-name=threevdata \
+		--db-name="${THREEV_DB_NAME}" || true
 }
 
 prepare_fs() {
