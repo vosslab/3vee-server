@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   sodipodi:docname="main_buttons.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Send"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Send"
+       style="overflow:visible;">
+      <path
+         id="path3453"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.2) rotate(180) translate(6,0)" />
+    </marker>
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+    <inkscape:perspective
+       id="perspective2644"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2711"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2523"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2590"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2657"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       sodipodi:type="inkscape:persp3d" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="-3"
+     inkscape:cy="440"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1125"
+     inkscape:window-x="0"
+     inkscape:window-y="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#ffd5d5;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2411"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,147.59605,55.636218)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/topleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#aaccff;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2413"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,482.99605,55.636208)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/topright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#ffccaa;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2415"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,147.59605,272.53621)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/midleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#ffeeaa;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2417"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,482.99605,272.53621)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/midright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#ccaaff;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2419"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,147.59605,489.43622)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/botleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#ccffaa;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2421"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,482.99605,489.43621)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/botright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="542.98346"
+       y="140.37428"
+       id="text2423"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/topright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         id="tspan2425"
+         x="542.98346"
+         y="140.37428"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif">Volume</tspan><tspan
+         sodipodi:role="line"
+         x="542.98346"
+         y="190.37428"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2427">Assessment</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="541.99805"
+       y="356.92273"
+       id="text2429"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/midright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         x="541.99805"
+         y="356.92273"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2433">Cavity</tspan><tspan
+         sodipodi:role="line"
+         x="541.99805"
+         y="406.92273"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2467">Extractor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="206.2065"
+       y="140.3743"
+       id="text2435"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/topleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         id="tspan2437"
+         x="206.2065"
+         y="140.3743"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif">Channel</tspan><tspan
+         sodipodi:role="line"
+         x="206.2065"
+         y="190.3743"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2439">Extractor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="206.644"
+       y="342.80066"
+       id="text2447"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/midleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         id="tspan2449"
+         x="206.644"
+         y="342.80066"
+         style="font-size:28px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif">Fractional Solvent</tspan><tspan
+         sodipodi:role="line"
+         x="206.644"
+         y="377.80066"
+         style="font-size:28px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2451">Volume (FSV)</tspan><tspan
+         sodipodi:role="line"
+         x="206.644"
+         y="412.80066"
+         style="font-size:28px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2463">Calculator</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="584.99274"
+       y="556.19183"
+       id="text2441"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/botright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         id="tspan2443"
+         x="584.99274"
+         y="556.19183"
+         style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif">Ribosomal</tspan><tspan
+         sodipodi:role="line"
+         x="584.99274"
+         y="596.19183"
+         style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2473">Exit Tunnel</tspan><tspan
+         sodipodi:role="line"
+         x="584.99274"
+         y="636.19183"
+         style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2445">Extractor</tspan></text>
+    <image
+       y="516.26215"
+       x="419.41556"
+       id="image2713"
+       height="136"
+       width="74.75"
+       sodipodi:absref="/home/vossman/3vee/img/exit_tunnel.png"
+       xlink:href="exit_tunnel.png"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/botright.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <g
+       id="g4218"
+       transform="translate(0,-6.4279402)"
+       inkscape:export-filename="/home/vossman/raid/3vee/img/botleft.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056">
+      <text
+         inkscape:export-ydpi="71.801056"
+         inkscape:export-xdpi="71.801056"
+         inkscape:export-filename="/home/vossman/raid/3vee/img/botleft.png"
+         id="text2453"
+         y="620.17432"
+         x="206.53462"
+         style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+         xml:space="preserve"><tspan
+           id="tspan2457"
+           style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+           y="620.17432"
+           x="206.53462"
+           sodipodi:role="line">Solvent</tspan><tspan
+           id="tspan2471"
+           style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+           y="660.17432"
+           x="206.53462"
+           sodipodi:role="line">Extractor</tspan></text>
+      <g
+         transform="translate(5.8315,0)"
+         id="g4213">
+        <image
+           y="521.40906"
+           x="223.08594"
+           id="image2592"
+           height="66.375"
+           width="111.5625"
+           sodipodi:absref="/home/vossman/3vee/img/protein_with_solvent.png"
+           xlink:href="protein_with_solvent.png" />
+        <image
+           y="520.75281"
+           x="68.289062"
+           id="image2659"
+           height="67.6875"
+           width="113.15625"
+           sodipodi:absref="/home/vossman/3vee/img/protein_volume.png"
+           xlink:href="protein_volume.png" />
+        <path
+           style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Send);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+           d="M 189.18405,554.59656 L 210.72221,554.59656"
+           id="path2663" />
+      </g>
+    </g>
+    <path
+       sodipodi:type="star"
+       style="opacity:0.75;fill:#c8b7b7;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2420"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,517.2958,709.53622)"
+       inkscape:export-filename="/home/vossman/3vee/img/extractChannels.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="576.29779"
+       y="793.92273"
+       id="text2422"
+       inkscape:export-filename="/home/vossman/3vee/img/extractChannels.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         x="576.29779"
+         y="793.92273"
+         style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2424">Extract All</tspan><tspan
+         sodipodi:role="line"
+         x="576.29779"
+         y="838.92273"
+         style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2426">Channels</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot2428"
+       style="fill:black;stroke:none;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:Liberation Serif;font-style:normal;font-weight:normal;font-size:18;-inkscape-font-specification:Liberation Serif;font-stretch:normal;font-variant:normal;text-anchor:middle;text-align:center;writing-mode:lr"><flowRegion
+         id="flowRegion2430"><rect
+           id="rect2432"
+           width="516"
+           height="265"
+           x="133"
+           y="695.36218" /></flowRegion><flowPara
+         id="flowPara2434" /></flowRoot>    <path
+       sodipodi:type="star"
+       style="opacity:0.75000000000000000;fill:#c8ab37;fill-opacity:1;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path2426"
+       sodipodi:sides="4"
+       sodipodi:cx="41"
+       sodipodi:cy="105.36218"
+       sodipodi:r1="123.84668"
+       sodipodi:r2="87.57283"
+       sodipodi:arg1="0.78539816"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0.2"
+       inkscape:randomized="0"
+       d="M 128.57283,192.93501 C 103.80349,217.70435 -21.803491,217.70435 -46.572827,192.93501 C -71.342163,168.16567 -71.342163,42.558692 -46.572827,17.789356 C -21.803491,-6.9799801 103.80349,-6.9799806 128.57283,17.789355 C 153.34216,42.558691 153.34216,168.16567 128.57283,192.93501 z"
+       transform="matrix(1.4562,0,0,0.9,168.2958,705.53622)"
+       inkscape:export-filename="/home/vossman/3vee/img/volumeRange.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056" />
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial"
+       x="227.29779"
+       y="789.92273"
+       id="text2428"
+       inkscape:export-filename="/home/vossman/3vee/img/volumeRange.png"
+       inkscape:export-xdpi="71.801056"
+       inkscape:export-ydpi="71.801056"><tspan
+         sodipodi:role="line"
+         x="227.29779"
+         y="789.92273"
+         style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2430">Volume</tspan><tspan
+         sodipodi:role="line"
+         x="227.29779"
+         y="834.92273"
+         style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Serif;-inkscape-font-specification:DejaVu Serif"
+         id="tspan2432">Range</tspan></text>
+  </g>
+</svg>
