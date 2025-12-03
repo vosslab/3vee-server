@@ -5,7 +5,7 @@ For a deep technical walkthrough of the stack (PHP UI, Python job layer, vossvol
 
 ## Containerized Web Server
 
-You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, and the freshly built `vossvolvox` binaries) with Docker or Podman. The container builds on Debian 13 “trixie”, installs Python 3.11 from the distro, and pulls the required scientific/DB bindings from the Debian packages (`python3-numpy`, `python3-scipy`, `python3-mysqldb`, `python3-pil`, etc.).
+You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, headless Python rendering, and the freshly built `vossvolvox` binaries) with Docker or Podman. The container builds on Debian 13 “trixie”, installs Python 3.11 from the distro, and pulls the required scientific/DB bindings from the Debian packages (`python3-numpy`, `python3-scipy`, `python3-mysqldb`, `python3-pil`, etc.).
 
 ### Prerequisites
 - Docker Engine 24+ **or** Podman 4+ with Compose support.
