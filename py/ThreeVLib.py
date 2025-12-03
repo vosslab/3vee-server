@@ -15,6 +15,7 @@ import random
 import shutil
 import locale
 import subprocess
+import shlex
 from scipy import ndimage
 from string import ascii_lowercase
 #local
@@ -37,6 +38,9 @@ class ThreeVLib(object):
 			self.jobid = datestamp+"."+randstamp
 		#self.rundir = "."
 		self.procdir = "/var/www/html/3vee"
+		base_url = os.environ.get("THREEV_BASE_URL", "http://localhost:8080")
+		self.web_base = base_url.rstrip("/")
+		self.output_url = self.web_base + "/output"
 		self.datestamp = self.jobid[:7]
 		self.jobdir = re.sub(r'\.', '/', self.jobid)
 		self.rundir = os.path.join(self.procdir, "output", self.jobdir)
@@ -415,7 +419,7 @@ class ThreeVLib(object):
 			text = ""
 			count = 1
 			for mrcfile in mrcfiles:
-				link = re.sub("/var/www/html/3vee/output", "http://3vee.molmovdb.org/output", mrcfile)
+				link = re.sub("/var/www/html/3vee/output", self.output_url, mrcfile)
 				text += "<a href='%s'>%d</a> \n"%(link, count)
 				count += 1
 			self.writeToRunningLog("Download MRC files: "+text)
@@ -662,61 +666,32 @@ class ThreeVLib(object):
 		self.checkSystemLoad()		
 
 		if not os.path.isfile(xthreedfile):
-			self.writeToRunningLog("failed to find x3d file to run meshlab", type="Cross")
+			self.writeToRunningLog("failed to find X3D file for conversion", type="Cross")
 			sys.exit(1)
 		if apFile.fileSize(xthreedfile) < 1:
 			self.writeToRunningLog("failed to open x3d file, file is empty", type="Cross")
 			sys.exit(1)
-		decimate = """
-<!DOCTYPE FilterScript>
-<!--
-PLYMesher Meshlabserver script
-by Neil Voss
--->
-
-<FilterScript>
-<filter name="Quadric Edge Collapse Decimation" >
-  <!-- <Param type="RichInt" value="402" name="TargetFaceNum"/> -->
-  <Param type="RichFloat" value="0" name="TargetPerc"/>
-  <Param type="RichFloat" value="0.3" name="QualityThr"/>
-  <Param type="RichBool" value="false" name="PreserveBoundary"/>
-  <Param type="RichFloat" value="1" name="BoundaryWeight"/>
-  <Param type="RichBool" value="true" name="PreserveNormal"/>
-  <Param type="RichBool" value="true" name="PreserveTopology"/>
-  <Param type="RichBool" value="true" name="OptimalPlacement"/>
-  <Param type="RichBool" value="true" name="PlanarQuadric"/>
-  <Param type="RichBool" value="false" name="QualityWeight"/>
-  <Param type="RichBool" value="true" name="AutoClean"/>
-  <Param type="RichBool" value="false" name="Selected"/>
-</filter>
-</FilterScript>
-"""
-
-		decimatefile = os.path.join(self.rundir, "decimate.mlx")
-		f = open(decimatefile, "w")
-		f.write(decimate)
-		f.close()
 		rootname = os.path.splitext(xthreedfile)[0]
 		stlfile = rootname+".stl"
 
-		meshlabcmd  = "meshlabserver"
-		#meshlabserver -i 2TMV-amino.x3d  -o 2TMV-amino.stl -s decimate.mlx 
-		meshlabcmd += " -i "+xthreedfile
-		meshlabcmd += " -o "+stlfile
-		meshlabcmd += " -s "+decimatefile
+		assimpcli = os.environ.get("ASSIMP_CLI", "assimp")
+		if shutil.which(assimpcli) is None:
+			self.writeToRunningLog("assimp CLI was not found; please install assimp or set ASSIMP_CLI", type="Cross")
+			sys.exit(1)
 
-		port = apParam.resetVirtualFrameBuffer()
-		self.writeToRunningLog("Created virtual frame buffer on port :"+str(port), type="Check")
-		self.writeToRunningLog("Please wait: Quadraitc decimating x3d volume and converting to STL using meshlab")
-		meshlabcmd = "export DISPLAY=:%d; %s"%(port, meshlabcmd)
-		self.runCommand(meshlabcmd, verbose=True)
-		apParam.killVirtualFrameBuffer(port)
+		convertcmd = "{} export {} {}".format(
+			shlex.quote(assimpcli),
+			shlex.quote(xthreedfile),
+			shlex.quote(stlfile),
+		)
+		self.writeToRunningLog("Converting X3D to STL using assimp-cli (headless mesh export)")
+		self.runCommand(convertcmd, verbose=True, source=False)
 
 		if not os.path.isfile(stlfile):
 			self.writeToRunningLog("FAILED to convert X3D into STL file: "+stlfile, type="Cross")
 			sys.exit(1)
-		self.writeToRunningLog("decimated STL file: "+stlfile, type="Check")
-		self.writeToRunningLog("MeshLab completed in %s"%(apDisplay.timeString(time.time()-t0)))
+		self.writeToRunningLog("wrote STL file: "+stlfile, type="Check")
+		self.writeToRunningLog("Mesh conversion completed in %s"%(apDisplay.timeString(time.time()-t0)))
 		return stlfile
 
 	#===========
@@ -770,7 +745,7 @@ by Neil Voss
 			tempfile = self.filterVolume(filename, tempfile)
 
 		### create images
-		link = re.sub("/var/www/html/3vee/output", "http://3vee.molmovdb.org/output", filename)
+		link = re.sub("/var/www/html/3vee/output", self.output_url, filename)
 		self.writeToRunningLog("imaging volume <a href='"+link+"'>(download mrc)</a> "
 			+"with <a href='http://www.cgl.ucsf.edu/chimera/'>UCSF Chimera</a>")
 		#self.writeToRunningLog("volume name: %s PDB name: %s"%(tempfile, pdbfile))
