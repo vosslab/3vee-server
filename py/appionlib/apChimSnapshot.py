@@ -32,8 +32,8 @@ try:
 	from _surface import SurfaceModel, connected_pieces
 	from chimera import openModels
 	from MeasureVolume import enclosed_volume
-import ScaleBar.session
-from chimera import exports
+	import ScaleBar.session
+	from chimera import exports
 except ImportError:
 	print("Failed to import chimera modules")
 	pass

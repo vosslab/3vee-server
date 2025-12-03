@@ -440,7 +440,7 @@ def updateHeaderUsingArray(header, a, calc_stats=True, reset_origin=True, mz=Non
 		header['rms'] = stats['std']
 
 	if reset_origin is True:
-		### changed next lines to be equivalent to proc3d origin=0,0,0
+		### changed next lines to be equivalent to legacy origin=0,0,0 handling
 		header['xorigin'] = 0
 		header['yorigin'] = 0
 		header['zorigin'] = 0
@@ -691,9 +691,9 @@ def appendArray(a, f):
 
 def substackFromMRCStack(mrcstack, outfile, listfile, excludeList=False):
 	'''
-	f=/path/to/stack.mrc, list=EMAN-style list, numbering starts with 0, writes output mrc stack
+f=/path/to/stack.mrc, list=legacy style list, numbering starts with 0, writes output mrc stack
 	'''
-	# read list, EMAN-style, one line per integer, numbersing starts with 0
+	# read list, legacy style, one line per integer, numbering starts with 0
 	l = open(listfile, "r")
 	llines = l.readlines()
 	locs = [int(line.strip()) for line in llines]

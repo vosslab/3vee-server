@@ -50,11 +50,37 @@ class ThreeVLib(object):
 		os.chdir(self.rundir)
 		self.runlogfile = os.path.join(self.procdir, "output", self.jobdir ,"runlog-"+self.jobid+".html")
 		self.pdbid = None
-		self._proc3d_path = shutil.which("proc3d")
-		if not self._proc3d_path:
-			apDisplay.printError(
-				"proc3d was not found in PATH. EMAN1 is now required; ensure EMANDIR/bin is installed and exported."
-			)
+
+	@staticmethod
+	def _normalize_volume(volume):
+		"""
+		Shift mean to 0 and scale to unit standard deviation (legacy norm=0,1 behavior).
+		"""
+		std = volume.std()
+		if std == 0:
+			return volume
+		return (volume - volume.mean()) / std
+
+	@staticmethod
+	def _fermi_lowpass(volume, apix, cutoff, rolloff=0.1):
+		"""
+		Apply a smooth low-pass filter in Fourier space using a Fermi-style mask.
+		cutoff is in angstroms (legacy tlp/lp convention); rolloff is
+		expressed as a fraction of the cutoff frequency.
+		"""
+		if cutoff is None or cutoff <= 0:
+			return volume
+		vol = numpy.asarray(volume, dtype=numpy.float32)
+		freq_z = numpy.fft.fftfreq(vol.shape[0], d=apix)
+		freq_y = numpy.fft.fftfreq(vol.shape[1], d=apix)
+		freq_x = numpy.fft.fftfreq(vol.shape[2], d=apix)
+		fz, fy, fx = numpy.meshgrid(freq_z, freq_y, freq_x, indexing="ij")
+		radius = numpy.sqrt(fx**2 + fy**2 + fz**2)
+		cutoff_freq = 1.0 / float(cutoff)
+		roll = max(cutoff_freq * rolloff, numpy.finfo(numpy.float32).eps)
+		mask = 1.0 / (1.0 + numpy.exp((radius - cutoff_freq) / roll))
+		filtered = numpy.fft.ifftn(numpy.fft.fftn(vol) * mask).real
+		return filtered.astype(numpy.float32)
 
 	#====================
 	def runCommand(self, cmd, verbose=False, showcmd=True, source=True):
@@ -67,7 +93,6 @@ class ThreeVLib(object):
 		if showcmd is True:
 			sys.stderr.write(apDisplay.colorString("COMMAND: ","magenta")+cmd+"\n")
 		t0 = time.time()
-		shell_executable = None
 		popen_kwargs = {}
 		popen_kwargs = {}
 		if source is True:
@@ -277,19 +302,18 @@ class ThreeVLib(object):
 		if os.path.isfile(mrcfile):
 			os.remove(mrcfile)
 
-		emancmd = "proc3d "
-		emancmd += ccp4file+" "
-		emancmd += mrcfile+" "
-		#emancmd += " origin=0,0,0 " # apix=1.0 lp=3"
+		try:
+			volume = mrc.read(ccp4file)
+		except Exception:
+			self.writeToRunningLog("failed to read CCP4 file for conversion", type="Cross")
+			raise
 
-		self.runCommand(emancmd, verbose=True)
+		header = mrc.getHeader(volume)
+		mrc.write(volume, mrcfile, header=header)
 
 		if not os.path.isfile(mrcfile):
 			self.writeToRunningLog("failed to convert CCP4 to MRC", type="Cross")
 			sys.exit(1)
-
-		if os.path.isfile(".emanlog"):
-			os.remove(".emanlog")
 
 		return mrcfile
 
@@ -724,18 +748,34 @@ class ThreeVLib(object):
 	#====================
 	def filterVolume(self, oldfilename, newfilename=None, radius=2.0):
 		'''
-		Filter volume for Chimera imaging
+		Filter volume for Chimera imaging using a Python low-pass filter.
 		'''
 		if newfilename is None:
 			newfilename = oldfilename
-		# for some reason EMAN needs the $HOME environ set to something
 		shrink = 2
-		emancmd = ("export HOME='/var/www'; proc3d %s %s apix=1.0 lp=%.1f norm=0,1 shrink=%d"
-			%(oldfilename, newfilename, radius, shrink))
-		emancmd += " origin=0,0,0"
 		self.checkSystemLoad()
-		self.writeToRunningLog("smoothing out volume")
-		self.runCommand(emancmd, verbose=True)
+		self.writeToRunningLog("smoothing out volume (Python low-pass)")
+
+		try:
+			volume = mrc.read(oldfilename).astype(numpy.float32)
+		except Exception:
+			self.writeToRunningLog("failed to read volume for filtering", type="Cross")
+			raise
+
+		filtered = self._fermi_lowpass(volume, apix=1.0, cutoff=radius, rolloff=0.05)
+		if shrink > 1:
+			# Downsample to match prior shrink behavior
+			zoom = 1.0 / shrink
+			filtered = ndimage.zoom(filtered, zoom=zoom, order=1)
+
+		filtered = self._normalize_volume(filtered)
+
+		try:
+			mrc.write(filtered, newfilename)
+		except Exception:
+			self.writeToRunningLog("failed to write filtered volume", type="Cross")
+			raise
+
 		if not os.path.isfile(newfilename):
 			self.writeToRunningLog("failed to smooth volume", "cross")
 			shutil.copy(oldfilename, newfilename)

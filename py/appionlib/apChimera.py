@@ -10,7 +10,8 @@ import numpy
 import random
 import colorsys
 import subprocess
-import shutil
+from scipy import ndimage
+from PIL import Image
 #appion
 from appionlib import apFile
 from appionlib import apParam
@@ -20,18 +21,54 @@ from pyami import mrc
 satvalue = 0.9
 hsvalue = 0.5
 
-_PROC3D_AVAILABLE = None
+def _normalize_volume(volume):
+	std = volume.std()
+	if std == 0:
+		return volume
+	return (volume - volume.mean()) / std
 
-def proc3d_available():
-	global _PROC3D_AVAILABLE
-	if _PROC3D_AVAILABLE is None:
-		proc_path = shutil.which("proc3d")
-		if not proc_path:
-			apDisplay.printError(
-				"proc3d was not found in PATH. EMAN1 is required; ensure EMANDIR/bin is installed and exported."
-			)
-		_PROC3D_AVAILABLE = True
-	return _PROC3D_AVAILABLE
+def _fermi_lowpass(volume, apix, cutoff, rolloff=0.1):
+	if cutoff is None or cutoff <= 0:
+		return volume
+	vol = numpy.asarray(volume, dtype=numpy.float32)
+	freq_z = numpy.fft.fftfreq(vol.shape[0], d=apix)
+	freq_y = numpy.fft.fftfreq(vol.shape[1], d=apix)
+	freq_x = numpy.fft.fftfreq(vol.shape[2], d=apix)
+	fz, fy, fx = numpy.meshgrid(freq_z, freq_y, freq_x, indexing="ij")
+	radius = numpy.sqrt(fx**2 + fy**2 + fz**2)
+	cutoff_freq = 1.0 / float(cutoff)
+	roll = max(cutoff_freq * rolloff, numpy.finfo(numpy.float32).eps)
+	mask = 1.0 / (1.0 + numpy.exp((radius - cutoff_freq) / roll))
+	filtered = numpy.fft.ifftn(numpy.fft.fftn(vol) * mask).real
+	return filtered.astype(numpy.float32)
+
+def _bilateral_filter_3d(vol, sigma_spatial=1.0, sigma_intensity=0.25, max_radius=2):
+	"""
+	Simple bilateral filter for 3D volumes using reflection padding.
+	"""
+	volume = numpy.asarray(vol, dtype=numpy.float32)
+	radius = max(1, min(int(math.ceil(2 * sigma_spatial)), max_radius))
+	coords = range(-radius, radius + 1)
+	padded = numpy.pad(volume, radius, mode="reflect")
+	accum = numpy.zeros_like(volume, dtype=numpy.float32)
+	weights_sum = numpy.zeros_like(volume, dtype=numpy.float32)
+
+	for dz in coords:
+		for dy in coords:
+			for dx in coords:
+				spatial_sq = float(dx*dx + dy*dy + dz*dz)
+				spatial_w = math.exp(-spatial_sq / (2.0 * sigma_spatial * sigma_spatial))
+				z_slice = slice(radius + dz, radius + dz + volume.shape[0])
+				y_slice = slice(radius + dy, radius + dy + volume.shape[1])
+				x_slice = slice(radius + dx, radius + dx + volume.shape[2])
+				shifted = padded[z_slice, y_slice, x_slice]
+				intensity_w = numpy.exp(-((shifted - volume) ** 2) / (2.0 * sigma_intensity * sigma_intensity))
+				w = spatial_w * intensity_w
+				accum += w * shifted
+				weights_sum += w
+
+	weights_sum = numpy.maximum(weights_sum, numpy.finfo(numpy.float32).eps)
+	return accum / weights_sum
 #
 #=========================================
 #=========================================
@@ -66,31 +103,53 @@ def isValidVolume(volfile):
 #=========================================
 def setVolumeMass(volumefile, apix=1.0, mass=1.0, rna=0.0):
 	"""
-	set the contour of 1.0 to the desired mass (in kDa) of the
-	macromolecule based on its density
-	
-	use RNA to set the percentage of RNA in the structure
+	Adjust the contour so the enclosed mass matches the requested kDa target.
+
+	We assume a bulk density for protein/RNA (default 0.81 Da/Å^3 for protein,
+	linearly adjusted toward 1.35 Da/Å^3 for RNA content). The routine finds
+	the voxel threshold that yields the desired enclosed mass when multiplied
+	by voxel volume.
 	"""
 	if isValidVolume(volumefile) is False:
 		apDisplay.printError("Volume file %s is not valid"%(volumefile))
+		return False
+	if mass <= 0:
+		apDisplay.printWarning("Mass must be positive; skipping mass-based scaling.")
+		return False
 
-	procbin = apParam.getExecPath("proc2d")
-	emandir = os.path.dirname(procbin)
-	volumebin = os.path.join(emandir, "volume")
-	if not os.path.isfile(volumebin):
-		apDisplay.printWarning("failed to find volume program")
+	vol = mrc.read(volumefile).astype(numpy.float32)
+	vol_for_threshold = vol.copy()
+	# Binary/quantized maps need a bit of smoothing to expose usable thresholds.
+	if numpy.unique(vol_for_threshold).size <= 4:
+		vol_for_threshold = _bilateral_filter_3d(vol_for_threshold, sigma_spatial=1.0, sigma_intensity=0.25, max_radius=2)
+
+	# Estimate density based on RNA fraction (very coarse model).
+	protein_density = 0.81  # Da/Å^3
+	rna_density = 1.35      # Da/Å^3
+	rna_fraction = max(0.0, min(1.0, float(rna)))
+	density_da_per_a3 = protein_density * (1 - rna_fraction) + rna_density * rna_fraction
+
+	target_mass_da = mass * 1000.0
+	voxel_volume = apix ** 3
+	# Flatten and sort descending to walk from highest density down.
+	flat = numpy.sort(vol_for_threshold.ravel())[::-1]
+	cumulative_mass = numpy.cumsum(flat) * voxel_volume * density_da_per_a3
+
+	threshold_index = numpy.searchsorted(cumulative_mass, target_mass_da)
+	if threshold_index >= flat.size:
+		apDisplay.printWarning("Target mass exceeds map integral; using minimum voxel value.")
+		threshold_value = flat[-1]
+	else:
+		threshold_value = flat[threshold_index]
+
+	# Normalize volume so contour 1.0 matches the threshold.
+	scale = threshold_value if threshold_value != 0 else 1.0
+	if scale == 0:
+		apDisplay.printWarning("Computed threshold is zero; cannot scale.")
 		return False
-	command = "%s %s %.3f set=%.3f"%(	
-		volumebin, volumefile, apix, mass
-	)
-	print("EMAN: "+command)
-	t0 = time.time()
-	proc = subprocess.Popen(command, shell=True)
-	proc.wait()
-	if time.time()-t0 < 0.01:
-		apDisplay.printWarning("failed to scale by mass in "+apDisplay.timeString(time.time()-t0))
-		return False
-	apDisplay.printMsg("finished scaling by mass in "+apDisplay.timeString(time.time()-t0))
+	vol_scaled = vol_for_threshold / scale
+	mrc.write(vol_scaled, volumefile)
+	apDisplay.printMsg("Mass-based scaling applied (target %.2f kDa, threshold %.5f)" % (mass, threshold_value))
 	return True
 
 #=========================================
@@ -111,37 +170,20 @@ def filterAndChimera(density, res=30, apix=None, box=None, chimtype='snapshot',
 	density = os.path.abspath(density)
 	filtres = 0.6*res
 	shrinkby = 1
-	proc3d_available()
 	tmpf = os.path.abspath(density+'.tmp.mrc')
 	cleanup_tmp = True
+	apDisplay.printMsg("Low pass filtering model for images (Python)")
+	vol = mrc.read(density).astype(numpy.float32)
 	if box is not None and box > 250:
 		shrinkby = int(math.ceil(box/160.0))
-		if box % (2*shrinkby) == 0:
-			lpcmd = ('proc3d %s %s apix=%.3f tlp=%.2f shrink=%d origin=0,0,0 norm=0,1'
-				% (density, tmpf, apix, filtres, shrinkby))
-		else:
-			clip = math.floor(box/shrinkby/2.0)*2*shrinkby
-			lpcmd = ('proc3d %s %s apix=%.3f tlp=%.2f shrink=%d origin=0,0,0 norm=0,1 clip=%d,%d,%d'
-				% (density, tmpf, apix, filtres, shrinkby, clip, clip, clip))
-	else:
-		lpcmd = ('proc3d %s %s apix=%.3f tlp=%.2f origin=0,0,0 norm=0,1'
-			% (density, tmpf, apix, filtres))
-	apDisplay.printMsg("Low pass filtering model for images")
-	proc = subprocess.Popen(lpcmd, shell=True)
-	proc.wait()
-
-	vol = mrc.read(tmpf)
-	numpy.where(vol < 0, 0.0, vol)
-	mrc.write(vol, tmpf)
-	del vol
-
-	if mass is not None:
-		setVolumeMass(tmpf, apix*shrinkby, mass)
-		contour = 1.0
-
-	recmd = "proc3d %s %s apix=%.3f origin=0,0,0"%(tmpf, tmpf, apix)
-	proc = subprocess.Popen(recmd, shell=True)
-	proc.wait()
+	filtered = _fermi_lowpass(vol, apix=apix, cutoff=filtres, rolloff=0.05)
+	if shrinkby > 1:
+		zoom = 1.0 / shrinkby
+		filtered = ndimage.zoom(filtered, zoom=zoom, order=1)
+	filtered = _normalize_volume(filtered)
+	filtered[filtered < 0] = 0.0
+	mrc.write(filtered, tmpf)
+	del vol, filtered
 
 	### render images
 	renderSlice(density, box=box, tmpfile=tmpf, sym=sym)
@@ -166,18 +208,18 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 		boxdims = apFile.getBoxSize(tmpfile)
 		box = boxdims[0]
 	halfbox = int(box/2)
-	tmphed = density + '.hed'
-	hedcmd = ('proc3d %s %s' % (tmpfile, tmphed))
-	if sym.lower()[:4] != 'icos':
-		hedcmd = hedcmd + " rot=90"
-	proc = subprocess.Popen(hedcmd, shell=True)
-	proc.wait()
+	vol = mrc.read(tmpfile)
+	slice_idx = min(max(halfbox, 0), vol.shape[0]-1)
+	slice_data = vol[slice_idx, :, :]
+	minv = slice_data.min()
+	maxv = slice_data.max()
+	if maxv > minv:
+		img_data = (255 * (slice_data - minv) / (maxv - minv)).astype(numpy.uint8)
+	else:
+		img_data = numpy.zeros_like(slice_data, dtype=numpy.uint8)
 	pngslice = density + '.slice.png'
-	slicecmd = ('proc2d %s %s first=%i last=%i' % (tmphed, pngslice, halfbox, halfbox))
-	proc = subprocess.Popen(slicecmd, shell=True)
-	proc.wait()
-	apFile.removeStack(tmphed, warn=False)
-	return
+	Image.fromarray(img_data).save(pngslice)
+	return pngslice
 
 #=========================================
 #=========================================
