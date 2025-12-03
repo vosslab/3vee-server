@@ -71,7 +71,9 @@ class threevdata {
 		//echo $q."<br/><br/>\n";
 		$r = $this->mysql->getSQLResult($q);
 		//echo print_r($r)."<br/><br/>\n";
-		return $r[0];
+		if (is_array($r) && isset($r[0]))
+			return $r[0];
+		return array();
 	}
 
 	/*************************
@@ -79,6 +81,8 @@ class threevdata {
 	*************************/
 	function getJobParams ($jobid) {
 		$jobdata = $this->getJobData($jobid);
+		if (!$jobdata || empty($jobdata['runid']))
+			return array();
 		$runid = $jobdata['runid'];
 		return $this->getRunParams($runid);
 	}
@@ -97,8 +101,9 @@ class threevdata {
 			."  paramvalue.`REF|ProgramRun|progrun` = '$runid' ";
 		//echo $q."<br/><br/>\n";
 		$rows = $this->mysql->getSQLResult($q);
+		if (!is_array($rows))
+			$rows = array();
 		//echo print_r($r)."<br/><br/>\n";
-
 		$hashed = array();
 		foreach ($rows as $row) {
 			$hashed[$row['name']] = $row['value'];
