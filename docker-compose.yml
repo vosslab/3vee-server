@@ -12,7 +12,7 @@ services:
       - db-data:/var/lib/mysql
 
   web:
-    build: .
+    image: "${WEB_IMAGE_NAME:-threev-web}:${WEB_IMAGE_TAG:-amd64}"
     ports:
       - "8080:80"
     environment:
