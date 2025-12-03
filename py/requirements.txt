@@ -3,3 +3,5 @@ pymysql
 scipy
 six
 DateTime
+scikit-image
+matplotlib
