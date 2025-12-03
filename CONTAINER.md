@@ -27,7 +27,7 @@ During the image build we automatically clone `https://github.com/vosslab/vossvo
 - On Linux, Podman can run rootless natively. On macOS/Windows, Podman spins up a VM; check with `podman machine ls`, start it via `podman machine start <name>` if it is stopped, and only run `podman machine init --now --user-mode-networking` when creating a new VM to ensure host ports forward into the guest.
 - Rootless Podman cannot bind privileged ports (<1024). We expose Apache on 8080 by default, so rootless setups are fine.
 - Compose plugin: install via `brew install podman podman-compose` (macOS) or the distro package (`dnf install podman-compose`, etc.).
-- The repo ships `build_podman_image.sh` at the root. It wraps the common steps (stop the current stack, start the DB, rebuild/run the `web` container, and tee the logs to `logs/podman-compose-<timestamp>.log`), so use it when you want the rebuild workflow described later without typing the long compose command. See `CONTAINER.md` for the rest of the Podman guidance.
+- The repo ships `build_podman_image.sh` at the root. It wraps the common steps (stop the current stack, start the DB, rebuild/run the `web` container, and tee the logs to `logs/podman-compose-<timestamp>.log`), defaulting to the host architecture unless `ARCH` is set.
 
 ## 2.1 Quick Commands
 Want the shortest path? Copy/paste the following (adjust for Docker vs Podman):
@@ -73,11 +73,8 @@ Both Docker and Podman respect the same `Dockerfile`. The build stage:
 1. Uses `debian:trixie` (aka Debian 13) as the base.
 2. Installs Apache, PHP, MariaDB client, Meshlab, ImageMagick, Xvfb, build tooling, and dev libraries.
 3. Builds CPython `PY2_VERSION` (default `2.7.18`) from source under `/opt/python2`, then installs pinned legacy packages (`numpy==1.16.6`, `scipy==1.2.3`, `mysqlclient==1.4.6`, `Pillow==6.2.2`).
-4. Installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`amd64` only; skipped on other arches) and sets `CHIMERA=/opt/chimera`.
-5. Clones `vossvolvox` (default branch `master`, override via `--build-arg VOSSVOLVOX_REF=<ref>`), builds the C++ tools, and copies the resulting `*.exe` binaries plus helper data/scripts into `/var/www/html/3vee/bin`, `/dat`, `/sh`.
-6. Configures Apache with a single vhost pointed at `/var/www/html/3vee`.
-
-Before running `docker compose build`/`podman build`, execute `./docker/prefetch-assets.sh`. It downloads the Chimera installer into `docker/` on the host so the Dockerfile can `COPY` it directly. The script is idempotent (skips when the file already exists), and `build_podman_image.sh` runs it for you automatically.
+4. Clones `vossvolvox` (default branch `master`, override via `--build-arg VOSSVOLVOX_REF=<ref>`), builds the C++ tools, and copies the resulting `*.exe` binaries plus helper data/scripts into `/var/www/html/3vee/bin`, `/dat`, `/sh`.
+5. Configures Apache with a single vhost pointed at `/var/www/html/3vee`.
 
 Build command (Docker):
 ```bash
@@ -98,7 +95,7 @@ Need a specific revision? Build args:
 | Service | Image | Purpose |
 | --- | --- | --- |
 | `db` | `mariadb:10.6` | Standalone MariaDB instance seeded via standard env vars. Data lives in volume `db-data`. |
-| `web` | locally built | Apache + PHP UI + Python job runners + Chimera + vossvolvox binaries. Binds `./output` into `/var/www/html/3vee/output`. |
+| `web` | locally built | Apache + PHP UI + Python job runners + vossvolvox binaries. Binds `./output` into `/var/www/html/3vee/output`. |
 
 The MariaDB service now uses Compose’ `logging.driver: "none"` setting so its verbose startup messages stay out of `compose up` output; run `docker compose logs db` (or `podman compose logs db`) when you need to inspect the database logs.
 
@@ -146,7 +143,7 @@ The MariaDB service uses the standard `MARIADB_*` env vars to create the same da
 ## 7. Customizing the Stack
 - **Changing the exposed port:** edit `docker-compose.yml`, replace `"8080:80"` with another mapping (e.g., `"8000:80"`). For Podman rootless you can also map to high ports per user preferences.
 - **Custom DB credentials:** update both `docker-compose.yml` (environment for `db` + `web`) and, if you set `THREEV_SKIP_DB_INIT=1`, ensure the DB is initialized manually.
-- **External Chimera:** the Docker build already installs a specific version (installed on amd64 only). If you prefer a different version, edit the URL/path in the Dockerfile.
+- Rendering is headless Python; no Chimera/EMAN required. If you install extra tools (e.g., for visualization), adjust the Dockerfile as needed.
 - **Python runtime:** Debian packages install Python 3 plus `numpy`, `scipy`, `mysqlclient`, and `Pillow`. If you need different versions, adjust the apt/pip steps in the Dockerfile.
 
 ## 8. Security Notes

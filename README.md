@@ -38,13 +38,13 @@ You can control how the web container connects to MariaDB via the following envi
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip the startup wait-for-DB loop |
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `maketables.py` on boot |
 
-Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible. On Apple Silicon (arm64) you may still choose to build `--arch amd64` for parity with production, but the stack is now pure Python for rendering and no longer depends on Chimera.
+Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible. The stack is pure Python for rendering and no longer depends on Chimera or EMAN, so you can build natively on arm64 or amd64; set `ARCH` in `build_podman_image.sh` only if you need to override.
 
 The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
 
 ## macOS x86_64 Podman via QEMU
 
-Apple Silicon hosts may still run amd64 containers for parity. Install `podman`, `podman-compose`, and `qemu` via Homebrew, initialize a machine (`podman machine init --now --user-mode-networking`), and keep it running with `podman machine start podman-machine-default`. Builds such as `./build_podman_image.sh` already pass `--arch amd64`, so the VM just needs qemu-backed virtualization to execute the emulated architecture. For a full checklist on preparing that machine, see `MACOS_PODMAN_QEMU.md`.
+Apple Silicon hosts may still run amd64 containers for parity. Install `podman`, `podman-compose`, and `qemu` via Homebrew, initialize a machine (`podman machine init --now --user-mode-networking`), and keep it running with `podman machine start podman-machine-default`. Use `ARCH=amd64` in `build_podman_image.sh` only if you explicitly want cross-arch builds; otherwise native arm64 works end to end. For a full checklist on preparing that machine, see `MACOS_PODMAN_QEMU.md`.
 
 ## Local Python tooling
 

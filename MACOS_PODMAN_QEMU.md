@@ -1,6 +1,6 @@
-# Preparing an x86_64 Podman Machine on macOS with QEMU
+# Preparing an x86_64-capable Podman Machine on macOS with QEMU
 
-Chimera and `threev-web`’s native binaries are amd64-only, so Apple Silicon hosts must run them inside an emulated x86_64 Podman VM. Podman on macOS uses QEMU under the hood; this document walks through the one-time preparation so that `podman build --arch amd64`, `./build_podman_image.sh`, and `podman compose up` all execute inside that emulated architecture.
+`threev-web` is now pure Python for rendering, so native arm64 builds run fine on Apple Silicon. If you still need amd64 images for parity, Podman on macOS uses QEMU under the hood; this document walks through preparing a VM that can run `podman build --arch amd64` and `podman compose up` for cross-arch work.
 
 ## Prerequisites
 
@@ -69,7 +69,7 @@ It should print `x86_64`. Podman automatically handles the `binfmt` registration
 
 ## 4. Build and run the stack
 
-- Use `./build_podman_image.sh` (default `ARCH=amd64`) to build the web image via Podman. It sets `podman build --arch amd64`, ensuring the resulting image is compatible with the binaries you need.
+- Use `ARCH=amd64 ./build_podman_image.sh` if you explicitly want an amd64 image; otherwise omit `ARCH` to build natively on arm64.
 - Start services with `podman compose up --build` after the machine is started. Keep the machine running while you interact with the UI or submit jobs.
 - `podman machine stop`/`start` controls the VM lifecycle.
 
@@ -79,4 +79,4 @@ It should print `x86_64`. Podman automatically handles the `binfmt` registration
 - Delete and recreate the machine when you want a clean slate: `podman machine stop podman-machine-default`, `podman machine rm podman-machine-default`, then `podman machine init ...`.
 - If host ↔ VM networking breaks, reinitialize with `--user-mode-networking` so `localhost:8080` maps into the guest automatically.
 
-With these steps completed, your macOS host can run the amd64-only components via Podman + QEMU while still interacting with them over `http://localhost:8080/php/volumeCalc.php`.
+With these steps completed, your macOS host can optionally build/run amd64 images via Podman + QEMU while still interacting with them over `http://localhost:8080/php/volumeCalc.php`.
