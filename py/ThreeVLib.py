@@ -806,16 +806,20 @@ class ThreeVLib(object):
 		except Exception as exc:
 			self.writeToRunningLog(f"could not read volume metadata: {exc}", type="Star")
 
-		apChimera.renderSnapshots(
-			tempfile,
-			contour=contour,
-			zoom=zoom,
-			sym=sym,
-			silhouette=False,
-			pdb=pdbfile,
-			name=filename,
-			print3d=print3d,
-		)
+		try:
+			apChimera.renderSnapshots(
+				tempfile,
+				contour=contour,
+				zoom=zoom,
+				sym=sym,
+				silhouette=False,
+				pdb=pdbfile,
+				name=os.path.splitext(filename)[0],
+				print3d=print3d,
+			)
+		except Exception as exc:
+			self.writeToRunningLog(f"Renderer crashed: {exc}", type="Cross")
+			return None, None
 		if "temp" in tempfile:
 			apFile.removeFile(tempfile)
 
@@ -835,7 +839,11 @@ class ThreeVLib(object):
 		pngbase = os.path.splitext(filename)[0]
 		pngfiles = glob.glob(pngbase+".*.png")
 		if not len(pngfiles) > 0:
-			self.writeToRunningLog("Renderer failed to create images, no files", type="Cross")
+			self.writeToRunningLog(
+				"Renderer failed to create images, no files. Dir contents: "
+				+ ", ".join(sorted(os.listdir(os.path.dirname(filename)))),
+				type="Cross",
+			)
 			return None, objfile
 		else:
 			png_info = []
@@ -924,12 +932,13 @@ class ThreeVLib(object):
 		try:
 			if logdir and not os.path.isdir(logdir):
 				os.makedirs(logdir, exist_ok=True)
-			with open(self.runlogfile, "a") as f:
-				f.write("<li class='"+type+"'>\n")
-				f.write(str(msg)+"\n")
-				f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
-				f.write("</li>\n")
-		except OSError as exc:
+			if os.path.isfile(self.runlogfile) or logdir:
+				with open(self.runlogfile, "a") as f:
+					f.write("<li class='"+type+"'>\n")
+					f.write(str(msg)+"\n")
+					f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
+					f.write("</li>\n")
+		except Exception as exc:
 			sys.stderr.write(f"Failed to write running log: {exc}\n")
 
 	#====================
