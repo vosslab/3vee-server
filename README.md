@@ -45,17 +45,20 @@ Use `podman compose` instead of `docker compose` if you prefer Podman—the file
 
 The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
 
+## macOS x86_64 Podman via QEMU
+
+Apple Silicon hosts need an x86_64-capable Podman VM to run Chimera/EMAN inside `threev-web`. Install `podman`, `podman-compose`, and `qemu` via Homebrew, initialize a machine (`podman machine init --now --user-mode-networking`), and keep it running with `podman machine start podman-machine-default`. Builds such as `./build_podman_image.sh` already pass `--arch amd64`, so the VM just needs qemu-backed virtualization to execute the emulated architecture. For a full checklist on preparing that machine, see `MACOS_PODMAN_QEMU.md`.
+
 ## Local Python tooling
 
-If you run the Python job layer on a host (for linting, debugging, or manual runs), install the dependencies listed in `py/requirements.txt`. The explicit Python packages this repo imports (outside of standard library modules and our own helpers) are:
+If you run the Python job layer on a host (for linting, debugging, or manual runs), install the dependencies listed in `py/requirements.txt`. The explicit Python packages managed by that requirements file are:
 
 ```
 numpy
-scipy          # provides scipy.ndimage
+pymysql
+scipy
 six
-sqldict
 DateTime
-egenix-mx-base
 ```
 
 ```bash
