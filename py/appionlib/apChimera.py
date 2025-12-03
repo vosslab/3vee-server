@@ -10,6 +10,7 @@ import numpy
 import random
 import colorsys
 import subprocess
+import shutil
 #appion
 from appionlib import apFile
 from appionlib import apParam
@@ -18,6 +19,19 @@ from pyami import mrc
 
 satvalue = 0.9
 hsvalue = 0.5
+
+_PROC3D_AVAILABLE = None
+
+def proc3d_available():
+	global _PROC3D_AVAILABLE
+	if _PROC3D_AVAILABLE is None:
+		proc_path = shutil.which("proc3d")
+		if not proc_path:
+			apDisplay.printError(
+				"proc3d was not found in PATH. EMAN1 is required; ensure EMANDIR/bin is installed and exported."
+			)
+		_PROC3D_AVAILABLE = True
+	return _PROC3D_AVAILABLE
 #
 #=========================================
 #=========================================
@@ -94,19 +108,18 @@ def filterAndChimera(density, res=30, apix=None, box=None, chimtype='snapshot',
 	### if eotest failed, filter to 30
 	if not res or str(res) == 'nan':
 		res = 30
-	### low pass filter the volume to 60% of reported res
-	tmpf = os.path.abspath(density+'.tmp.mrc')
 	density = os.path.abspath(density)
 	filtres = 0.6*res
 	shrinkby = 1
+	proc3d_available()
+	tmpf = os.path.abspath(density+'.tmp.mrc')
+	cleanup_tmp = True
 	if box is not None and box > 250:
 		shrinkby = int(math.ceil(box/160.0))
 		if box % (2*shrinkby) == 0:
-			### box is divisible by shrink by
 			lpcmd = ('proc3d %s %s apix=%.3f tlp=%.2f shrink=%d origin=0,0,0 norm=0,1'
 				% (density, tmpf, apix, filtres, shrinkby))
 		else:
-			### box not divisible by shrink by, need a clip
 			clip = math.floor(box/shrinkby/2.0)*2*shrinkby
 			lpcmd = ('proc3d %s %s apix=%.3f tlp=%.2f shrink=%d origin=0,0,0 norm=0,1 clip=%d,%d,%d'
 				% (density, tmpf, apix, filtres, shrinkby, clip, clip, clip))
@@ -117,18 +130,15 @@ def filterAndChimera(density, res=30, apix=None, box=None, chimtype='snapshot',
 	proc = subprocess.Popen(lpcmd, shell=True)
 	proc.wait()
 
-	### flatten solvent
 	vol = mrc.read(tmpf)
 	numpy.where(vol < 0, 0.0, vol)
 	mrc.write(vol, tmpf)
 	del vol
 
-	### contour volume to mass
 	if mass is not None:
 		setVolumeMass(tmpf, apix*shrinkby, mass)
 		contour = 1.0
 
-	### set pixelsize and origin
 	recmd = "proc3d %s %s apix=%.3f origin=0,0,0"%(tmpf, tmpf, apix)
 	proc = subprocess.Popen(recmd, shell=True)
 	proc.wait()
@@ -139,7 +149,8 @@ def filterAndChimera(density, res=30, apix=None, box=None, chimtype='snapshot',
 		renderAnimation(tmpf, contour, zoom, sym, color, silhouette, name=density)
 	elif chimtype != 'animate':
 		renderSnapshots(tmpf, contour, zoom, sym, color, silhouette, name=density)
-	apFile.removeFile(tmpf)
+	if cleanup_tmp:
+		apFile.removeFile(tmpf)
 
 #=========================================
 #=========================================
