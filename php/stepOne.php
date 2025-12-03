@@ -187,8 +187,7 @@ function selectProcess($extra=false) {
 		$pdbfile = $uploadfile;
 	} elseif ($pdbid) {
 		$uploadfile = $uploaddir . $jobid . ".pdb.gz";
-		$pdburl =  "http://www.rcsb.org/pdb/cgi/export.cgi/"
-			.$pdbid.".pdb.gz?format=PDB&pdbId=".$pdbid."&compression=gz";
+		$pdburl =  "https://files.rcsb.org/download/".$pdbid.".pdb.gz";
 		$command = "wget '$pdburl' -O '$uploadfile'";
 		$command.=" > /var/www/html/3vee/output/running/shell-$jobid.log 2>&1";
  		$command.=" ;";
