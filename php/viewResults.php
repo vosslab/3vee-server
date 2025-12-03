@@ -83,24 +83,77 @@ function checkLogFile($logfile, $tail) {
 /*************************
 **************************
 *************************/
+function convertAnsiCodeToHtml($matches) {
+	global $ANSI_SPAN_OPEN;
+	$codes = explode(';', $matches[1]);
+	$reset = false;
+	$color = false;
+	foreach ($codes as $code) {
+		switch ($code) {
+			case '0':
+				$reset = true;
+				break;
+			case '30':
+				$color = 'black';
+				break;
+			case '31':
+				$color = 'red';
+				break;
+			case '32':
+				$color = 'green';
+				break;
+			case '33':
+				$color = 'yellow';
+				break;
+			case '34':
+				$color = 'blue';
+				break;
+			case '35':
+				$color = 'magenta';
+				break;
+			case '36':
+				$color = 'cyan';
+				break;
+			case '37':
+				$color = 'white';
+				break;
+		}
+	}
+	if ($color) {
+		$output = "";
+		if ($ANSI_SPAN_OPEN) {
+			$output .= "</span>";
+			$ANSI_SPAN_OPEN = false;
+		}
+		$output .= "<span class='ansi-color' style='color:$color'>";
+		$ANSI_SPAN_OPEN = true;
+		return $output;
+	}
+	if ($reset && $ANSI_SPAN_OPEN) {
+		$ANSI_SPAN_OPEN = false;
+		return "</span>";
+	}
+	return '';
+};
+
 function convertToColors($j) {
+	global $ANSI_SPAN_OPEN;
+	$ANSI_SPAN_OPEN = false;
+	$line = "";
+	$linelen = 0;
 	foreach ($j as $i) {
-		//$i = removebackspace($i);
 		$i = trim($i);
-		$i = preg_replace("/\033\[(1;)?31m/","<font style='color:red'>", $i);
-		$i = preg_replace("/\033\[(1;)?32m/","<font style='color:green'>", $i);
-		$i = preg_replace("/\033\[(1;)?33m/","<font style='color:yellow'>", $i);
-		$i = preg_replace("/\033\[(1;)?34m/","<font style='color:blue'>", $i);
-		$i = preg_replace("/\033\[(1;)?35m/","<font style='color:magenta'>", $i);
-		$i = preg_replace("/\033\[(1;)?36m/","<font style='color:cyan'>", $i);
-		$i = preg_replace("/\033\[(1;)?0m/","</font>", $i);
+		$i = preg_replace_callback("/\033\[([0-9;]+)m/", "convertAnsiCodeToHtml", $i);
 		$line .= "$i ";
-		// make sure line doesn't get too long:
 		$linelen = $linelen + strlen($i) + 1;
 		if ($linelen > 100) {
 			$linelen = 0;
 			$line .= "\n";
-		}		
+		}
+	}
+	if ($ANSI_SPAN_OPEN) {
+		$line .= "</span>";
+		$ANSI_SPAN_OPEN = false;
 	}
 	return $line;
 };
@@ -319,5 +372,3 @@ writeBottom();
 exit;
 
 ?>
-
-
