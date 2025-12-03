@@ -1,6 +1,6 @@
 # Preparing an x86_64 Podman Machine on macOS with QEMU
 
-Chimera, EMAN 1.9, and `threev-web`’s legacy binaries are amd64-only, so Apple Silicon hosts must run them inside an emulated x86_64 Podman VM. Podman on macOS uses QEMU under the hood; this document walks through the one-time preparation so that `podman build --arch amd64`, `./build_podman_image.sh`, and `podman compose up` all execute inside that emulated architecture.
+Chimera and `threev-web`’s native binaries are amd64-only, so Apple Silicon hosts must run them inside an emulated x86_64 Podman VM. Podman on macOS uses QEMU under the hood; this document walks through the one-time preparation so that `podman build --arch amd64`, `./build_podman_image.sh`, and `podman compose up` all execute inside that emulated architecture.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ podman machine init \
   --disk-size 40
 ```
 
-The defaults work, but bumping memory/disk gives the VM enough headroom for compiling `vossvolvox` and storing Chimera/EMAN assets. `--now` starts the VM immediately; omit it if you prefer to boot manually.
+The defaults work, but bumping memory/disk gives the VM enough headroom for compiling `vossvolvox` and storing Chimera assets. `--now` starts the VM immediately; omit it if you prefer to boot manually.
 
 2. Confirm the machine is running:
 
@@ -45,6 +45,16 @@ podman machine ssh
 ```
 
 Inside the VM you can install additional tooling or verify that `/usr/local/bin/qemu-x86_64` exists.
+
+4. Install QEMU user emulation inside the VM (one time):
+
+```bash
+podman machine ssh -- sudo rpm-ostree install qemu-user-static
+podman machine stop podman-machine-default
+podman machine start podman-machine-default
+```
+
+This adds the static QEMU binaries to the guest so binfmt registration can run for amd64 images. Restarting the machine applies the rpm-ostree change.
 
 ## 3. Verify x86_64 emulation
 
