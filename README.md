@@ -15,11 +15,8 @@ You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, 
 ```bash
 # from the repo root
 mkdir -p output                      # persist job artifacts on the host
-./docker/prefetch-assets.sh          # download Chimera installer once
 docker compose up --build            # or: podman compose up --build
 ```
-
-`./docker/prefetch-assets.sh` grabs the UCSF Chimera installer into `docker/` on the host so every Docker/Podman build can simply `COPY` it into the image. Rerun the script when you need a newer version; otherwise it’s a quick no-op check. The `build_podman_image.sh` helper runs it automatically before invoking `podman build`.
 
 When you want to rebuild the web image via Podman (e.g., on macOS where the VM is already running) there is also `build_podman_image.sh` in the repo root; it tears down the existing containers, starts MariaDB in the background, and builds/runs the `web` container while streaming logs to `logs/podman-compose-<timestamp>.log`. See [CONTAINER.md](CONTAINER.md) for the full Podman workflow, including VM setup and port-forwarding tips.
 
@@ -41,13 +38,13 @@ You can control how the web container connects to MariaDB via the following envi
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip the startup wait-for-DB loop |
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `maketables.py` on boot |
 
-Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible. On Apple Silicon (arm64) you still need the amd64-only Chimera build, so the provided `build_podman_image.sh` runs `podman build --arch amd64 -t threev-web:amd64 .` and passes that tag into Compose (`WEB_IMAGE_NAME`/`WEB_IMAGE_TAG` env vars) so `podman compose` simply runs the prebuilt amd64 image.
+Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible. On Apple Silicon (arm64) you may still choose to build `--arch amd64` for parity with production, but the stack is now pure Python for rendering and no longer depends on Chimera.
 
 The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
 
 ## macOS x86_64 Podman via QEMU
 
-Apple Silicon hosts need an x86_64-capable Podman VM to run Chimera inside `threev-web`. Install `podman`, `podman-compose`, and `qemu` via Homebrew, initialize a machine (`podman machine init --now --user-mode-networking`), and keep it running with `podman machine start podman-machine-default`. Builds such as `./build_podman_image.sh` already pass `--arch amd64`, so the VM just needs qemu-backed virtualization to execute the emulated architecture. For a full checklist on preparing that machine, see `MACOS_PODMAN_QEMU.md`.
+Apple Silicon hosts may still run amd64 containers for parity. Install `podman`, `podman-compose`, and `qemu` via Homebrew, initialize a machine (`podman machine init --now --user-mode-networking`), and keep it running with `podman machine start podman-machine-default`. Builds such as `./build_podman_image.sh` already pass `--arch amd64`, so the VM just needs qemu-backed virtualization to execute the emulated architecture. For a full checklist on preparing that machine, see `MACOS_PODMAN_QEMU.md`.
 
 ## Local Python tooling
 
@@ -59,6 +56,8 @@ pymysql
 scipy
 six
 DateTime
+scikit-image
+matplotlib
 ```
 
 ```bash
@@ -68,7 +67,7 @@ pip3 install -r requirements.txt
 
 The repo also provides lightweight defaults for the Python-side configs (`py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg`) so you can execute `tests/run_pyflakes.sh` and `tests/check.sh` without a real database. Feel free to replace those config stubs with your own credentials if you want to point at an actual MariaDB or instrument configuration.
 
-> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`). EMAN is no longer bundled or required; volume filtering now happens via pure Python (NumPy/SciPy).
+> **Note:** Rendering is now handled by pure Python tooling (NumPy/SciPy/scikit-image/matplotlib); Chimera and EMAN are no longer bundled or required.
 
 Useful build arguments:
 - `VOSSVOLVOX_REF` (default `master`) and `VOSSVOLVOX_REPO` to check out a specific vossvolvox branch/tag/fork.

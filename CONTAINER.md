@@ -5,7 +5,7 @@ This document captures every gory detail required to build, run, and hack on the
 ## 1. Repository Layout Recap
 ```
 3vee-server/
-├── Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + Chimera)
+├── Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + headless Python renderer)
 ├── docker-compose.yml      # Orchestrates the web + MariaDB services
 ├── docker/entrypoint.sh    # Web container bootstrap (DB wait, sinedon config, maketables)
 ├── output/                 # Recommended host bind mount (job artifacts/logs)
@@ -20,8 +20,8 @@ During the image build we automatically clone `https://github.com/vosslab/vossvo
 - Modern container runtime:
   - **Docker** Engine ≥ 24 *or*
   - **Podman** ≥ 4 with Compose plug-in (`podman compose`) and, on macOS/Windows, a Podman machine/VM.
-- CPU/RAM: ~2 GiB free RAM and ~5 GiB disk space (compiling `vossvolvox`, installing Chimera, MariaDB data volume).
-- Internet access (the build downloads Debian packages, UCSF Chimera, etc.).
+- CPU/RAM: ~2 GiB free RAM and ~5 GiB disk space (compiling `vossvolvox`, installing Python deps, MariaDB data volume).
+- Internet access (the build downloads Debian packages, Python deps, etc.).
 
 ### Podman specifics
 - On Linux, Podman can run rootless natively. On macOS/Windows, Podman spins up a VM; check with `podman machine ls`, start it via `podman machine start <name>` if it is stopped, and only run `podman machine init --now --user-mode-networking` when creating a new VM to ensure host ports forward into the guest.
