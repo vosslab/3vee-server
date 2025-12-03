@@ -333,11 +333,19 @@ def closeFunctionLog(functionname=None, logfile=None, msg=True, stats=None):
 	if functionname is not None:
 		out += " of "+functionname
 	out += "\n"
-	f=open(logfile,'a')
-	f.write(timestamp)
-	f.write(avgtimestr)
-	f.write(out)
-	f.close()
+	try:
+		f=open(logfile,'a')
+	except Exception:
+		return
+	try:
+		f.write(timestamp)
+		f.write(avgtimestr)
+		f.write(out)
+	finally:
+		try:
+			f.close()
+		except Exception:
+			pass
 
 #=====================
 def createDirectory(path, mode=0o775, warning=True):
