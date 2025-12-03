@@ -10,14 +10,16 @@ mkdir -p "$LOG_DIR"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 log_file="${LOG_DIR}/podman-compose-${timestamp}.log"
 
-ARCH="${ARCH:-amd64}"
+ARCH="${ARCH:-}"
 IMAGE_NAME="${IMAGE_NAME:-threev-web}"
-IMAGE_TAG="${IMAGE_TAG:-${ARCH}}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-./docker/prefetch-assets.sh
-
-echo "Building ${IMAGE_NAME}:${IMAGE_TAG} for architecture ${ARCH}"
-podman build --arch "${ARCH}" -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+echo "Building ${IMAGE_NAME}:${IMAGE_TAG} (ARCH=${ARCH:-native})"
+if [ -n "${ARCH}" ]; then
+  podman build --arch "${ARCH}" -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+else
+  podman build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+fi
 
 # Clean out old containers, keep DB data
 podman compose down
