@@ -2,8 +2,7 @@ FROM debian:trixie
 
 ENV DEBIAN_FRONTEND=noninteractive \
     APP_ROOT=/var/www/html/3vee \
-    CHIMERA=/opt/chimera \
-    EMANDIR=/usr/local/EMAN
+    CHIMERA=/opt/chimera
 
 ARG TARGETARCH
 
@@ -28,7 +27,6 @@ RUN ln -sf /etc/bash.bashrc /etc/bashrc
 
 # copy third-party installers that were fetched on the host
 COPY docker/chimera.bin /tmp/chimera.bin
-COPY docker/eman-linux-x86_64-cluster-1.9.tar.gz /tmp/eman.tar.gz
 
 # install UCSF Chimera (OSMesa build)
 RUN set -eux; \
@@ -42,43 +40,6 @@ RUN set -eux; \
       echo "Skipping Chimera install on ${TARGETARCH} (installer is amd64-only)"; \
     fi; \
     rm -rf /tmp/chimera.bin /tmp/chimera-installer
-
-# install EMAN 1.9 (prebuilt cluster build) - amd64 only
-RUN set -eux; \
-    if [ "${TARGETARCH}" = "amd64" ]; then \
-      tar -xzf /tmp/eman.tar.gz -C /tmp && \
-      if [ -d /tmp/EMAN ]; then \
-        mv /tmp/EMAN ${EMANDIR}; \
-      elif [ -d /tmp/eman1 ]; then \
-        mv /tmp/eman1 ${EMANDIR}; \
-      else \
-        echo "Unable to find extracted EMAN directory" >&2; \
-        exit 1; \
-      fi && \
-      cd ${EMANDIR} && \
-      SHELL=/bin/bash printf 'yes\n/bin/sh\n' | /bin/bash ./eman-installer && \
-      env LD_LIBRARY_PATH=${EMANDIR}/lib:${LD_LIBRARY_PATH:-} ${EMANDIR}/bin/proc3d --help >/dev/null 2>&1 || true; \
-    else \
-      echo "Skipping EMAN install on ${TARGETARCH} (archive is amd64-only)"; \
-      mkdir -p ${EMANDIR}; \
-    fi; \
-    rm -f /tmp/eman.tar.gz
-
-RUN set -eux; \
-    if [ "${TARGETARCH}" = "amd64" ]; then \
-      { \
-        echo 'export EMANDIR=/usr/local/EMAN'; \
-        echo 'export PATH=${EMANDIR}/bin:${PATH}'; \
-        echo 'export LD_LIBRARY_PATH=${EMANDIR}/lib:${LD_LIBRARY_PATH}'; \
-        echo 'export PYTHONPATH=${EMANDIR}/lib:${PYTHONPATH}'; \
-        echo 'if [ -f "${EMANDIR}/eman.bashrc" ]; then . "${EMANDIR}/eman.bashrc"; fi'; \
-      } > /etc/profile.d/eman.sh; \
-      chmod 644 /etc/profile.d/eman.sh; \
-    fi
-
-ENV PATH=${EMANDIR}/bin:${PATH} \
-    LD_LIBRARY_PATH=${EMANDIR}/lib:${LD_LIBRARY_PATH} \
-    PYTHONPATH=${EMANDIR}/lib:${PYTHONPATH}
 
 ARG VOSSVOLVOX_REPO=https://github.com/vosslab/vossvolvox.git
 ARG VOSSVOLVOX_REF=master
@@ -106,22 +67,9 @@ RUN make -C /tmp/vossvolvox/src CPU_FLAGS="-march=x86-64 -mtune=generic" all && 
     rm -rf /tmp/vossvolvox
 
 # Apache configuration
+COPY docker/3vee.conf /etc/apache2/sites-available/3vee.conf
 RUN set -eux; \
     a2dissite 000-default.conf; \
-    cat <<'EOF' > /etc/apache2/sites-available/3vee.conf
-<VirtualHost *:80>
-    DocumentRoot /var/www/html/3vee
-    <Directory /var/www/html/3vee>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    ErrorLog /var/log/apache2/3vee-error.log
-    CustomLog /var/log/apache2/3vee-access.log combined
-</VirtualHost>
-EOF
-
-RUN set -eux; \
     PHP_MOD=$(basename /etc/apache2/mods-available/php*.load .load); \
     a2ensite 3vee.conf; \
     a2enmod rewrite "${PHP_MOD}"; \
