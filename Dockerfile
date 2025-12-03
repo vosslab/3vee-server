@@ -24,6 +24,10 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
 # ensure scripts sourcing /etc/bashrc do not fail noisily
 RUN ln -sf /etc/bash.bashrc /etc/bashrc
 
+# matplotlib cache dir (writable for headless rendering)
+ENV MPLCONFIGDIR=/tmp/matplotlib-cache
+RUN mkdir -p ${MPLCONFIGDIR} && chmod 777 ${MPLCONFIGDIR}
+
 ARG VOSSVOLVOX_REPO=https://github.com/vosslab/vossvolvox.git
 ARG VOSSVOLVOX_REF=master
 RUN git clone --depth 1 --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossvolvox
