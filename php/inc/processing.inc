@@ -106,6 +106,7 @@ function writeTop($title, $heading=false, $javascript=false, $extra=false, $popu
 	echo "<link rel='stylesheet' type='text/css' href='css/viewer.css'> \n";
 	//echo "<link rel='stylesheet' type='text/css' href='css/view.css'> \n";
 	echo "<link rel='stylesheet' type='text/css' href='css/proc.css'> \n";
+	echo "<script type='text/javascript' src='js/lvmenu.js'></script>\n";
 	echo "$javascript\n";
 	// google analytics
 	echo "

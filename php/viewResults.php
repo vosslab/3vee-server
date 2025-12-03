@@ -279,7 +279,7 @@ function preLog() {
 	echo "<h2>Job Id, '<i>$jobid</i>' was not found or has not started yet</h2>";
 	echo "<h4>Sometime it can take a few seconds to start</h4> ";
 	echo "<h4>Check these log files and email Neil "
-		."&lt;<i>vossman77 [at] gmail [dot] com</i>&gt;, if there is a problem</h4>";
+		."&lt;<i>vossman77 [at] Yahoo! [dot] com</i>&gt;, if there is a problem</h4>";
 	echo "<ul>\n";
 	if (file_exists($PROCDIR."output/$jobdir/shell-$jobid.log"))
 		echo "  <li>Shell log: <font size='-1'><a href='output/$jobdir/shell-$jobid.log'>"
