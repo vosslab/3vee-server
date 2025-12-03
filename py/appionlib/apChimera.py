@@ -170,8 +170,8 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 
 #=========================================
 #=========================================
-def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None, 
-		silhouette=True, xvfb=False, pdb=None, name=None):
+def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
+		silhouette=True, xvfb=False, pdb=None, name=None, print3d=False):
 	"""
 	create a few snapshots for viewing on the web
 	"""
@@ -203,6 +203,10 @@ def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 		os.environ['CHIMZOOM'] = str(zoom)
 	if pdb is not None:
 		os.environ['CHIMPDBFILE'] = pdb
+	if print3d:
+		os.environ['CHIMPRINT3D'] = "print3d"
+	elif 'CHIMPRINT3D' in os.environ:
+		os.environ.pop('CHIMPRINT3D', None)
 	os.environ['CHIMIMGSIZE'] = "1024"
 	### unused
 	#'CHIMBACK',  'CHIMIMGSIZE', 'CHIMIMGFORMAT', 'CHIMFILEFORMAT',

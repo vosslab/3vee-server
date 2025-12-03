@@ -32,7 +32,8 @@ try:
 	from _surface import SurfaceModel, connected_pieces
 	from chimera import openModels
 	from MeasureVolume import enclosed_volume
-	import ScaleBar.session
+import ScaleBar.session
+from chimera import exports
 except ImportError:
 	print("Failed to import chimera modules")
 	pass
@@ -49,7 +50,10 @@ class ChimSnapShots(object):
 		chimera.viewer.windowSize = self.imgsize
 		self.openPDBData()
 		self.openVolumeData()
-		self.saveOBJfile()
+		if self.print3d:
+			self.saveX3Dscene()
+		else:
+			self.saveOBJfile()
 		### select proper function
 		if self.type == 'animate':
 			if self.symmetry[:4] == 'icos':
@@ -103,11 +107,25 @@ class ChimSnapShots(object):
 		self.writeMessageToLog("Saving OBJ file: %s"%(self.objfilename))
 		chimcmd = "export format OBJ %s"%(self.objfilename)
 		self.runChimCommand(chimcmd)
-		if os.path.isfile(self.objfilename):
+		if os.path.isfile(self.objfilename) and os.stat(self.objfilename)[6] > 0:
 			self.writeMessageToLog("Saved OBJ file: %s"%(self.objfilename))
 			self.convertOBJfile(self.objfilename)
 		else:
 			self.writeMessageToLog("Failed to write OBJ file: %s"%(self.objfilename))
+
+	# -----------------------------------------------------------------------------
+	def saveX3Dscene(self):
+		"""
+		save X3D file for 3D printer use
+		"""
+		self.x3dfilename = os.path.splitext(self.volumepath)[0]+".x3d"
+		self.writeMessageToLog("Saving X3D file: %s"%(self.x3dfilename))
+		exports.doExportCommand('X3D', self.x3dfilename)
+		if os.path.isfile(self.x3dfilename) and os.stat(self.x3dfilename)[6] > 0:
+			size = os.stat(self.x3dfilename)[6]
+			self.writeMessageToLog("Saved X3D file: %s (size %d bytes)"%(self.x3dfilename, size))
+		else:
+			self.writeMessageToLog("Failed to write X3D file: %s"%(self.x3dfilename))
 
 	# -----------------------------------------------------------------------------
 	def convertOBJfile(self, objfile):
@@ -832,6 +850,7 @@ class ChimSnapShots(object):
 			self.tmpfilepath = self.volumepath
 		### PDB structure
 		self.pdbfilepath = os.environ.get('CHIMPDBFILE')
+		self.print3d = os.environ.get('CHIMPRINT3D')
 		### High resolution rendering
 		voxellimit = os.environ.get('CHIMVOXELLIMIT')
 		if voxellimit is not None and bool(voxellimit) is True:
