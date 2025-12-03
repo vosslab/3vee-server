@@ -36,8 +36,8 @@ def main():
 	# Load volume
 	vol = mrc.read(str(mrc_path)).astype(numpy.float32)
 
-	tmpdir = Path(tempfile.mkdtemp(prefix="render_smoke_"))
-	basename = tmpdir / "rendered"
+	out_dir = Path(__file__).resolve().parent
+	basename = out_dir / "rendered"
 
 	verts, faces = apVolumeRender.extract_mesh(vol, level=None, spacing=(1.0, 1.0, 1.0))
 	apVolumeRender.render_png_views(verts, faces, str(basename), imgsize=256)
@@ -50,7 +50,7 @@ def main():
 	assert_nonempty(basename.with_suffix(".animate.gif"), "animation")
 	assert_nonempty(basename.with_suffix(".stl"), "stl")
 
-	print(f"Headless render smoke test passed. Outputs in {tmpdir}")
+	print(f"Headless render smoke test passed. Outputs in {out_dir}")
 	return 0
 
 

@@ -5,14 +5,13 @@ Uses scikit-image marching cubes + matplotlib (Agg) for snapshots/animations,
 and a tiny STL writer for 3D-print exports.
 """
 
-import math
-import tempfile
 from pathlib import Path
 
 import numpy
 from PIL import Image
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from matplotlib import colors as mcolors
 from matplotlib import use as mpl_use
 from skimage import measure
 
@@ -65,32 +64,40 @@ def export_stl(verts, faces, out_path):
 
 
 def _cylindrical_colors(verts):
-	theta = numpy.arctan2(verts[:, 1], verts[:, 0])
-	val = (theta + math.pi) / (2.0 * math.pi)
-	return val
+	radius = numpy.sqrt(verts[:, 0] ** 2 + verts[:, 1] ** 2)
+	max_r = float(radius.max())
+	if max_r == 0:
+		return numpy.zeros_like(radius)
+	return radius / max_r
+
+
+def _face_colors(verts, faces, scalar_field, cmap):
+	norm = mcolors.Normalize(vmin=float(scalar_field.min()), vmax=float(scalar_field.max()))
+	per_face = scalar_field[faces].mean(axis=1)
+	return cmap(norm(per_face))
 
 
 def _render_view(ax, verts, faces, elev, azim, cmap):
 	colors = _cylindrical_colors(verts)
+	face_colors = _face_colors(verts, faces, colors, cmap)
 	tri = ax.plot_trisurf(
 		verts[:, 0],
 		verts[:, 1],
-		faces,
 		verts[:, 2],
-		shade=True,
+		triangles=faces,
+		shade=False,
 		linewidth=0.0,
 		antialiased=True,
-		cmap=cmap,
 	)
-	tri.set_array(colors)
+	tri.set_facecolors(face_colors)
 	ax.view_init(elev=elev, azim=azim)
 	ax.set_axis_off()
 	ax.set_box_aspect([1, 1, 1])
 
 
-def render_png_views(verts, faces, basename, imgsize=1024):
+def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis"):
 	out_base = Path(basename)
-	cmap = cm.get_cmap("viridis")
+	cmap = cm.get_cmap(cmap_name)
 	views = [(0, 0, 1), (0, 90, 2), (90, 0, 3)]
 	for elev, azim, idx in views:
 		fig = plt.figure(figsize=(imgsize / 100.0, imgsize / 100.0), dpi=100)
@@ -100,22 +107,23 @@ def render_png_views(verts, faces, basename, imgsize=1024):
 		plt.close(fig)
 
 
-def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=30.0):
-	tmp_dir = Path(tempfile.mkdtemp(prefix="render_frames_"))
-	cmap = cm.get_cmap("viridis")
+def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=30.0, cmap_name="viridis"):
+	out_base = Path(basename)
+	tmp_dir = out_base.parent
+	cmap = cm.get_cmap(cmap_name)
 	frames = []
 	fig = plt.figure(figsize=(imgsize / 100.0, imgsize / 100.0), dpi=100)
 	ax = fig.add_subplot(111, projection="3d")
 	for i in range(n_frames):
 		ax.clear()
 		_render_view(ax, verts, faces, elev, azim=(360.0 / n_frames) * i, cmap=cmap)
-		frame_path = tmp_dir / f"frame_{i:03d}.png"
+		frame_path = tmp_dir / f"{out_base.name}.frame_{i:03d}.png"
 		fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
 		frames.append(Image.open(frame_path))
 	plt.close(fig)
 
 	if frames:
-		out_gif = Path(basename).with_suffix(".animate.gif")
+		out_gif = out_base.with_suffix(".animate.gif")
 		frames[0].save(
 			out_gif,
 			save_all=True,
