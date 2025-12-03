@@ -14,7 +14,6 @@ import numpy
 import random
 import shutil
 import locale
-import builtins
 import subprocess
 import shlex
 from scipy import ndimage
@@ -798,31 +797,54 @@ class ThreeVLib(object):
 
 		### create images
 		link = re.sub("/var/www/html/3vee/output", self.output_url, filename)
-		self.writeToRunningLog("imaging volume <a href='"+link+"'>(download mrc)</a> "
-			+"with <a href='http://www.cgl.ucsf.edu/chimera/'>UCSF Chimera</a>")
-		#self.writeToRunningLog("volume name: %s PDB name: %s"%(tempfile, pdbfile))
-		apChimera.renderSnapshots(tempfile, contour=contour, zoom=zoom, sym=sym, 
-			silhouette=False, pdb=pdbfile, name=filename, print3d=print3d)
+		self.writeToRunningLog("imaging volume <a href='"+link+"'>(download mrc)</a> with headless renderer")
+		try:
+			mrc_size_mb = os.path.getsize(tempfile) / (1024.0 * 1024.0)
+			vol_header = mrc.readHeaderFromFile(tempfile)
+			dims = (vol_header.get('nx'), vol_header.get('ny'), vol_header.get('nz'))
+			self.writeToRunningLog(f"volume shape {dims} size {mrc_size_mb:.2f} MB")
+		except Exception as exc:
+			self.writeToRunningLog(f"could not read volume metadata: {exc}", type="Star")
+
+		apChimera.renderSnapshots(
+			tempfile,
+			contour=contour,
+			zoom=zoom,
+			sym=sym,
+			silhouette=False,
+			pdb=pdbfile,
+			name=filename,
+			print3d=print3d,
+		)
 		if "temp" in tempfile:
 			apFile.removeFile(tempfile)
 
 		objfile = (os.path.splitext(filename)[0])+".obj"
 		if os.path.isfile(objfile):
-			self.writeToRunningLog("UCSF Chimera created Jmol compatible file")
+			self.writeToRunningLog("Renderer created Jmol compatible file")
 			objfile = self.gzipFile(objfile)
 		else:
 			objfile = None
 
 		x3dfile = (os.path.splitext(filename)[0])+".x3d"
 		if os.path.isfile(x3dfile):
-			self.writeToRunningLog("UCSF Chimera created 3D printing compatible file")
+			self.writeToRunningLog("Renderer created 3D printing compatible file")
 			objfile = x3dfile
 			
 		### look for files
-		pngfiles = glob.glob(filename+"*.png")
+		pngbase = os.path.splitext(filename)[0]
+		pngfiles = glob.glob(pngbase+".*.png")
 		if not len(pngfiles) > 0:
-			self.writeToRunningLog("UCSF Chimera failed to create images, no files", type="Cross")
+			self.writeToRunningLog("Renderer failed to create images, no files", type="Cross")
 			return None, objfile
+		else:
+			png_info = []
+			for pf in pngfiles:
+				try:
+					png_info.append(f"{os.path.basename(pf)} ({os.path.getsize(pf)/1024.0:.1f} KB)")
+				except OSError:
+					png_info.append(os.path.basename(pf))
+			self.writeToRunningLog("png outputs: " + ", ".join(sorted(png_info)))
 
 		### trim pngs
 		if trim is True:
@@ -831,7 +853,7 @@ class ThreeVLib(object):
 				trimcmd = "mogrify -trim "+pngfile
 				self.runCommand(trimcmd, verbose=False)
 
-		self.writeToRunningLog("UCSF Chimera completed in %s"%(apDisplay.timeString(time.time()-t0)))
+		self.writeToRunningLog("Rendering completed in %s"%(apDisplay.timeString(time.time()-t0)))
 
 		return pngfiles, objfile
 
@@ -902,7 +924,7 @@ class ThreeVLib(object):
 		try:
 			if logdir and not os.path.isdir(logdir):
 				os.makedirs(logdir, exist_ok=True)
-			with builtins.open(self.runlogfile, "a") as f:
+			with open(self.runlogfile, "a") as f:
 				f.write("<li class='"+type+"'>\n")
 				f.write(str(msg)+"\n")
 				f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
