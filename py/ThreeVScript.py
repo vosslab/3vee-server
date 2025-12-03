@@ -52,7 +52,7 @@ class ThreeVScript(object):
 
 		### any custom init functions go here
 		self.onInit()
-		self.website = os.path.join("output/", self.jobdir)+"/"
+		self.website = "/" + os.path.join("output", self.jobdir) + "/"
 
 		### get pdb
 		if not self.params['pdbfile']:
