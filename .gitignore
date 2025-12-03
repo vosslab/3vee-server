@@ -176,3 +176,4 @@ cython_debug/
 # Docker / runtime output
 output/
 docker/chimera.bin
+docker/eman-linux_x86_64-cluster-1.9_stripped.tar.gz
