@@ -58,6 +58,7 @@ six
 DateTime
 scikit-image
 matplotlib
+Pillow
 ```
 
 ```bash
