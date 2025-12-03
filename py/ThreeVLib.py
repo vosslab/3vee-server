@@ -14,6 +14,7 @@ import numpy
 import random
 import shutil
 import locale
+import builtins
 import subprocess
 import shlex
 from scipy import ndimage
@@ -49,6 +50,11 @@ class ThreeVLib(object):
 		os.chdir(self.rundir)
 		self.runlogfile = os.path.join(self.procdir, "output", self.jobdir ,"runlog-"+self.jobid+".html")
 		self.pdbid = None
+		self._proc3d_path = shutil.which("proc3d")
+		if not self._proc3d_path:
+			apDisplay.printError(
+				"proc3d was not found in PATH. EMAN1 is now required; ensure EMANDIR/bin is installed and exported."
+			)
 
 	#====================
 	def runCommand(self, cmd, verbose=False, showcmd=True, source=True):
@@ -61,13 +67,19 @@ class ThreeVLib(object):
 		if showcmd is True:
 			sys.stderr.write(apDisplay.colorString("COMMAND: ","magenta")+cmd+"\n")
 		t0 = time.time()
+		shell_executable = None
+		popen_kwargs = {}
+		popen_kwargs = {}
 		if source is True:
 			cmd = "source /etc/bashrc; "+cmd
+			popen_kwargs["executable"] = "/bin/bash"
+			popen_kwargs["env"] = os.environ.copy()
+			popen_kwargs["env"]["BASH_ENV"] = "/etc/bashrc"
 		try:
 			if verbose is False:
-				proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_kwargs)
 			else:
-				proc = subprocess.Popen(cmd, shell=True)
+				proc = subprocess.Popen(cmd, shell=True, **popen_kwargs)
 			if verbose is True:
 				proc.wait()
 			else:
@@ -846,17 +858,22 @@ class ThreeVLib(object):
 	#====================
 	def writeToRunningLog(self, msg, type="Check"):
 		print("Message: ", msg)
-		f = open(self.runlogfile, "a")
-		f.write("<li class='"+type+"'>\n")
-		f.write(str(msg)+"\n")
-		f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
-		f.write("</li>\n")
-		f.close()
+		logdir = os.path.dirname(self.runlogfile)
+		try:
+			if logdir and not os.path.isdir(logdir):
+				os.makedirs(logdir, exist_ok=True)
+			with builtins.open(self.runlogfile, "a") as f:
+				f.write("<li class='"+type+"'>\n")
+				f.write(str(msg)+"\n")
+				f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
+				f.write("</li>\n")
+		except OSError as exc:
+			sys.stderr.write(f"Failed to write running log: {exc}\n")
 
 	#====================
 	def thousands(self, num):
 		locale.setlocale(locale.LC_ALL, "")
-		return locale.format('%d', num, True)
+		return locale.format_string('%d', num, grouping=True)
 
 	#====================
 	def docpop(self, key, text):
