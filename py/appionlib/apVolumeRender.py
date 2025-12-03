@@ -103,7 +103,8 @@ def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis"):
 		fig = plt.figure(figsize=(imgsize / 100.0, imgsize / 100.0), dpi=100)
 		ax = fig.add_subplot(111, projection="3d")
 		_render_view(ax, verts, faces, elev, azim, cmap)
-		fig.savefig(out_base.with_suffix(f".{idx}.png"), bbox_inches="tight", pad_inches=0)
+		out_path = f"{out_base}.{idx}.png"
+		fig.savefig(out_path, bbox_inches="tight", pad_inches=0)
 		plt.close(fig)
 
 
