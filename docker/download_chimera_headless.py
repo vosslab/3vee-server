@@ -2,7 +2,6 @@
 """Download the UCSF Chimera installer by accepting the license form headlessly."""
 
 import argparse
-import os
 import sys
 import urllib.parse
 import urllib.request
@@ -10,8 +9,6 @@ import urllib.error
 import http.cookiejar
 import re
 import html
-import hashlib
-import shutil
 from pathlib import Path
 from http.client import HTTPMessage
 
@@ -118,28 +115,15 @@ def extract_redirect(html_text):
     return chosen
 
 
-def resolve_cache_path(cache_dir, file_param):
-    cache_root = Path(cache_dir).expanduser()
-    cache_root.mkdir(parents=True, exist_ok=True)
-    basename = os.path.basename(file_param) or "chimera-installer.bin"
-    digest = hashlib.sha256(file_param.encode("utf-8")).hexdigest()[:12]
-    filename = f"{basename}.{digest}"
-    return cache_root / filename
-
-
-def copy_file(src, dest):
-    shutil.copyfile(src, dest)
-
-
-def download_installer(file_param, output_path, user_agent, cache_dir):
+def download_installer(file_param, output_path, user_agent, force):
+    destination = Path(output_path).expanduser()
+    if destination.is_file() and destination.stat().st_size > 0 and not force:
+        print(
+            f"[download_chimera] existing installer found at {destination}, skipping"
+        )
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
     opener = build_opener(user_agent)
-    cache_path = None
-    if cache_dir:
-        cache_path = resolve_cache_path(cache_dir, file_param)
-        if cache_path.is_file() and cache_path.stat().st_size > 0:
-            print(f"[download_chimera] using cached installer {cache_path}")
-            copy_file(cache_path, output_path)
-            return
 
     # Load license page to establish cookies/session
     http_request(opener, f"{CHIMERA_FORM_URL}?{urllib.parse.urlencode({'file': file_param})}")
@@ -159,13 +143,9 @@ def download_installer(file_param, output_path, user_agent, cache_dir):
     )
 
     binary = http_request(opener, download_url)
-    with open(output_path, "wb") as outfile:
+    with destination.open("wb") as outfile:
         outfile.write(binary)
-    print(f"[download_chimera] wrote {len(binary)} bytes to {output_path}")
-
-    if cache_path:
-        copy_file(output_path, cache_path)
-        print(f"[download_chimera] cached installer at {cache_path}")
+    print(f"[download_chimera] wrote {len(binary)} bytes to {destination}")
 
 
 def parse_args(argv):
@@ -186,9 +166,9 @@ def parse_args(argv):
         help="Override the User-Agent header sent to cgl.ucsf.edu",
     )
     parser.add_argument(
-        "--cache-dir",
-        default=os.environ.get("CHIMERA_CACHE_DIR"),
-        help="Directory to reuse previously downloaded installers",
+        "--force",
+        action="store_true",
+        help="Always download a fresh copy even if the output file exists",
     )
     return parser.parse_args(argv)
 
@@ -196,7 +176,7 @@ def parse_args(argv):
 def main(argv=None):
     args = parse_args(argv or sys.argv[1:])
     try:
-        download_installer(args.file, args.output, args.user_agent, args.cache_dir)
+        download_installer(args.file, args.output, args.user_agent, args.force)
     except Exception as exc:  # pylint: disable=broad-except
         print(f"Failed to download Chimera installer: {exc}", file=sys.stderr)
         return 1
