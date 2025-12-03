@@ -229,7 +229,10 @@ def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 	"""
 	if isValidVolume(density) is False:
 		apDisplay.printError("Volume file is not valid")
-	basename = name or density
+	if name is not None:
+		basename = name
+	else:
+		basename = os.path.splitext(density)[0]
 	vol = mrc.read(density).astype(numpy.float32)
 	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
 	apVolumeRender.render_png_views(verts, faces, basename, imgsize=512)
