@@ -1,0 +1,9 @@
+# Reduce build context size and speed up COPY layers
+3vee-server-orig/
+jmol-16.3.37/
+leginon/
+output/
+logs/
+# VCS / metadata
+.git
+.gitignore
