@@ -38,8 +38,8 @@ ENV PYTHONPATH=${APP_ROOT}/py:${PYTHONPATH}
 
 RUN pip3 install --break-system-packages --no-cache-dir -r py/requirements.txt
 
-# build vossvolvox binaries and install helper data (force portable CPU flags via make override)
-RUN make -C /tmp/vossvolvox/src CPU_FLAGS="-march=x86-64 -mtune=generic" all && \
+# build vossvolvox binaries and install helper data (portable CPU flags)
+RUN make -C /tmp/vossvolvox/src CPU_FLAGS="-mtune=generic" all && \
     mkdir -p ${APP_ROOT}/bin ${APP_ROOT}/dat ${APP_ROOT}/sh ${APP_ROOT}/output && \
     cp -a /tmp/vossvolvox/bin/. ${APP_ROOT}/bin/ && \
     cp /tmp/vossvolvox/mapman/lx_mapman ${APP_ROOT}/bin/mapman_linux.exe && \
