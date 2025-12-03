@@ -59,7 +59,11 @@ function showRecentRuns($progname=false, $count=3) {
 			$runparams = $threevdata->getRunParams($runid);
 			//print_r($runparams);
 			//print $rundata['path'];
-			$pngfiles = glob($rundata['path']."/*.png");
+			$pngdir = $rundata['path'];
+			if ($pngdir && substr($pngdir, 0, 1) != '/') {
+				$pngdir = $GLOBALS['PROCDIR'].$pngdir;
+			}
+			$pngfiles = glob($pngdir."/*.png");
 			if (!$pngfiles)
 				continue;
 			$runcount++;
@@ -75,7 +79,7 @@ function showRecentRuns($progname=false, $count=3) {
 				$pngcount ++;
 				if ($pngcount > 3)
 					break;
-				$pngurl = ereg_replace('.*output/', 'output/', $pngfile);
+				$pngurl = preg_replace('#^.*?/output/#', '/output/', $pngfile);
 				echo "<a href='$pngurl'>\n";
 				echo "  <img src='$pngurl' height='80'>\n";
 				echo "</a>\n";
