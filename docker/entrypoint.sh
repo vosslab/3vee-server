@@ -1,5 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+set -euxo pipefail
+
+echo "[entrypoint] starting 3vee entrypoint"
 
 APP_ROOT="/var/www/html/3vee"
 PY_ROOT="${APP_ROOT}/py"
@@ -15,6 +17,7 @@ PYTHONPATH="${PY_ROOT}:${PYTHONPATH:-}"
 export PYTHONPATH
 
 update_sinedon_config() {
+	echo "[entrypoint] updating sinedon.cfg"
 	python3 <<'PYCODE'
 import os
 import configparser
@@ -47,6 +50,7 @@ PYCODE
 }
 
 wait_for_db() {
+	echo "[entrypoint] waiting for db"
   if [[ "${THREEV_SKIP_DB_WAIT:-0}" == "1" ]]; then
     echo "THREEV_SKIP_DB_WAIT=1, skipping DB wait"
     return 0
@@ -77,6 +81,7 @@ wait_for_db() {
 }
 
 bootstrap_db() {
+	echo "[entrypoint] bootstrap db tables (THREEV_SKIP_DB_INIT=${THREEV_SKIP_DB_INIT:-0})"
 	if [[ "${THREEV_SKIP_DB_INIT}" == "1" ]]; then
 		return
 	fi
@@ -87,6 +92,7 @@ bootstrap_db() {
 }
 
 prepare_fs() {
+	echo "[entrypoint] preparing filesystem"
 	mkdir -p "${APP_ROOT}/output"
 	chown -R www-data:www-data "${APP_ROOT}/output"
 	mkdir -p /run/apache2
@@ -98,4 +104,5 @@ wait_for_db
 bootstrap_db
 prepare_fs
 
+echo "[entrypoint] exec apache"
 exec /usr/sbin/apache2ctl -D FOREGROUND
