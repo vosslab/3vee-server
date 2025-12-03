@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${REPO_ROOT}"
+
 LOG_DIR="${LOG_DIR:-logs}"
 mkdir -p "$LOG_DIR"
 
@@ -10,6 +13,8 @@ log_file="${LOG_DIR}/podman-compose-${timestamp}.log"
 ARCH="${ARCH:-amd64}"
 IMAGE_NAME="${IMAGE_NAME:-threev-web}"
 IMAGE_TAG="${IMAGE_TAG:-${ARCH}}"
+
+./docker/prefetch-assets.sh
 
 echo "Building ${IMAGE_NAME}:${IMAGE_TAG} for architecture ${ARCH}"
 podman build --arch "${ARCH}" -t "${IMAGE_NAME}:${IMAGE_TAG}" .
