@@ -126,10 +126,11 @@ class ThreeVLib(object):
 		### download the file
 		if os.path.isfile(pdbfile+".gz"):
 			os.remove(pdbfile+".gz")
+		rcsb_base = "https://files.rcsb.org/download/%s"%(pdbid.upper())
 		if biounit is True:
-			self.pdburl = "http://www.rcsb.org/pdb/files/%s.pdb1.gz"%(pdbid.upper())
+			self.pdburl = rcsb_base + ".pdb1.gz"
 		else:
-			self.pdburl = "http://www.rcsb.org/pdb/files/%s.pdb.gz"%(pdbid.upper())
+			self.pdburl = rcsb_base + ".pdb.gz"
 		wgetcmd = "wget '"+self.pdburl+"' -O "+pdbfile+".gz"
 		self.runCommand(wgetcmd, verbose=True)
 		if not os.path.isfile(pdbfile+".gz") or self.fileSize(pdbfile+".gz") < 10:
@@ -138,7 +139,7 @@ class ThreeVLib(object):
 				sys.exit(1)
 			self.runCommand("rm -f "+pdbfile+".gz", verbose=False)
 			self.writeToRunningLog("trying download pdb id again without bio unit")
-			self.pdburl = "http://www.rcsb.org/pdb/files/%s.pdb.gz"%(pdbid.upper())
+			self.pdburl = rcsb_base + ".pdb.gz"
 			wgetcmd = "wget '"+self.pdburl+"' -O "+pdbfile+".gz"
 			self.runCommand(wgetcmd, verbose=True)
 			if not os.path.isfile(pdbfile+".gz") or self.fileSize(pdbfile+".gz") < 10:
