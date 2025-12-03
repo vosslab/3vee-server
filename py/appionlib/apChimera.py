@@ -5,11 +5,9 @@
 import os
 import math
 import time
-import glob
 import numpy
 import random
 import colorsys
-import subprocess
 from scipy import ndimage
 from PIL import Image
 #appion
@@ -17,6 +15,7 @@ from appionlib import apFile
 from appionlib import apParam
 from appionlib import apDisplay
 from pyami import mrc
+from appionlib import apVolumeRender
 
 satvalue = 0.9
 hsvalue = 0.5
@@ -226,148 +225,37 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 		silhouette=True, xvfb=False, pdb=None, name=None, print3d=False):
 	"""
-	create a few snapshots for viewing on the web
+	create a few snapshots for viewing on the web (headless)
 	"""
 	if isValidVolume(density) is False:
 		apDisplay.printError("Volume file is not valid")
-	### setup chimera params
-	if name is None:
-		os.environ['CHIMVOL'] = density
-	else:
-		### set chimera to use temp volume
-		os.environ['CHIMTEMPVOL'] = density
-		os.environ['CHIMVOL'] = name
-	os.environ['CHIMTYPE'] = 'snapshot'
-	if silhouette is True:
-		os.environ['CHIMSILHOUETTE'] = 'true'
-	else:
-		os.unsetenv('CHIMSILHOUETTE')
-	if sym is not None:
-		os.environ['CHIMSYM'] = sym
-	if contour is not None:
-		os.environ['CHIMCONTOUR'] = str(contour)
-	if color is not None:
-		colorstr = colorToString(color)
-		os.environ['CHIMCOLORS'] = colorstr
-	else:
-		colorstr = getColorString()
-		os.environ['CHIMCOLORS'] = colorstr
-	if zoom is not None:
-		os.environ['CHIMZOOM'] = str(zoom)
-	if pdb is not None:
-		os.environ['CHIMPDBFILE'] = pdb
+	basename = name or density
+	vol = mrc.read(density).astype(numpy.float32)
+	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
+	apVolumeRender.render_png_views(verts, faces, basename, imgsize=512)
 	if print3d:
-		os.environ['CHIMPRINT3D'] = "print3d"
-	elif 'CHIMPRINT3D' in os.environ:
-		os.environ.pop('CHIMPRINT3D', None)
-	os.environ['CHIMIMGSIZE'] = "1024"
-	### unused
-	#'CHIMBACK',  'CHIMIMGSIZE', 'CHIMIMGFORMAT', 'CHIMFILEFORMAT',
-	chimsnappath = getSnapPath()
-	apDisplay.printColor("running Chimera Snapshot for sym "+str(sym), "cyan")
-	runChimeraScript(chimsnappath, xvfb=xvfb)
-
-	image1 = os.environ['CHIMVOL']+".1.png"
-	if not os.path.isfile(image1):
-		apDisplay.printWarning("Chimera failed to generate images")
-		runChimeraScript(chimsnappath, xvfb=xvfb)
-
-	if not os.path.isfile(image1):
-		apDisplay.printWarning("Chimera failed to generate images, twice")
-
-	return
+		apVolumeRender.export_stl(verts, faces, basename + ".stl")
+	return basename
 
 #=========================================
 #=========================================
 def renderAnimation(density, contour=None, zoom=1.0, sym=None, color=None,
 		silhouette=False, xvfb=False, name=None):
 	"""
-	create several snapshots and merge into animated GIF
+	create several snapshots and merge into animated GIF (headless)
 	"""
 	if isValidVolume(density) is False:
 		apDisplay.printError("Volume file is not valid")
-	### setup chimera params
-	if name is None:
-		os.environ['CHIMVOL'] = density
-	else:
-		### set chimera to use temp volume
-		os.environ['CHIMTEMPVOL'] = density
-		os.environ['CHIMVOL'] = name
-	os.environ['CHIMTYPE'] = 'animate'
-	if silhouette is True:
-		os.environ['CHIMSILHOUETTE'] = 'true'
-	else:
-		os.unsetenv('CHIMSILHOUETTE')
-	if sym is not None:
-		os.environ['CHIMSYM'] = sym
-	if contour is not None:
-		os.environ['CHIMCONTOUR'] = str(contour)
-	if color is not None:
-		colorstr = colorToString(color)
-		os.environ['CHIMCOLORS'] = colorstr
-	else:
-		colorstr = getColorString()
-		os.environ['CHIMCOLORS'] = colorstr
-	if zoom is not None:
-		os.environ['CHIMZOOM'] = str(zoom)
-	os.environ['CHIMIMGSIZE'] = "512"
-	### unused
-	#'CHIMBACK',  'CHIMIMGSIZE', 'CHIMIMGFORMAT', 'CHIMFILEFORMAT',
-	chimsnappath = getSnapPath()
-	apDisplay.printColor("running Chimera Animation for sym "+str(sym), "cyan")
-	runChimeraScript(chimsnappath, xvfb=xvfb)
-	image1 = os.environ['CHIMVOL']+".001.png"
-
-	if os.path.isfile(image1):
-		### merge into animated GIF
-		finalgif = density+".animate.gif"
-		imagemagickcmd1 = "convert -delay 10 -loop 15 "
-		images = glob.glob(density+".*[0-9][0-9].png")
-		images.sort()
-		imagestr = ""
-		for image in images:
-			imagestr += image+" "
-		imagemagickcmd1 += imagestr+finalgif
-		apFile.removeFile(finalgif)
-		proc = subprocess.Popen(imagemagickcmd1, shell=True)
-		proc.wait()
-		#if os.path.isfile(finalgif):
-		apFile.removeFilePattern(density+".*[0-9][0-9].png")
-	return
+	basename = name or density
+	vol = mrc.read(density).astype(numpy.float32)
+	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
+	apVolumeRender.render_animation_gif(verts, faces, basename, imgsize=512)
+	return basename
 
 #=========================================
 #=========================================
 def runChimeraScript(chimscript, xvfb=False):
-	if not chimscript or not os.path.isfile(chimscript):
-		print(chimscript)
-		apDisplay.printError("Could not find file: apChimSnapshot.py")
-	#apDisplay.printColor("Trying to use chimera for model imaging","cyan")
-	if xvfb is True:
-		port = apParam.resetVirtualFrameBuffer()
-		time.sleep(1)
-	if 'CHIMERA' in os.environ and os.path.isdir(os.environ['CHIMERA']):
-		chimpath = os.environ['CHIMERA']
-		os.environ['CHIMERA'] = chimpath
-		os.environ['CHIMERAPATH'] = os.path.join(chimpath,"share")
-		os.environ['LD_LIBRARY_PATH'] = os.path.join(chimpath,"lib")+":"+os.environ['LD_LIBRARY_PATH']
-		chimexe = os.path.join(chimpath,"bin/chimera")
-		if not os.path.isfile(chimexe):
-			apDisplay.printWarning("Could not find chimera at: "+chimexe)
-	else:
-		chimpath = None
-		chimexe = "chimera"
-		#apDisplay.printWarning("'CHIMERA' environmental variable is unset")
-	rendercmd = (chimexe+" --debug python:"+chimscript)
-	logf = open("chimeraRun.log", "a")
-	apDisplay.printColor("running Chimera:\n "+rendercmd, "cyan")
-	if xvfb is True:
-		print("import -verbose -display :%d -window root screencapture.png"%(port))
-	proc = subprocess.Popen(rendercmd, shell=True, stdout=logf, stderr=logf)
-	proc.wait()
-	logf.close()
-	if xvfb is True:
-		apParam.killVirtualFrameBuffer(port)
-	return
+	apDisplay.printError("Chimera rendering path removed; use renderSnapshots/renderAnimation (headless) instead.")
 
 #=========================================
 #=========================================
