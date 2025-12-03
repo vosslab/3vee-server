@@ -36,6 +36,11 @@ function docpop($key,$text) {
 };
 
 /*************************************/
+function post_value($key, $default = '') {
+	return array_key_exists($key, $_POST) ? $_POST[$key] : $default;
+}
+
+/*************************************/
 // write popup function 'a href'
 function showRecentRuns($progname=false, $count=3) {
 	$threevdata = new threevdata();
@@ -391,7 +396,7 @@ function getJobId() {
 /*************************************/
 function makeErrorMsg($msg) {
 	$html = "";
-	$html .= "<font color='#990000' size='+2'>$msg</font>\n";
+	$html .= "<span style='color:#990000; font-size:larger;'>$msg</span>\n";
 	$html .= "<hr/>\n";
 	$html .= "<br/><br/>\n";
 	return $html;
@@ -410,53 +415,54 @@ function firstColumn($print3d=false) {
 	$html .= "	<input type='file' name='uploadpdb' size='25' maxlength='250'/><br/>\n";
 	$html .= "</td></tr><tr><td>\n";
 
-	$pdbid = ($_POST['pdbid']) ? $_POST['pdbid'] : '';
+	$pdbid = post_value('pdbid');
 	$html .= docpop('pdbid','Enter PDB ID to process:<br/>');
 	$html .= "	<input type='text' name='pdbid' size='4' value='$pdbid'/>&nbsp;\n";
 	$html .= "</td></tr></table>\n";
 	$html .= "<br/>\n";
 
 	// Biological unit
-	$biounit = ($_POST['biounit']=='off') ? '' : 'CHECKED';
+	$biounit = (post_value('biounit')=='off') ? '' : 'CHECKED';
 	$html .= "<input type='checkbox' name='biounit' $biounit />\n";
 	$html .= docpop('biounit','Use biological unit?');
 	$html .= "<br/><br/>\n";
 
 	// Hetero atoms
-	$hetero = ($_POST['hetero']=='on') ? 'CHECKED' : '';
+	$hetero = (post_value('hetero')=='on') ? 'CHECKED' : '';
 	$html .= "<input type='checkbox' name='hetero' $hetero />\n";
 	$html .= docpop('hetero','Use hetero atoms?');
 	$html .= "<br/><br/>\n";
 
 	// Grid resolution
+	$gridres = post_value('gridres', 'low');
 	$html .= docpop('gridres','Grid resolution:<br/>');
 	$html .= "	<input type='radio' name='gridres' value='crude' ";
-	if ($_POST['gridres'] == 'crude')
+	if ($gridres == 'crude')
 		$html .=  " checked ";
 	$html .= "/>crude\n";
 	$html .= "	<input type='radio' name='gridres' value='low' ";
-	if (!$_POST['gridres'] || $_POST['gridres'] == 'low')
+	if ($gridres == 'low')
 		$html .=  " checked ";
 	$html .= "/>low\n";
 	$html .= "	<input type='radio' name='gridres' value='medium' ";
-	if ($_POST['gridres'] == 'medium')
+	if ($gridres == 'medium')
 		$html .=  " checked ";
 	$html .= "/>medium\n";
 	$html .= "	<input type='radio' name='gridres' value='high' ";
-	if ($_POST['gridres'] == 'high')
+	if ($gridres == 'high')
 		$html .=  " checked ";
 	$html .= "/>high\n";
 	$html .= "<br/><br/>\n";
 
 	if ($print3d == false) {
 		// PyMOL compatibility
-		$pymol = ($_POST['pymol']=='on') ? 'CHECKED' : '';
+		$pymol = (post_value('pymol')=='on') ? 'CHECKED' : '';
 		$html .= "<input type='checkbox' name='pymol' $pymol />\n";
 		$html .= docpop('pymol','PyMOL compatible');
 		$html .= "<br/>\n";
 
 		// Water PDB
-		$waterpdb = ($_POST['waterpdb']=='on') ? 'CHECKED' : '';
+		$waterpdb = (post_value('waterpdb')=='on') ? 'CHECKED' : '';
 		$html .= "<input type='checkbox' name='waterpdb' $waterpdb />\n";
 		$html .= docpop('waterpdb','Create Water PDB');
 		$html .= "<br/>\n";
@@ -464,7 +470,7 @@ function firstColumn($print3d=false) {
 
 	}
 	// Allow use
-	$allowuse = ($_POST['allowuse']=='off') ? '' : 'CHECKED';
+	$allowuse = (post_value('allowuse')=='off') ? '' : 'CHECKED';
 	$html .= "<input type='checkbox' name='allowuse' $allowuse />\n";
 	$html .= docpop('allowuse','Share your results');
 	$html .= "<br/>\n";
@@ -475,58 +481,62 @@ function firstColumn($print3d=false) {
 
 /*************************************/
 function print3dColumn($print3d=false) {
+	$html = "";
+	$flatMethod = post_value('flatMethod', 'trim');
 	// Flat Surface Method
 	$html .= docpop('flatmethod','Flat Surface Method:<br/>');
 	$html .= "	<input type='radio' name='flatMethod' value='trim' ";
-	if (!$_POST['flatMethod'] || $_POST['flatMethod'] == 'trim')
+	if ($flatMethod == 'trim')
 		$html .=  " checked ";
 	$html .= "/>trim\n";
 	$html .= "	<input type='radio' name='flatMethod' value='bisect' ";
-	if ($_POST['flatMethod'] == 'bisect')
+	if ($flatMethod == 'bisect')
 		$html .=  " checked ";
 	$html .= "/>bisect\n";
 	$html .= "	<input type='radio' name='flatMethod' value='none' ";
-	if ($_POST['flatMethod'] == 'none')
+	if ($flatMethod == 'none')
 		$html .=  " checked ";
 	$html .= "/>none\n";
 	$html .= "<br/><br/>\n";
 
 	// Flat Surface Axis
+	$flatAxis = post_value('flataxis', 'auto');
 	$html .= docpop('flataxis','Flat Surface Axis:<br/>');
 	$html .= "	<input type='radio' name='flataxis' value='auto' ";
-	if (!$_POST['flataxis'] || $_POST['flataxis'] == 'auto')
+	if ($flatAxis == 'auto')
 		$html .=  " checked ";
 	$html .= "/>auto\n";
 	$html .= "	<input type='radio' name='flataxis' value='x' ";
-	if ($_POST['flataxis'] == 'x')
+	if ($flatAxis == 'x')
 		$html .=  " checked ";
 	$html .= "/>x\n";
 	$html .= "	<input type='radio' name='flataxis' value='y' ";
-	if ($_POST['flataxis'] == 'y')
+	if ($flatAxis == 'y')
 		$html .=  " checked ";
 	$html .= "/>y\n";
 	$html .= "	<input type='radio' name='flataxis' value='z' ";
-	if ($_POST['flataxis'] == 'z')
+	if ($flatAxis == 'z')
 		$html .=  " checked ";
 	$html .= "/>z\n";
 	$html .= "<br/><br/>\n";
 
 	// Flat Surface Percent
+	$trimChoice = post_value('trimpercentchoice', 'auto');
 	$html .= docpop('trimpercent','Trim Percent:<br/>');
 	$html .= "	<input type='radio' name='trimpercentchoice' value='auto' onChange='customTrimPercent(this.form, true)'";
-	if (!$_POST['trimpercentchoice'] || $_POST['trimpercentchoice'] == 'auto')
+	if ($trimChoice == 'auto')
 		$html .=  " checked ";
 	$html .= "/>auto\n";
 	$html .= "	<input type='radio' name='trimpercentchoice' value='custom' onChange='customTrimPercent(this.form, false)'";
-	if ($_POST['trimpercentchoice'] == 'custom')
+	if ($trimChoice == 'custom')
 		$html .=  " checked ";
 	$html .= "/>custom\n";
-	$trimpercent = ($_POST['trimpercent']) ? $_POST['trimpercent'] : '';
-	if (!$_POST['trimpercent'])
+	$trimpercent = post_value('trimpercent', '');
+	if ($trimpercent === '')
 		$html .= "<br/>Percent: <input type='text' name='trimpercent' size='4' disabled> (0..100)";
 	else
 		$html .= "<br/>Percent: <input type='text' name='trimpercent' size='4' value='"
-			.$_POST['trimpercent']."' disabled> (0..100)";
+			.$trimpercent."' disabled> (0..100)";
 	$html .= "<br/><br/>\n";
 	return $html;
 };
@@ -538,16 +548,17 @@ function launchJob($command, $progname, $print3d=false) {
 	global $PROCDIR;
 	$hostip = $_SERVER['REMOTE_ADDR'];
 	$jobid = getJobId();
-	$pdbid=$_POST['pdbid'];
-	$hetero=$_POST['hetero'];
-	$biounit=$_POST['biounit'];
-	$gridres = $_POST['gridres'];
-	$allowuse = $_POST['allowuse'];
-	$flatmethod = $_POST['flatMethod'];
-	$flataxis = $_POST['flataxis'];
-	$trimpercent = $_POST['trimpercent'];
-	$pymol = $_POST['pymol'];
-	$waterpdb = $_POST['waterpdb'];
+	$pdbid = post_value('pdbid');
+	$hetero = post_value('hetero');
+	$biounit = post_value('biounit');
+	$gridres = post_value('gridres', 'low');
+	$allowuse = post_value('allowuse', 'on');
+	$flatmethod = post_value('flatMethod', 'trim');
+	$flataxis = post_value('flataxis', 'auto');
+	$trimpercent = post_value('trimpercent', '');
+	$pymol = post_value('pymol');
+	$waterpdb = post_value('waterpdb');
+	$uploadName = isset($_FILES['uploadpdb']['name']) ? $_FILES['uploadpdb']['name'] : '';
 
 	$datestamp = substr($jobid, 0, 7);
 	$jobdir = preg_replace("/\./", "/", $jobid);
@@ -555,22 +566,23 @@ function launchJob($command, $progname, $print3d=false) {
 	//mkdir($PROCDIR."output/$jobdir");
 
 	// make sure pdb id was selected
-	if (!$pdbid && !$_FILES['uploadpdb']['name']) {
+	if (!$pdbid && !$uploadName) {
 		return ('No pdbid selected');
 		exit;
-	} elseif ($_FILES['uploadpdb']['name']) {
+	} elseif ($uploadName) {
 		$uploaddir = $PROCDIR."output/uploads/";
 		$uploadfile = $uploaddir . $jobid . ".pdb";
 		#echo $_FILES['uploadpdb']['tmp_name']."<br/>";
-		if (!move_uploaded_file($_FILES['uploadpdb']['tmp_name'], $uploadfile)) {
+		$tmpname = isset($_FILES['uploadpdb']['tmp_name']) ? $_FILES['uploadpdb']['tmp_name'] : '';
+		if (!$tmpname || !move_uploaded_file($tmpname, $uploadfile)) {
 			print_r($_FILES['uploadpdb']);
-			return ('file did not upload properly (hard drive full?) '.$_FILES['uploadpdb']['tmp_name']);
+			return ('file did not upload properly (hard drive full?) '.$tmpname);
 			exit;
 		}
 	}
 
 	// finish write command line
-	if ($_FILES['uploadpdb']['name'])
+	if ($uploadName)
 		$command.=" --pdbfile=$uploadfile";
 	elseif ($pdbid)
 		$command.=" --pdbid=$pdbid";

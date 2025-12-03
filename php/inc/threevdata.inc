@@ -2,19 +2,29 @@
 
 require_once "inc/mysql.inc";
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'vossman');
-define('DB_PASS', '');
-define('DB_NAME', 'threevdata');
+$dbHost = getenv('THREEV_DB_HOST') ?: 'localhost';
+$dbUser = getenv('THREEV_DB_USER') ?: 'vossman';
+$dbPass = getenv('THREEV_DB_PASSWORD') ?: '';
+$dbName = getenv('THREEV_DB_NAME') ?: 'threevdata';
+
+define('DB_HOST', $dbHost);
+define('DB_USER', $dbUser);
+define('DB_PASS', $dbPass);
+define('DB_NAME', $dbName);
 
 class threevdata {
 	var $crlf="\n";
+	private $mysql;
 
 	/*************************
 	**************************
 	*************************/
-	function threevdata () {
-		$this->mysql = new mysql(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+	function __construct($db = null) {
+		if ($db instanceof mysql) {
+			$this->mysql = $db;
+		} else {
+			$this->mysql = new mysql(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+		}
 	}
 
 	/*************************
@@ -96,5 +106,3 @@ class threevdata {
 		return $hashed;
 	}
 };
-
-

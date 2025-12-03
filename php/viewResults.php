@@ -86,13 +86,10 @@ function checkLogFile($logfile, $tail) {
 function convertAnsiCodeToHtml($matches) {
 	global $ANSI_SPAN_OPEN;
 	$codes = explode(';', $matches[1]);
-	$reset = false;
-	$color = false;
+	$reset = in_array('0', $codes, true);
+	$color = null;
 	foreach ($codes as $code) {
 		switch ($code) {
-			case '0':
-				$reset = true;
-				break;
 			case '30':
 				$color = 'black';
 				break;
@@ -119,21 +116,20 @@ function convertAnsiCodeToHtml($matches) {
 				break;
 		}
 	}
+	$output = '';
+	if ($reset && $ANSI_SPAN_OPEN) {
+		$output .= "</span>";
+		$ANSI_SPAN_OPEN = false;
+	}
 	if ($color) {
-		$output = "";
 		if ($ANSI_SPAN_OPEN) {
 			$output .= "</span>";
 			$ANSI_SPAN_OPEN = false;
 		}
 		$output .= "<span class='ansi-color' style='color:$color'>";
 		$ANSI_SPAN_OPEN = true;
-		return $output;
 	}
-	if ($reset && $ANSI_SPAN_OPEN) {
-		$ANSI_SPAN_OPEN = false;
-		return "</span>";
-	}
-	return '';
+	return $output;
 };
 
 function convertToColors($j) {
@@ -164,7 +160,9 @@ function convertToColors($j) {
 function writeJobTable($jobid) {
 	require_once "inc/threevdata.inc";
 	$threevdata = new threevdata();
-	//$jobdata = $threevdata->getJobData($jobid);
+	$jobdata = $threevdata->getJobData($jobid);
+	if (!is_array($jobdata))
+		$jobdata = array();
 	$jobparams = $threevdata->getJobParams($jobid);
 	//echo print_r($jobparams);
 
@@ -182,24 +180,21 @@ function writeJobTable($jobid) {
 	}
 
 	// biounit
-	if ($jobdata['biounit'])
-		$biounit = "<font color='#229922'>yes</font>";
-	else
-		$biounit = "<font color='#992222'>no</font>";
+	$biounit = !empty($jobdata['biounit'])
+		? "<span style='color:#229922;'>yes</span>"
+		: "<span style='color:#992222;'>no</span>";
 	echo "	<tr><td>".docpop('biounit','biological unit:')."</td> <td align='right'>$biounit</td></tr>\n";
 
 	// hetero
-	if ($jobdata['hetero'])
-		$hetero = "<font color='#229922'>yes</font>";
-	else
-		$hetero = "<font color='#992222'>no</font>";
+	$hetero = !empty($jobdata['hetero'])
+		? "<span style='color:#229922;'>yes</span>"
+		: "<span style='color:#992222;'>no</span>";
 	echo "	<tr><td>".docpop('hetero','use hetero atoms:')."</td> <td align='right'>$hetero</td></tr>\n";
 
 	// allow use
-	if ($jobdata['allowuse'])
-		$allowuse = "<font color='#229922'>yes</font>";
-	else
-		$allowuse = "<font color='#992222'>no</font>";
+	$allowuse = !empty($jobdata['allowuse'])
+		? "<span style='color:#229922;'>yes</span>"
+		: "<span style='color:#992222;'>no</span>";
 	echo "	<tr><td>".docpop('allowuse','allow public display:')."</td> <td align='right'>$allowuse</td></tr>\n";
 
 	echo "	<tr><td>".docpop('gridres','grid resolution:')."</td> <td align='right'>".$jobparams['gridres']."</td></tr>\n";
@@ -224,11 +219,10 @@ function writeJobTable($jobid) {
 /*************************
 **************************
 *************************/
-function showResults() {
+function showResults($jobid, $showrunlog) {
 	global $PROCDIR;
-	$jobid = $_GET['jobid'];
 	$formAction=$_SERVER['PHP_SELF']."?jobid=$jobid";
-	if($_GET['showrunlog'])
+	if($showrunlog)
 		$formAction.="&showrunlog=1";
 	$title = "3v Results for JobId ".$jobid;
 	$heading = "3v Results for JobId <i>'".$jobid."'</i>";
@@ -247,11 +241,10 @@ function showResults() {
 /*************************
 **************************
 *************************/
-function runningLog() {
+function runningLog($jobid, $showrunlog) {
 	global $PROCDIR;
-	$jobid = $_GET['jobid'];
 	$formAction=$_SERVER['PHP_SELF']."?jobid=$jobid";
-	if($_GET['showrunlog'])
+	if($showrunlog)
 		$formAction.="&showrunlog=1";
 	$title = "3v Running Log for JobId ".$jobid;
 	$heading = "3v Running Log for JobId <i>'".$jobid."'</i>";
@@ -272,6 +265,8 @@ function runningLog() {
 	echo "li.Check {\nlist-style-image: url('img/icon-check.png')\n}\n";
 	echo "li.Star {\nlist-style-image: url('img/icon-bluestar.png')\n}\n";
 	echo "li.Cross {\nlist-style-image: url('img/icon-cross.png')\n}\n";
+	echo ".terminal-shell { background-color: #000022; }\n";
+	echo ".terminal-output { color: #ffffff; font-size: 0.9em; margin: 0; }\n";
 	echo "</style>\n";
 	echo "<h2>Program is still running, progress is shown below</h2>";
 	if (file_exists($resultsfile) && filesize($resultsfile) > 1)
@@ -283,7 +278,7 @@ function runningLog() {
 	echo "<h4>hit reload to refresh this page</h4>\n";
 
 	$logfile = $PROCDIR."output/$jobdir/shell-$jobid.log";
-	$tail = $_POST['tail'] ? $_POST['tail'] : '20';
+	$tail = isset($_POST['tail']) && $_POST['tail'] !== '' ? (int)$_POST['tail'] : 20;
 	$loginfo = checkLogFile($logfile, $tail);
 	if ($loginfo) {
 		echo "<br/><hr width='50%'/>\n";
@@ -299,14 +294,13 @@ function runningLog() {
 		echo "	<tr><td>\n";
 		echo "		<pre>Terminal display</pre>\n";
 		echo "	</td></tr>\n";
-		echo "	<tr><td bgcolor='#000022'>\n";
-		echo "		<pre>\n";
-		echo "		<font color='white' size='-1'>\n";
-		foreach ($loginfo as $l) {
-			$colored = convertToColors($l);
-			echo "$colored\n";
-		}
-		echo "		</font></pre>\n";
+	echo "	<tr><td class='terminal-shell'>\n";
+	echo "		<pre class='terminal-output'>\n";
+	foreach ($loginfo as $l) {
+		$colored = convertToColors($l);
+		echo "$colored\n";
+	}
+	echo "		</pre>\n";
 		echo "	</td></tr></table>\n";
 		echo "</td></tr></table>\n";
 		echo "</form>\n";
@@ -317,10 +311,9 @@ function runningLog() {
 /*************************
 **************************
 *************************/
-function preLog() {
+function preLog($jobid) {
 	require_once "inc/threevdata.inc";
 	global $PROCDIR;
-	$jobid = $_GET['jobid'];
 	$formAction=$_SERVER['PHP_SELF']."?jobid=$jobid";
 	$title = "3v Preparing for JobId ".$jobid;
 	$heading = "3v Preparing for JobId <i>'".$jobid."'</i>";
@@ -335,14 +328,14 @@ function preLog() {
 		."&lt;<i>vossman77 [at] Yahoo! [dot] com</i>&gt;, if there is a problem</h4>";
 	echo "<ul>\n";
 	if (file_exists($PROCDIR."output/$jobdir/shell-$jobid.log"))
-		echo "  <li>Shell log: <font size='-1'><a href='output/$jobdir/shell-$jobid.log'>"
-			.$PROCDIR."output/$jobdir/shell-$jobid.log</a></font>\n";
+		echo "  <li>Shell log: <span style='font-size:smaller;'><a href='output/$jobdir/shell-$jobid.log'>"
+			.$PROCDIR."output/$jobdir/shell-$jobid.log</a></span>\n";
 	if (file_exists($PROCDIR."output/$jobdir/runlog-$jobid.html"))
-		echo "  <li>Running log: <font size='-1'><a href='output/$jobdir/runlog-$jobid.html'>"
-			.$PROCDIR."output/$jobdir/runlog-$jobid.html</a></font>\n";
+		echo "  <li>Running log: <span style='font-size:smaller;'><a href='output/$jobdir/runlog-$jobid.html'>"
+			.$PROCDIR."output/$jobdir/runlog-$jobid.html</a></span>\n";
 	if (file_exists($PROCDIR."output/$jobdir/results-$jobid.html"))
-		echo "  <li>Results html: <font size='-1'><a href='output/$jobdir/results-$jobid.html'>"
-			.$PROCDIR."output/$jobdir/results-$jobid.html</a></font>\n";
+		echo "  <li>Results html: <span style='font-size:smaller;'><a href='output/$jobdir/results-$jobid.html'>"
+			.$PROCDIR."output/$jobdir/results-$jobid.html</a></span>\n";
 	echo "</ul>\n";
 	echo "</td></tr></table>\n";
 }
@@ -353,19 +346,21 @@ function preLog() {
 global $PROCDIR;
 require_once "inc/processing.inc";
 
-$jobid = $_GET['jobid'];
+$jobid = isset($_GET['jobid']) ? trim($_GET['jobid']) : '';
 //$datestamp = substr($jobid, 0, 7);
 $jobdir = preg_replace("/\./", "/", $jobid);
 $runningfile = $PROCDIR."output/$jobdir/runlog-".$jobid.".html";
 $resultsfile = $PROCDIR."output/$jobdir/results-".$jobid.".html";
-$showrunlog = $_GET['showrunlog'];
+$showrunlog = isset($_GET['showrunlog']) ? (int)$_GET['showrunlog'] : 0;
 
-if (file_exists($resultsfile) && filesize($resultsfile) > 10 && $showrunlog!=1) {
-	showResults();
+if (!$jobid) {
+	preLog($jobid);
+} elseif (file_exists($resultsfile) && filesize($resultsfile) > 10 && $showrunlog!=1) {
+	showResults($jobid, $showrunlog);
 } elseif (file_exists($runningfile)) {
-	runningLog();
+	runningLog($jobid, $showrunlog);
 } else {
-	preLog();
+	preLog($jobid);
 }
 
 writeBottom();
