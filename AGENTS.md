@@ -1,5 +1,13 @@
 # Repository Guidelines
 
+## Codebase Overview
+- **Entry points:** Users interact through PHP pages in `php/` (e.g., `volumeCalc.php`, `viewResults.php`). Shared helpers live in `php/inc/*.inc`, and diagnostics/scripts sit in `php/tests/`.
+- **Job orchestration:** Form submissions run `py/run*.py`, which bootstrap `ThreeVScript.py`/`ThreeVLib.py`. Those modules coordinate volume calculations, smoothing, and rendering by shelling out to EMAN1 (`proc3d`), Chimera/ChimeraX via `py/appionlib`, and legacy `vossvolvox` binaries.
+- **Supporting libraries:** `py/appionlib`, `py/pyami`, and `py/sinedon` are mostly vendor drops—touch only as needed for bug fixes or Python 3 work.
+- **Visualization assets:** `jmol/`, `jmol-*/`, `php/css/`, `php/img/`, and `php/js/` provide the static UI and viewer resources packaged with the repo.
+- **Container/build plumbing:** `Dockerfile`, `docker-compose.yml`, `docker/`, and `build_podman_image.sh` define the web + MariaDB stack. Images are pre-built via `podman build --arch <ARCH>` (default `amd64`) before `podman compose up`.
+- **Data & artifacts:** `output/` is bind-mounted at runtime to hold submitted jobs, logs, and generated meshes. Keep it out of version control.
+
 ## Project Structure & Module Organization
 - `php/`: Web UI entry points and result viewers (with `php/tests/` for ad hoc diagnostics).
 - `py/`: Python job runners (`run*.py`, `ThreeVLib.py`, `ThreeVScript.py`, `threevdata.py`), shared libraries (`appionlib`, `pyami`, `sinedon`), and smoke scripts under `py/tests/`.
