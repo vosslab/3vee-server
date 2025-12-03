@@ -8,7 +8,7 @@ and a tiny STL writer for 3D-print exports.
 from pathlib import Path
 
 import numpy
-from PIL import Image, ImageChops
+from PIL import Image
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib import colors as mcolors
@@ -95,20 +95,18 @@ def _render_view(ax, verts, faces, elev, azim, cmap):
 	ax.set_box_aspect([1, 1, 1])
 
 
-def _get_background_color(image: Image.Image):
-	# Use the top-left pixel as the background color heuristic.
-	return image.getpixel((0, 0))
-
-
-def _trim_image(path):
+def _trim_image(path, tolerance=5):
 	with Image.open(path) as img:
-		bg_color = _get_background_color(img)
-		bg = Image.new(img.mode, img.size, bg_color)
-		diff = ImageChops.difference(img, bg)
-		diff = ImageChops.add(diff, diff, 2.0, -0)
-		bbox = diff.getbbox()
-		if bbox:
-			img.crop(bbox).save(path)
+		arr = numpy.asarray(img.convert("RGB"))
+		bg = arr[0, 0].astype(int)
+		diff = numpy.abs(arr.astype(int) - bg[None, None, :])
+		mask = (diff > tolerance).any(axis=2)
+		coords = numpy.argwhere(mask)
+		if coords.size == 0:
+			return
+		y0, x0 = coords.min(axis=0)
+		y1, x1 = coords.max(axis=0) + 1
+		img.crop((x0, y0, x1, y1)).save(path)
 
 
 def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis"):
@@ -140,6 +138,10 @@ def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=
 		_render_view(ax, verts, faces, elev, azim=(360.0 / n_frames) * i, cmap=cmap)
 		frame_path = tmp_dir / f"{out_base.name}.frame_{i:03d}.png"
 		fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
+		try:
+			_trim_image(frame_path)
+		except Exception:
+			pass
 		frames.append(Image.open(frame_path))
 	plt.close(fig)
 
