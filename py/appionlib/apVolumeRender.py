@@ -138,11 +138,8 @@ def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=
 		_render_view(ax, verts, faces, elev, azim=(360.0 / n_frames) * i, cmap=cmap)
 		frame_path = tmp_dir / f"{out_base.name}.frame_{i:03d}.png"
 		fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
-		try:
-			_trim_image(frame_path)
-		except Exception:
-			pass
-		frames.append(Image.open(frame_path))
+		with Image.open(frame_path) as frame:
+			frames.append(frame.copy())
 	plt.close(fig)
 
 	if frames:
