@@ -175,3 +175,4 @@ cython_debug/
 
 # Docker / runtime output
 output/
+docker/chimera.bin
