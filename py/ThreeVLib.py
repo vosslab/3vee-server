@@ -230,7 +230,7 @@ class ThreeVLib(object):
 			apDisplay.printError("could not find file: "+newatm)
 		xyzrfile = os.path.splitext(pdbfile)[0]+".xyzr"
 
-		convertexe = os.path.join(self.procdir, "sh/pdb_to_xyzr.sh") 
+		convertexe = os.path.join(self.procdir, "bin/pdb_to_xyzr.exe") 
 		convertcmd = convertexe+" "+atomfile+" > "+xyzrfile
 		print(os.getcwd())
 		os.chdir(self.rundir)
