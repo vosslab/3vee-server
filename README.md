@@ -15,8 +15,11 @@ You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, 
 ```bash
 # from the repo root
 mkdir -p output                      # persist job artifacts on the host
+./docker/prefetch-assets.sh          # download Chimera/EMAN installers once
 docker compose up --build            # or: podman compose up --build
 ```
+
+`./docker/prefetch-assets.sh` grabs the UCSF Chimera installer and the EMAN 1.9 tarball into `docker/` on the host so every Docker/Podman build can simply `COPY` them into the image. Rerun the script when you need a newer version of those installers; otherwise it’s a quick no-op check. The `build_podman_image.sh` helper runs it automatically before invoking `podman build`.
 
 When you want to rebuild the web image via Podman (e.g., on macOS where the VM is already running) there is also `build_podman_image.sh` in the repo root; it tears down the existing containers, starts MariaDB in the background, and builds/runs the `web` container while streaming logs to `logs/podman-compose-<timestamp>.log`. See [CONTAINER.md](CONTAINER.md) for the full Podman workflow, including VM setup and port-forwarding tips.
 
@@ -62,7 +65,7 @@ pip3 install -r requirements.txt
 
 The repo also provides lightweight defaults for the Python-side configs (`py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg`) so you can execute `tests/run_pyflakes.sh` and `tests/check.sh` without a real database. Feel free to replace those config stubs with your own credentials if you want to point at an actual MariaDB or instrument configuration.
 
-> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN`. Non-amd64 builds skip both installers. Python tooling auto-detects whether `proc3d` is present (override with `THREEV_ARCH` or `THREEV_DISABLE_PROC3D=1`) so the runtime can skip smoothing gracefully when EMAN is missing.
+> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and the full EMAN 1.9 bundle (with docs and chimeraext) into `/usr/local/EMAN`. Non-amd64 builds skip both installers, so we rely on the amd64 build path to keep EMAN1’s `proc3d` available. The runtime now requires `proc3d`; when running outside the container make sure EMAN 1.9 is installed, its `bin/` directory is on your `PATH`, and its `eman.bashrc` (or the env exports in `/etc/profile.d/eman.sh`) is sourced so `libEM.so` is on `LD_LIBRARY_PATH`.
 
 Useful build arguments:
 - `VOSSVOLVOX_REF` (default `master`) and `VOSSVOLVOX_REPO` to check out a specific vossvolvox branch/tag/fork.

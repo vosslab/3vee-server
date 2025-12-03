@@ -37,6 +37,7 @@ Want the shortest path? Copy/paste the following (adjust for Docker vs Podman):
 git clone https://github.com/vosslab/3vee-server.git
 cd 3vee-server
 mkdir -p output
+./docker/prefetch-assets.sh
 docker compose up --build
 # open http://localhost:8080/php/volumeCalc.php
 ```
@@ -46,6 +47,7 @@ docker compose up --build
 git clone https://github.com/vosslab/3vee-server.git
 cd 3vee-server
 mkdir -p output
+./docker/prefetch-assets.sh
 podman compose up --build
 # open http://localhost:8080/php/volumeCalc.php
 ```
@@ -59,6 +61,7 @@ podman machine start podman-machine-default   # start the VM if it's stopped
 git clone https://github.com/vosslab/3vee-server.git
 cd 3vee-server
 mkdir -p output
+./docker/prefetch-assets.sh
 podman compose up --build
 # open http://localhost:8080/php/volumeCalc.php
 ```
@@ -75,6 +78,8 @@ Both Docker and Podman respect the same `Dockerfile`. The build stage:
 6. Clones `vossvolvox` (default branch `master`, override via `--build-arg VOSSVOLVOX_REF=<ref>`), builds the C++ tools, and copies the resulting `*.exe` binaries plus helper data/scripts into `/var/www/html/3vee/bin`, `/dat`, `/sh`.
 7. Configures Apache with a single vhost pointed at `/var/www/html/3vee`.
 
+Before running `docker compose build`/`podman build`, execute `./docker/prefetch-assets.sh`. It downloads the Chimera installer and EMAN tarball into `docker/` on the host so the Dockerfile can `COPY` them directly. The script is idempotent (skips when the files already exist), and `build_podman_image.sh` runs it for you automatically.
+
 Build command (Docker):
 ```bash
 docker compose build web
@@ -87,6 +92,8 @@ If you want to build without Compose, run `docker build -t threev-web .` or `pod
 
 Need a specific revision? Build args:
 - `VOSSVOLVOX_REF` / `VOSSVOLVOX_REPO` – clone a particular branch/tag or fork of vossvolvox (default ref `master`).
+
+EMAN note: we now ship the full EMAN 1.9 bundle (docs + chimeraext) and run its installer inside the image. `/etc/profile.d/eman.sh` exports `EMANDIR` plus `PATH`/`LD_LIBRARY_PATH`/`PYTHONPATH` (and sources `eman.bashrc` when present) so EMAN binaries find their libs; if you run EMAN tools manually inside the container, open a login shell or source that profile script.
 
 ## 4. Runtime Topology
 `docker-compose.yml` defines two services:
