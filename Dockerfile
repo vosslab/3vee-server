@@ -26,29 +26,54 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
 # ensure scripts sourcing /etc/bashrc do not fail noisily
 RUN ln -sf /etc/bash.bashrc /etc/bashrc
 
+# copy third-party installers that were fetched on the host
+COPY docker/chimera.bin /tmp/chimera.bin
+COPY docker/eman-linux-x86_64-cluster-1.9.tar.gz /tmp/eman.tar.gz
+
 # install UCSF Chimera (OSMesa build)
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-      curl -L "https://www.cgl.ucsf.edu/chimera/cgi-bin/secure/chimera-get.py?ident=OHeQer2VSqNn9%2BRyrXpc5f1xvkdSQdv50hN50BTlifgjqu%2FK&file=linux_x86_64_osmesa%2Fchimera-1.19-linux_x86_64_osmesa.bin&choice=Notified" \
-        -o /tmp/chimera.bin && \
-      chmod +x /tmp/chimera.bin && \
-      /tmp/chimera.bin --mode unattended --prefix ${CHIMERA} && \
-      rm -f /tmp/chimera.bin; \
+RUN set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      mkdir -p /tmp/chimera-installer && \
+      unzip -q /tmp/chimera.bin -d /tmp/chimera-installer && \
+      chmod +x /tmp/chimera-installer/installer /tmp/chimera-installer/chimera.bin && \
+      /tmp/chimera-installer/installer /tmp/chimera-installer && \
+      /tmp/chimera-installer/chimera.bin --mode unattended --prefix ${CHIMERA}; \
     else \
       echo "Skipping Chimera install on ${TARGETARCH} (installer is amd64-only)"; \
-    fi
+    fi; \
+    rm -rf /tmp/chimera.bin /tmp/chimera-installer
 
 # install EMAN 1.9 (prebuilt cluster build) - amd64 only
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-      curl -L "https://github.com/leginon-org/appion-redmine-files/raw/heads/main/eman-linux-x86_64-cluster-1.9.tar.gz" \
-        -o /tmp/eman.tar.gz && \
+RUN set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
       tar -xzf /tmp/eman.tar.gz -C /tmp && \
-      mv /tmp/EMAN ${EMANDIR} && \
+      if [ -d /tmp/EMAN ]; then \
+        mv /tmp/EMAN ${EMANDIR}; \
+      elif [ -d /tmp/eman1 ]; then \
+        mv /tmp/eman1 ${EMANDIR}; \
+      else \
+        echo "Unable to find extracted EMAN directory" >&2; \
+        exit 1; \
+      fi && \
       cd ${EMANDIR} && \
-      ./eman-installer && \
-      rm -f /tmp/eman.tar.gz; \
+      SHELL=/bin/bash printf 'yes\n/bin/sh\n' | /bin/bash ./eman-installer && \
+      env LD_LIBRARY_PATH=${EMANDIR}/lib:${LD_LIBRARY_PATH:-} ${EMANDIR}/bin/proc3d --help >/dev/null 2>&1 || true; \
     else \
       echo "Skipping EMAN install on ${TARGETARCH} (archive is amd64-only)"; \
       mkdir -p ${EMANDIR}; \
+    fi; \
+    rm -f /tmp/eman.tar.gz
+
+RUN set -eux; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      { \
+        echo 'export EMANDIR=/usr/local/EMAN'; \
+        echo 'export PATH=${EMANDIR}/bin:${PATH}'; \
+        echo 'export LD_LIBRARY_PATH=${EMANDIR}/lib:${LD_LIBRARY_PATH}'; \
+        echo 'export PYTHONPATH=${EMANDIR}/lib:${PYTHONPATH}'; \
+        echo 'if [ -f "${EMANDIR}/eman.bashrc" ]; then . "${EMANDIR}/eman.bashrc"; fi'; \
+      } > /etc/profile.d/eman.sh; \
+      chmod 644 /etc/profile.d/eman.sh; \
     fi
 
 ENV PATH=${EMANDIR}/bin:${PATH} \
