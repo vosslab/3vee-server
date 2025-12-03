@@ -50,6 +50,7 @@ Inside the VM you can install additional tooling or verify that `/usr/local/bin/
 
 ```bash
 podman machine ssh -- sudo rpm-ostree install qemu-user-static
+podman machine ssh -- rpm -q qemu-user-static
 podman machine stop podman-machine-default
 podman machine start podman-machine-default
 ```

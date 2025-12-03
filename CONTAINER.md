@@ -5,7 +5,7 @@ This document captures every gory detail required to build, run, and hack on the
 ## 1. Repository Layout Recap
 ```
 3vee-server/
-├── Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + Chimera + EMAN)
+├── Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + Chimera)
 ├── docker-compose.yml      # Orchestrates the web + MariaDB services
 ├── docker/entrypoint.sh    # Web container bootstrap (DB wait, sinedon config, maketables)
 ├── output/                 # Recommended host bind mount (job artifacts/logs)
@@ -20,8 +20,8 @@ During the image build we automatically clone `https://github.com/vosslab/vossvo
 - Modern container runtime:
   - **Docker** Engine ≥ 24 *or*
   - **Podman** ≥ 4 with Compose plug-in (`podman compose`) and, on macOS/Windows, a Podman machine/VM.
-- CPU/RAM: ~2 GiB free RAM and ~5 GiB disk space (compiling `vossvolvox`, installing Chimera/EMAN, MariaDB data volume).
-- Internet access (the build downloads Debian packages, UCSF Chimera, EMAN 1.9, etc.).
+- CPU/RAM: ~2 GiB free RAM and ~5 GiB disk space (compiling `vossvolvox`, installing Chimera, MariaDB data volume).
+- Internet access (the build downloads Debian packages, UCSF Chimera, etc.).
 
 ### Podman specifics
 - On Linux, Podman can run rootless natively. On macOS/Windows, Podman spins up a VM; check with `podman machine ls`, start it via `podman machine start <name>` if it is stopped, and only run `podman machine init --now --user-mode-networking` when creating a new VM to ensure host ports forward into the guest.
@@ -74,11 +74,10 @@ Both Docker and Podman respect the same `Dockerfile`. The build stage:
 2. Installs Apache, PHP, MariaDB client, Meshlab, ImageMagick, Xvfb, build tooling, and dev libraries.
 3. Builds CPython `PY2_VERSION` (default `2.7.18`) from source under `/opt/python2`, then installs pinned legacy packages (`numpy==1.16.6`, `scipy==1.2.3`, `mysqlclient==1.4.6`, `Pillow==6.2.2`).
 4. Installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`amd64` only; skipped on other arches) and sets `CHIMERA=/opt/chimera`.
-5. Installs EMAN 1.9 into `/usr/local/EMAN` on amd64; skipped on other arches (creates the dir so paths still resolve) and exports `EMANDIR`, `PATH`, `LD_LIBRARY_PATH`, `PYTHONPATH`.
-6. Clones `vossvolvox` (default branch `master`, override via `--build-arg VOSSVOLVOX_REF=<ref>`), builds the C++ tools, and copies the resulting `*.exe` binaries plus helper data/scripts into `/var/www/html/3vee/bin`, `/dat`, `/sh`.
-7. Configures Apache with a single vhost pointed at `/var/www/html/3vee`.
+5. Clones `vossvolvox` (default branch `master`, override via `--build-arg VOSSVOLVOX_REF=<ref>`), builds the C++ tools, and copies the resulting `*.exe` binaries plus helper data/scripts into `/var/www/html/3vee/bin`, `/dat`, `/sh`.
+6. Configures Apache with a single vhost pointed at `/var/www/html/3vee`.
 
-Before running `docker compose build`/`podman build`, execute `./docker/prefetch-assets.sh`. It downloads the Chimera installer and EMAN tarball into `docker/` on the host so the Dockerfile can `COPY` them directly. The script is idempotent (skips when the files already exist), and `build_podman_image.sh` runs it for you automatically.
+Before running `docker compose build`/`podman build`, execute `./docker/prefetch-assets.sh`. It downloads the Chimera installer into `docker/` on the host so the Dockerfile can `COPY` it directly. The script is idempotent (skips when the file already exists), and `build_podman_image.sh` runs it for you automatically.
 
 Build command (Docker):
 ```bash
@@ -93,15 +92,13 @@ If you want to build without Compose, run `docker build -t threev-web .` or `pod
 Need a specific revision? Build args:
 - `VOSSVOLVOX_REF` / `VOSSVOLVOX_REPO` – clone a particular branch/tag or fork of vossvolvox (default ref `master`).
 
-EMAN note: we now ship the full EMAN 1.9 bundle (docs + chimeraext) and run its installer inside the image. `/etc/profile.d/eman.sh` exports `EMANDIR` plus `PATH`/`LD_LIBRARY_PATH`/`PYTHONPATH` (and sources `eman.bashrc` when present) so EMAN binaries find their libs; if you run EMAN tools manually inside the container, open a login shell or source that profile script.
-
 ## 4. Runtime Topology
 `docker-compose.yml` defines two services:
 
 | Service | Image | Purpose |
 | --- | --- | --- |
 | `db` | `mariadb:10.6` | Standalone MariaDB instance seeded via standard env vars. Data lives in volume `db-data`. |
-| `web` | locally built | Apache + PHP UI + Python job runners + Chimera + EMAN + vossvolvox binaries. Binds `./output` into `/var/www/html/3vee/output`. |
+| `web` | locally built | Apache + PHP UI + Python job runners + Chimera + vossvolvox binaries. Binds `./output` into `/var/www/html/3vee/output`. |
 
 The MariaDB service now uses Compose’ `logging.driver: "none"` setting so its verbose startup messages stay out of `compose up` output; run `docker compose logs db` (or `podman compose logs db`) when you need to inspect the database logs.
 
@@ -149,11 +146,11 @@ The MariaDB service uses the standard `MARIADB_*` env vars to create the same da
 ## 7. Customizing the Stack
 - **Changing the exposed port:** edit `docker-compose.yml`, replace `"8080:80"` with another mapping (e.g., `"8000:80"`). For Podman rootless you can also map to high ports per user preferences.
 - **Custom DB credentials:** update both `docker-compose.yml` (environment for `db` + `web`) and, if you set `THREEV_SKIP_DB_INIT=1`, ensure the DB is initialized manually.
-- **External Chimera/EMAN:** the Docker build already installs specific versions (Chimera is only installed on amd64). If you prefer different versions, edit the URLs/paths in the Dockerfile.
+- **External Chimera:** the Docker build already installs a specific version (installed on amd64 only). If you prefer a different version, edit the URL/path in the Dockerfile.
 - **Python runtime:** Debian packages install Python 3 plus `numpy`, `scipy`, `mysqlclient`, and `Pillow`. If you need different versions, adjust the apt/pip steps in the Dockerfile.
 
 ## 8. Security Notes
-- The Chimera/EMAN installers are fetched over HTTPS from their official distributors. Verify licensing fits your use case before redistributing the image.
+- The Chimera installer is fetched over HTTPS from its official distributor. Verify licensing fits your use case before redistributing the image.
 - MariaDB credentials are stored in plain text inside `docker-compose.yml` for convenience. Supply secrets via environment variables or Docker secrets if deploying beyond local dev.
 - The container runs Apache as `www-data`. Job outputs land in `/var/www/html/3vee/output`; ensure you trust inputs because PHP pages launch shell commands on submitted values.
 

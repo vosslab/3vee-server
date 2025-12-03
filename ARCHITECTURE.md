@@ -89,7 +89,7 @@ To add a new tool:
 Because job metadata is abstracted through Sinedon, new parameters will automatically show up in the “Run Information” table as soon as the runner sends them through `uploadScriptData()`.
 
 ## Key Dependencies and Assumptions
-- UCSF Chimera, EMAN’s `proc3d`, Meshlab, and ImageMagick must be installed on the host for imaging and 3D conversion steps.
+- UCSF Chimera, Meshlab, and ImageMagick must be installed on the host for imaging and 3D conversion steps.
 - MariaDB credentials are stored in `py/sinedon/sinedon.cfg`; both PHP and Python components expect this file to be configured.
 - The filesystem layout referenced by `$PROCDIR`/`ThreeVLib.procdir` must match the production deployment (`/var/www/html/3vee`).
 - Some PHP includes (`inc/processing.inc`, `inc/threevdata.inc`) are not part of this repo; they are required for the site to run.
