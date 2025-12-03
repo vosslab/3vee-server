@@ -19,6 +19,7 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
     libmariadb-dev pkg-config \
     mariadb-client netcat-openbsd \
     imagemagick meshlab xvfb xauth xfonts-base libglu1-mesa libxi6 libxrender1 \
+    assimp-utils \
     gawk procps unzip bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
