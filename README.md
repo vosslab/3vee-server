@@ -38,7 +38,7 @@ You can control how the web container connects to MariaDB via the following envi
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip the startup wait-for-DB loop |
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `maketables.py` on boot |
 
-Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible.
+Use `podman compose` instead of `docker compose` if you prefer Podman—the files are compatible. On Apple Silicon (arm64) you still need amd64-only tools (Chimera, EMAN1/`proc3d`), so the provided `build_podman_image.sh` runs `podman build --arch amd64 -t threev-web:amd64 .` and passes that tag into Compose (`WEB_IMAGE_NAME`/`WEB_IMAGE_TAG` env vars) so `podman compose` simply runs the prebuilt amd64 image.
 
 The `web` container’s entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, sleeping ~20 s between attempts (six tries total). Leave the defaults unless you have custom SSL needs; otherwise, keep an eye on `podman compose logs web` to ensure the DB is ready before Apache starts serving traffic.
 
@@ -62,7 +62,7 @@ pip3 install -r requirements.txt
 
 The repo also provides lightweight defaults for the Python-side configs (`py/sinedon/sinedon.cfg` and `py/pyami/pyami.cfg`) so you can execute `tests/run_pyflakes.sh` and `tests/check.sh` without a real database. Feel free to replace those config stubs with your own credentials if you want to point at an actual MariaDB or instrument configuration.
 
-> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN` (`EMANDIR=/usr/local/EMAN`, with `PATH`, `LD_LIBRARY_PATH`, and `PYTHONPATH` updated accordingly). Non-amd64 builds skip both installers (they are x86-only), so plan accordingly if you need those tools. Ensure you are licensed/permitted to use these packages in your environment.
+> **Note:** On amd64 builds, the Docker image installs UCSF Chimera 1.19 (OSMesa build) into `/opt/chimera` (`CHIMERA=/opt/chimera`) and EMAN 1.9 into `/usr/local/EMAN`. Non-amd64 builds skip both installers. Python tooling auto-detects whether `proc3d` is present (override with `THREEV_ARCH` or `THREEV_DISABLE_PROC3D=1`) so the runtime can skip smoothing gracefully when EMAN is missing.
 
 Useful build arguments:
 - `VOSSVOLVOX_REF` (default `master`) and `VOSSVOLVOX_REPO` to check out a specific vossvolvox branch/tag/fork.
