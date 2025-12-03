@@ -1,8 +1,7 @@
 FROM debian:trixie
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    APP_ROOT=/var/www/html/3vee \
-    CHIMERA=/opt/chimera
+    APP_ROOT=/var/www/html/3vee
 
 ARG TARGETARCH
 
@@ -24,22 +23,6 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
 
 # ensure scripts sourcing /etc/bashrc do not fail noisily
 RUN ln -sf /etc/bash.bashrc /etc/bashrc
-
-# copy third-party installers that were fetched on the host
-COPY docker/chimera.bin /tmp/chimera.bin
-
-# install UCSF Chimera (OSMesa build)
-RUN set -eux; \
-    if [ "${TARGETARCH}" = "amd64" ]; then \
-      mkdir -p /tmp/chimera-installer && \
-      unzip -q /tmp/chimera.bin -d /tmp/chimera-installer && \
-      chmod +x /tmp/chimera-installer/installer /tmp/chimera-installer/chimera.bin && \
-      /tmp/chimera-installer/installer /tmp/chimera-installer && \
-      /tmp/chimera-installer/chimera.bin --mode unattended --prefix ${CHIMERA}; \
-    else \
-      echo "Skipping Chimera install on ${TARGETARCH} (installer is amd64-only)"; \
-    fi; \
-    rm -rf /tmp/chimera.bin /tmp/chimera-installer
 
 ARG VOSSVOLVOX_REPO=https://github.com/vosslab/vossvolvox.git
 ARG VOSSVOLVOX_REF=master
