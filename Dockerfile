@@ -33,10 +33,13 @@ ARG VOSSVOLVOX_REF=master
 RUN git clone --depth 1 --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossvolvox
 
 WORKDIR ${APP_ROOT}
-COPY . ${APP_ROOT}
 
-# Remove local pymysql stub so the image uses the real driver package
-RUN rm -f ${APP_ROOT}/py/pymysql.py
+# Copy only the vossvolvox sources first so their build can be cached separately
+COPY vossvolvox /tmp/vossvolvox
+
+# Prestage Python requirements for caching
+RUN mkdir -p py
+COPY py/requirements.txt py/requirements.txt
 
 ENV PYTHONPATH=${APP_ROOT}/py:${PYTHONPATH}
 
@@ -52,6 +55,12 @@ RUN make -C /tmp/vossvolvox/src CPU_FLAGS="-mtune=generic" all && \
     cp /tmp/vossvolvox/xyzr/pdb_to_xyzr.sh ${APP_ROOT}/sh/pdb_to_xyzr.sh && \
     chmod +x ${APP_ROOT}/bin/*.exe ${APP_ROOT}/bin/mapman_linux.exe ${APP_ROOT}/sh/pdb_to_xyzr.sh && \
     rm -rf /tmp/vossvolvox
+
+# Now copy the rest of the application (PHP/Python/static)
+COPY . ${APP_ROOT}
+
+# Remove local pymysql stub so the image uses the real driver package
+RUN rm -f ${APP_ROOT}/py/pymysql.py
 
 # Apache configuration
 COPY docker/3vee.conf /etc/apache2/sites-available/3vee.conf
