@@ -70,6 +70,7 @@ The repo also provides lightweight defaults for the Python-side configs (`py/sin
 
 > **Note:** Rendering is now handled by pure Python tooling (NumPy/SciPy/scikit-image/matplotlib); Chimera and EMAN are no longer bundled or required.
 
+
 Useful build arguments:
 - `VOSSVOLVOX_REF` (default `master`) and `VOSSVOLVOX_REPO` to check out a specific vossvolvox branch/tag/fork.
 `tests/check.sh` and `tests/run_pyflakes.sh` automatically write temporary copies of `py/sinedon/sinedon.cfg`, `py/pyami/pyami.cfg`, and `py/pymysql.py` before running, then delete them when the script ends, so you do not need to commit those files to the repo.
