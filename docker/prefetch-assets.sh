@@ -17,7 +17,7 @@ file_size_bytes() {
 	if [ ! -e "${path}" ]; then
 		echo 0
 		return
-	}
+	fi
 	if stat -f %z "${path}" >/dev/null 2>&1; then
 		stat -f %z "${path}"
 		return
@@ -33,7 +33,7 @@ prefetch_chimera() {
 		size=$(file_size_bytes "${CHIMERA_BIN}")
 		log "Chimera installer already present at docker/chimera.bin (${size} bytes)"
 		return
-	}
+	fi
 	log "Downloading Chimera installer to docker/chimera.bin"
 	python3 "${REPO_ROOT}/docker/download_chimera_headless.py" \
 		--file "${CHIMERA_FILE}" \
