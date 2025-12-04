@@ -30,12 +30,9 @@ RUN mkdir -p ${MPLCONFIGDIR} && chmod 777 ${MPLCONFIGDIR}
 
 ARG VOSSVOLVOX_REPO=https://github.com/vosslab/vossvolvox.git
 ARG VOSSVOLVOX_REF=master
-RUN git clone --depth 1 --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossvolvox
+RUN git clone --branch ${VOSSVOLVOX_REF} ${VOSSVOLVOX_REPO} /tmp/vossvolvox
 
 WORKDIR ${APP_ROOT}
-
-# Copy only the vossvolvox sources first so their build can be cached separately
-COPY vossvolvox /tmp/vossvolvox
 
 # Prestage Python requirements for caching
 RUN mkdir -p py
@@ -76,5 +73,7 @@ COPY docker/entrypoint.sh /usr/local/bin/3vee-entrypoint.sh
 RUN chmod +x /usr/local/bin/3vee-entrypoint.sh
 
 EXPOSE 80
+
+RUN echo "visit http://localhost:8080/php/index.php"
 
 ENTRYPOINT ["/usr/local/bin/3vee-entrypoint.sh"]
