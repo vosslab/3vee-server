@@ -21,7 +21,7 @@ from string import ascii_lowercase
 #local
 from appionlib import apDisplay
 from appionlib import apParam
-from appionlib import apChimera
+from appionlib import apHeadlessRender
 from appionlib import apFile
 from pyami import mrc, surfarea
 
@@ -807,7 +807,7 @@ class ThreeVLib(object):
 			self.writeToRunningLog(f"could not read volume metadata: {exc}", type="Star")
 
 		try:
-			apChimera.renderSnapshots(
+			apHeadlessRender.renderSnapshots(
 				tempfile,
 				contour=contour,
 				zoom=zoom,
@@ -870,7 +870,7 @@ class ThreeVLib(object):
 		return None
 		self.checkSystemLoad()
 		self.writeToRunningLog("making animated gif")
-		apChimera.renderAnimation(filename, contour=contour, zoom=zoom, sym=sym, silhouette=False)
+		apHeadlessRender.renderAnimation(filename, contour=contour, zoom=zoom, sym=sym, silhouette=False)
 		giffile = filename+".animate.gif"
 
 		if not os.path.isfile(giffile):

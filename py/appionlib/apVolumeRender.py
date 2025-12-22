@@ -8,7 +8,7 @@ and a tiny STL writer for 3D-print exports.
 from pathlib import Path
 
 import numpy
-from PIL import Image
+from PIL import Image, ImageChops, ImageFilter, ImageOps
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib import colors as mcolors
@@ -109,7 +109,29 @@ def _trim_image(path, tolerance=5):
 		img.crop((x0, y0, x1, y1)).save(path)
 
 
-def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis"):
+def _add_silhouette(path, width=2, color=(0, 0, 0), strength=1.8, threshold=20):
+	if width <= 0:
+		return
+	try:
+		with Image.open(path).convert("RGBA") as img:
+			# Find edges on luminance; thicker dilation approximates toon silhouette.
+			luma = ImageOps.autocontrast(img.convert("L"))
+			edges = luma.filter(ImageFilter.FIND_EDGES)
+			edges = edges.point(lambda p: min(255, int(p * strength)))
+			edges = edges.point(lambda p: 255 if p > threshold else 0)
+			edges = edges.filter(ImageFilter.MaxFilter(width * 2 + 1))
+			if edges.getbbox() is None:
+				return
+
+			stroke = Image.new("RGBA", img.size, color + (255,))
+			stroke.putalpha(edges)
+			out = Image.alpha_composite(img, stroke)
+			out.save(path)
+	except Exception:
+		return
+
+
+def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis", silhouette_width=0):
 	out_base = Path(basename)
 	cmap = cm.get_cmap(cmap_name)
 	views = [(0, 0, 1), (0, 90, 2), (90, 0, 3)]
@@ -120,13 +142,23 @@ def render_png_views(verts, faces, basename, imgsize=1024, cmap_name="viridis"):
 		out_path = f"{out_base}.{idx}.png"
 		fig.savefig(out_path, bbox_inches="tight", pad_inches=0)
 		try:
+			_add_silhouette(out_path, width=silhouette_width)
 			_trim_image(out_path)
 		except Exception:
 			pass
 		plt.close(fig)
 
 
-def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=30.0, cmap_name="viridis"):
+def render_animation_gif(
+	verts,
+	faces,
+	basename,
+	imgsize=512,
+	n_frames=36,
+	elev=30.0,
+	cmap_name="viridis",
+	silhouette_width=0,
+):
 	out_base = Path(basename)
 	tmp_dir = out_base.parent
 	cmap = cm.get_cmap(cmap_name)
@@ -138,6 +170,11 @@ def render_animation_gif(verts, faces, basename, imgsize=512, n_frames=36, elev=
 		_render_view(ax, verts, faces, elev, azim=(360.0 / n_frames) * i, cmap=cmap)
 		frame_path = tmp_dir / f"{out_base.name}.frame_{i:03d}.png"
 		fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
+		try:
+			_add_silhouette(frame_path, width=silhouette_width)
+			_trim_image(frame_path)
+		except Exception:
+			pass
 		with Image.open(frame_path) as frame:
 			frames.append(frame.copy())
 	plt.close(fig)
