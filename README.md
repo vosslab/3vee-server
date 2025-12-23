@@ -3,6 +3,18 @@ Web server for 3v: voss volume voxelator
 
 For a deep technical walkthrough of the stack (PHP UI, Python job layer, vossvolvox binaries, and MariaDB logging) see [docs/CODE_ARCHITECTURE.md](docs/CODE_ARCHITECTURE.md).
 
+## Documentation
+
+- [docs/REPO_STYLE.md](docs/REPO_STYLE.md)
+- [docs/MARKDOWN_STYLE.md](docs/MARKDOWN_STYLE.md)
+- [docs/PYTHON_STYLE.md](docs/PYTHON_STYLE.md)
+- [docs/CODE_ARCHITECTURE.md](docs/CODE_ARCHITECTURE.md)
+- [docs/CONTAINER.md](docs/CONTAINER.md)
+- [docs/MACOS_PODMAN.md](docs/MACOS_PODMAN.md)
+- [docs/AUTHORS.md](docs/AUTHORS.md)
+- [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- [docs/TODO.md](docs/TODO.md)
+
 ## Containerized Web Server
 
 You can spin up the full stack (Apache + PHP UI, Python 3 job runners, MariaDB, headless Python rendering, and the freshly built `vossvolvox` binaries) with Docker or Podman. The container builds on Debian 13 “trixie”, installs Python 3.11 from the distro, and pulls the required scientific/DB bindings from the Debian packages (`python3-numpy`, `python3-scipy`, `python3-mysqldb`, `python3-pil`, etc.).

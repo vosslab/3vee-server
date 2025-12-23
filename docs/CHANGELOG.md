@@ -33,3 +33,4 @@
 - Expanded the footer to a five-column layout with separate Resources and Social sections.
 - Moved Font Awesome font assets into `php/assets/fonts/`.
 - Replaced footer email with support + social links and added Font Awesome icons.
+- Added a documentation index section to `README.md` linking all `docs/*.md` files.
