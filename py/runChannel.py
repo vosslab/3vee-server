@@ -49,6 +49,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		f = open("results-"+self.params['jobid']+".html", "w")
 
 		self.threev.webImageSection(pngfiles, self.website, f)
+		self.threev.webJmolSection(objfile, self.website, f, pdbfile=self.pdbfile)
 		self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
 		self.threev.webMrcSection([mrcfile], self.website, f, pdb=True, pymol=self.params['pymol'])
 
@@ -63,7 +64,6 @@ if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
 	runthreev.close()	
-
 
 
 

@@ -46,11 +46,10 @@ RUN pip3 install --break-system-packages --no-cache-dir -r py/requirements.txt
 RUN make -C /tmp/vossvolvox/src CPU_FLAGS="-mtune=generic" all && \
     mkdir -p ${APP_ROOT}/bin ${APP_ROOT}/dat ${APP_ROOT}/sh ${APP_ROOT}/output && \
     cp -a /tmp/vossvolvox/bin/. ${APP_ROOT}/bin/ && \
-    cp /tmp/vossvolvox/mapman/lx_mapman ${APP_ROOT}/bin/mapman_linux.exe && \
     cp /tmp/vossvolvox/xyzr/atmtypenumbers ${APP_ROOT}/dat/atmtypenumbers.dat && \
     cp /tmp/vossvolvox/xyzr/atmtypenumbers ${APP_ROOT}/sh/atmtypenumbers && \
     cp /tmp/vossvolvox/xyzr/pdb_to_xyzr.sh ${APP_ROOT}/sh/pdb_to_xyzr.sh && \
-    chmod +x ${APP_ROOT}/bin/*.exe ${APP_ROOT}/bin/mapman_linux.exe ${APP_ROOT}/sh/pdb_to_xyzr.sh && \
+    chmod +x ${APP_ROOT}/bin/*.exe ${APP_ROOT}/sh/pdb_to_xyzr.sh && \
     rm -rf /tmp/vossvolvox
 
 # Now copy the rest of the application (PHP/Python/static)

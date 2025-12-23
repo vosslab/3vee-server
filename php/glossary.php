@@ -3,179 +3,175 @@
 require "inc/processing.inc";
 
 $title = "3v Glossary";
-writeTop($title,$title,'');
-global $PROCDIR;
+writeTop($title, $title, '');
 
+echo "<div class='threev-content'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Glossary</h2>\n";
+echo "    <p>This page defines the volume terms used by 3v. The probe radius determines which surface is measured; larger probes smooth away small pockets, smaller probes follow fine detail.</p>\n";
+echo "  </div>\n";
 
-echo "<table border='0' cellpading='3'><tr><td align='left'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>External volumes</h2>\n";
+echo "    <div class='threev-grid'>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme-00.0.mrc.2.png'><img width='128' height='128' src='img/lysozyme-00.0.mrc.2.png' alt='Probe 0.0'></a>\n";
+echo "        <figcaption>Probe 0.0 &Aring; (VDW)</figcaption>\n";
+echo "      </figure>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme-01.0.mrc.2.png'><img width='128' height='128' src='img/lysozyme-01.0.mrc.2.png' alt='Probe 1.0'></a>\n";
+echo "        <figcaption>Probe 1.0 &Aring;</figcaption>\n";
+echo "      </figure>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme-02.0.mrc.2.png'><img width='128' height='128' src='img/lysozyme-02.0.mrc.2.png' alt='Probe 2.0'></a>\n";
+echo "        <figcaption>Probe 2.0 &Aring;</figcaption>\n";
+echo "      </figure>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme-04.0.mrc.2.png'><img width='128' height='128' src='img/lysozyme-04.0.mrc.2.png' alt='Probe 4.0'></a>\n";
+echo "        <figcaption>Probe 4.0 &Aring;</figcaption>\n";
+echo "      </figure>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme-08.0.mrc.2.png'><img width='128' height='128' src='img/lysozyme-08.0.mrc.2.png' alt='Probe 8.0'></a>\n";
+echo "        <figcaption>Probe 8.0 &Aring;</figcaption>\n";
+echo "      </figure>\n";
+echo "    </div>\n";
+echo "    <dl class='threev-defs'>\n";
+echo "      <dt>Van der Waals (VDW) volume</dt>\n";
+echo "      <dd>The volume defined by the union of all atomic spheres at their van der Waals radii.</dd>\n";
+echo "      <dt>Solvent-accessible volume</dt>\n";
+echo "      <dd>The volume defined by expanding each atom by the solvent probe radius (typically 1.5 &Aring;) and taking the union of those expanded spheres.</dd>\n";
+echo "      <dt>Solvent-excluded volume</dt>\n";
+echo "      <dd>The volume inside the surface traced by a rolling solvent probe; it excludes regions the probe center cannot reach.</dd>\n";
+echo "      <dt>ASA/SAS/SES context (from Wikipedia)</dt>\n";
+echo "      <dd>The solvent-accessible surface area (ASA/SAS) is traced by the center of a rolling probe, while the solvent-excluded surface (SES, also called the Connolly surface) follows the probe’s outer envelope around atoms. The SES concept is closely related to ASA and uses rolling-ball methods originally developed by Richards and later implemented in 3D by Connolly and Richmond.</dd>\n";
+echo "      <dd><strong>References cited on Wikipedia:</strong>\n";
+echo "        <ul>\n";
+echo "          <li>Richards, F.M. (1977). Areas, volumes, packing and protein structure. <em>Annu Rev Biophys Bioeng</em>. doi:10.1146/annurev.bb.06.060177.001055</li>\n";
+echo "          <li>Connolly, M.L. (1983). Analytical molecular surface calculation. <em>J Appl Crystallogr</em>. doi:10.1107/S0021889883010985</li>\n";
+echo "          <li>Richmond, T.J. (1984). Solvent accessible surface area and excluded volume in proteins. <em>J Mol Biol</em>. doi:10.1016/0022-2836(84)90231-6</li>\n";
+echo "          <li>Connolly, M.L. (1993). The molecular surface package. <em>J Mol Graphics</em>. doi:10.1016/0263-7855(93)87010-3</li>\n";
+echo "        </ul>\n";
+echo "        <a href='https://en.wikipedia.org/wiki/Accessible_surface_area'>Wikipedia: Accessible surface area</a>\n";
+echo "      </dd>\n";
+echo "      <dt>Shell volume</dt>\n";
+echo "      <dd>The limiting surface used to separate inside from outside. It is the boundary that 3v uses to define “interior.”</dd>\n";
+echo "      <dt>Convex hull volume</dt>\n";
+echo "      <dd>The smallest convex volume that fully encloses the structure. Conceptually equivalent to an infinite-radius probe.</dd>\n";
+echo "    </dl>\n";
+echo "  </div>\n";
 
-/*********************************/
-/*********************************/
-echo "<br/>";
-echo "<h1>External Volumes</h1>";
-echo "<hr/>";
-echo "</td></tr><tr><td align='left'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Internal volumes</h2>\n";
+echo "    <div class='threev-grid'>\n";
+echo "      <figure>\n";
+echo "        <a href='img/lysozyme_layers.png'><img width='245' height='260' src='img/lysozyme_layers.png' alt='Lysozyme layers'></a>\n";
+echo "        <figcaption>Lysozyme cross-section</figcaption>\n";
+echo "      </figure>\n";
+echo "      <figure>\n";
+echo "        <a href='img/ribosome_layers.png'><img width='240' height='306' src='img/ribosome_layers.png' alt='Ribosome layers'></a>\n";
+echo "        <figcaption>50S ribosome cross-section</figcaption>\n";
+echo "      </figure>\n";
+echo "    </div>\n";
+echo "    <div class='threev-note'>\n";
+echo "      <strong>Legend:</strong> Inside the VDW surface (dark blue) and solvent-excluded surface (light blue), cavities are light green and channels are light red. The outer boundary is the shell surface.\n";
+echo "    </div>\n";
+echo "    <dl class='threev-defs'>\n";
+echo "      <dt>Empty volume</dt>\n";
+echo "      <dd>Solvent-excluded volume minus VDW volume. These are tiny voids between atoms that a solvent probe cannot access.</dd>\n";
+echo "      <dt>Solvent volume</dt>\n";
+echo "      <dd>Shell volume minus solvent-excluded volume. This includes all probe-accessible interior space.</dd>\n";
+echo "      <dt>Cavity volume</dt>\n";
+echo "      <dd>Interior solvent volume that is enclosed and not connected to the exterior by a probe-accessible path.</dd>\n";
+echo "      <dt>Channel volume</dt>\n";
+echo "      <dd>Interior solvent volume that is connected to the exterior (solvent volume minus cavity volume).</dd>\n";
+echo "    </dl>\n";
+echo "  </div>\n";
 
-/*********************************/
-/********** FIGURE ***************/
-echo "<table border='0' width='600' cellspacing='5'>\n";
-echo "<tr><td align='center' colspan='8'>\n";
-echo "<h4>Series of lysozyme excluded volumes at difference probe sizes</h4>\n";
-echo "<font size='-2'>Click on images for a larger version</font>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Parameter quick reference</h2>\n";
+echo "    <ul>\n";
+echo "      <li><strong>Probe radius</strong>: Larger probes smooth away small pockets; smaller probes capture finer details.</li>\n";
+echo "      <li><strong>Grid resolution</strong>: Higher resolution uses smaller voxels (more detail, slower).</li>\n";
+echo "      <li><strong>Shell method</strong>: Determines how the limiting surface is computed for cavity/channel separation.</li>\n";
+echo "    </ul>\n";
+echo "  </div>\n";
 
-echo "</td></tr><tr><td align='center'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Program summaries</h2>\n";
+echo "    <div class='threev-grid'>\n";
+echo "      <figure>\n";
+echo "        <img src='img/richards.png' width='220' alt='Rolling probe'>\n";
+echo "        <figcaption><strong>Volume Assessor</strong></figcaption>\n";
+echo "      </figure>\n";
+echo "      <div>\n";
+echo "        <p><strong>Volume Assessor</strong> calculates the volume of your macromolecule of interest. A virtual probe rolls over the molecular surface and the volume is computed from the resulting envelope.</p>\n";
+echo "      </div>\n";
+echo "    </div>\n";
+echo "    <hr/>\n";
+echo "    <div class='threev-grid'>\n";
+echo "      <figure>\n";
+echo "        <img src='img/solvent.png' width='320' alt='Solvent and channel volumes'>\n";
+echo "        <figcaption><strong>Channel Finder</strong></figcaption>\n";
+echo "      </figure>\n";
+echo "      <div>\n";
+echo "        <p><strong>Channel Finder</strong> is one of the most useful tools. It can pull interesting channels out from a structure (for example, the ribosome exit tunnel or the internal cavity of GroEL).</p>\n";
+echo "        <p>Channel Finder works by calculating the shell volume (A), subtracting the solvent-excluded volume (B) to get the solvent volume (C), then retaining only the solvent volume connected to a user-specified point.</p>\n";
+echo "      </div>\n";
+echo "    </div>\n";
+echo "    <hr/>\n";
+echo "    <div class='threev-grid'>\n";
+echo "      <figure>\n";
+echo "        <a href='img/grid_vs_probe.jpg'><img src='img/grid_vs_probe_sm.jpg' width='260' alt='Grid size vs probe size'></a>\n";
+echo "        <figcaption><strong>Simple 3D Printer Prep</strong></figcaption>\n";
+echo "      </figure>\n";
+echo "      <div>\n";
+echo "        <p><strong>Simple 3D Printer Prep</strong> calculates the volume of your macromolecule of interest using the same rolling-probe approach as Volume Assessor, then prepares a simplified mesh suitable for printing.</p>\n";
+echo "        <p>The figure highlights the difference between grid resolution and probe size.</p>\n";
+echo "      </div>\n";
+echo "    </div>\n";
+echo "  </div>\n";
 
-echo "<a href='img/lysozyme-00.0.mrc.2.png'>\n";
-echo "  <img border='0' width='128' height='128' src='img/lysozyme-00.0.mrc.2.png'>\n";
-echo "</a><font size='-2'>Probe 0.0 &Aring; (VDW)</font>\n";
-echo "</td><td align='center'>\n";
-echo "<a href='img/lysozyme-01.0.mrc.2.png'>\n";
-echo "  <img border='0' width='128' height='128' src='img/lysozyme-01.0.mrc.2.png'>\n";
-echo "</a><font size='-2'>Probe 1.0 &Aring;</font>\n";
-echo "</td><td align='center'>\n";
-echo "<a href='img/lysozyme-02.0.mrc.2.png'>\n";
-echo "  <img border='0' width='128' height='128' src='img/lysozyme-02.0.mrc.2.png'>\n";
-echo "</a><font size='-2'>Probe 2.0 &Aring;</font>\n";
-echo "</td><td align='center'>\n";
-echo "<a href='img/lysozyme-04.0.mrc.2.png'>\n";
-echo "  <img border='0' width='128' height='128' src='img/lysozyme-04.0.mrc.2.png'>\n";
-echo "</a><font size='-2'>Probe 4.0 &Aring;</font>\n";
-echo "</td><td align='center'>\n";
-echo "<a href='img/lysozyme-08.0.mrc.2.png'>\n";
-echo "  <img border='0' width='128' height='128' src='img/lysozyme-08.0.mrc.2.png'>\n";
-echo "</a><font size='-2'>Probe 8.0 &Aring;</font>\n";
-echo "</td><td align='center'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Guided tutorials (quick exercises)</h2>\n";
+echo "    <p>Use the preset buttons on each tool page to run a known example. These are designed as short, repeatable exercises you can share with students or new lab members.</p>\n";
+echo "    <ol>\n";
+echo "      <li><strong>Volume Assessor (Lysozyme):</strong> On the Volume page, run <em>Lysozyme - Solvent Excluded</em> and <em>Lysozyme - Shell</em>. Compare how the probe radius changes the overall envelope.</li>\n";
+echo "      <li><strong>Channel Finder (Ribosome exit tunnel):</strong> On Channel Finder, run <em>50S Ribosomal Subunit</em>. Inspect the resulting channel and compare it to known exit tunnel geometry.</li>\n";
+echo "      <li><strong>Channel Finder (GroEL cavity):</strong> Try the <em>GroEL cavity</em> preset and compare channel connectivity to the solvent-excluded surface.</li>\n";
+echo "      <li><strong>3D Print Prep:</strong> On Simple 3D Printer Prep, run the lysozyme preset and compare grid resolution versus probe size in the output meshes.</li>\n";
+echo "    </ol>\n";
+echo "  </div>\n";
 
-echo "</td></tr></table>\n";
-echo "<hr/>";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Parameter intuition</h2>\n";
+echo "    <ul>\n";
+echo "      <li><strong>Probe radius:</strong> Small probes capture narrow crevices; large probes smooth them away. If a channel disappears, increase the probe size or switch to Channel Finder with an anchor point.</li>\n";
+echo "      <li><strong>Grid resolution:</strong> Finer grids increase detail but slow down runs. Use coarse grids for exploration, then rerun with higher resolution for publication figures.</li>\n";
+echo "      <li><strong>Channel anchor point:</strong> The specified point should lie inside the target channel or cavity. If the result is empty, try a nearby point or a larger small-probe radius.</li>\n";
+echo "      <li><strong>Shell method:</strong> The shell surface defines interior vs exterior. If cavities look fragmented, try a larger probe or a different shell method.</li>\n";
+echo "    </ul>\n";
+echo "  </div>\n";
 
-echo "</td></tr><tr><td align='left'>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Interpreting results</h2>\n";
+echo "    <ul>\n";
+echo "      <li><strong>Channels vs cavities:</strong> Channels connect to the exterior; cavities are enclosed. Use the Channel Finder or Cavity Extract tools to separate them.</li>\n";
+echo "      <li><strong>Binary volumes:</strong> Many outputs are binary (0/1). Use low thresholds (around 0.01) in ChimeraX/Chimera to render clean surfaces.</li>\n";
+echo "      <li><strong>Compare across probes:</strong> A probe series (Volume Range) can reveal whether a pocket is robust or probe-size sensitive.</li>\n";
+echo "    </ul>\n";
+echo "  </div>\n";
 
-/*********************************/
-echo "<h3>Van der Waals (VDW) volume</h3>";
-echo "<h5>
-The van der Waals (VDW) surface is the surface defined as the surface 
-created when each atom is represented by a sphere with a radius equal
-to the van der Waals (VDW) radius of that atom. The van der Waals (VDW) 
-surface for a molecule is the union of all the individual van der Waals
-spheres.
-
-The van der Waals volume of a molecule is the total volume occupied by its atoms. It is computed assuming each atom is a sphere having its non-bonded van der Waals radius, and counting volumes where van der Waals spheres overlap only once.
-
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Solvent-accessible volume</h3>";
-echo "<h5>
-The solvent accessible surface is the surface defined as the VDW surface 
-plus a probe radius.
-
-The solvent-accessible volume of a macromolecule corresponds to the volume inside the accessible surface defined for it by the rolling probe method using a 1.5 &Aring; radius probe (Richards, 1977). However it is not computed that way. Instead, every atom in the structure is treated as a sphere the radius of which is the sum of its non-bonded van der Waals radius plus 1.5 &Aring;, the radius of a water molecule. The solvent-accessible volume is the sum of the volume of all such spheres with regions where spheres overlap counted only once (Lee & Richards, 1971). 
-
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Solvent-excluded volume</h3>";
-echo "<h5>
-The solvent-excluded volume of a macromolecule is the volume inside the excluded surface of that macromolecule determined using a spherical probe of 1.5 &Aring;.
-
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Shell volume</h3>";
-echo "<h5>
-The 'shell' of a macromolecule is the limiting surface used to distinguish the interior of the macromolecule from its exterior. The shell volume is the volume inside that surface.
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Convex hull volume</h3>";
-echo "<h5>
-The convex hull of any object is the smallest convex surface that entirely surrounds the set of van der Waals (VDW) spheres for macromolecules. The convex hull volume of an object is the volume inside its convex hull. The convex hull volume is equivalent to the infinite-excluded volume, <i>i.e.</i>, the excluded surface of that macromolecule determined using a spherical probe of infinite radius or two-dimensional plane.
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-
-/*********************************/
-/*********************************/
-echo "<hr/>";
-echo "<h1>Internal Volumes</h1>";
-echo "<hr/>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-/********** FIGURE ***************/
-echo "<table border='0' width='600' cellspacing='5'>\n";
-echo "<tr><td align='center'>\n";
-echo "<h4>Slice through Lysozyme</h4>\n";
-echo "<font size='-2'>Click on image for a larger version</font>\n";
-echo "</td><td align='center'>\n";
-echo "<h4>Slice through 50S Ribosomal subunit</h4>\n";
-echo "<font size='-2'>Click on image for a larger version</font>\n";
-
-echo "</td></tr><tr><td align='center'>\n";
-
-echo "<a href='img/lysozyme_layers.png'>\n";
-echo "  <img border='0' width='245' height='260' src='img/lysozyme_layers.png'>\n";
-echo "</a>\n";
-echo "</td><td align='center'>\n";
-echo "<a href='img/ribosome_layers.png'>\n";
-echo "  <img border='0' width='240' height='306' src='img/ribosome_layers.png'>\n";
-echo "</a>\n";
-
-echo "</td></tr><tr><td colspan='3'>\n";
-echo "<h4>
-<b>LEGEND:</b> Inside the van der Waals surface (dark blue) 
-and the solvent excluded surface (light blue), there are two
-type of solvent: cavities (light green) and channels (light red).
-The outer most surface (dark red line) is defined by the shell volume.
-The difference between channels and cavities is that channels are connected
-to the outside surface and cavities are self-contained units.
-</h4>
-\n";
-
-echo "</td></tr></table>\n";
-echo "<hr/>";
-
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Empty volume</h3>";
-echo "<h5>
-The empty volume of a macromolecule is the difference between its solvent-excluded volume and its van der Waals volume. It corresponds to the sum of the small volumes in between the atoms that are not accessible to a solvent molecule. The empty volume corresponds to the light blue area in the Figures (above).
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Solvent volume</h3>";
-echo "<h5>
-The solvent volume of a macromolecule is the difference between its shell volume and its solvent-excluded volume. This corresponds to all points inside the shell volume large enough to accommodate a solvent molecule that do not overlap with the solvent-excluded volume. The solvent volume corresponds to both the light red and green areas in the Figures (above).
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Cavity volume</h3>";
-echo "<h5>
-The cavity volume of a macromolecule is the sum of the volumes inside its shell that are large enough to accommodate a spherical probe, but are not connected to the macromolecule's shell by at least one passage traversable by the probe. The cavity volume corresponds to the light green areas in the Figures (above).
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "<h3>Channel volume</h3>";
-echo "<h5>
-The channel volume is equal to the solvent volume minus the cavity volume. The channel volume corresponds to the light red areas in the Figures (above).
-<h5>";
-echo "</td></tr><tr><td align='left'>\n";
-
-/*********************************/
-echo "</td></tr></table>\n";
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Common pitfalls</h2>\n";
+echo "    <ul>\n";
+echo "      <li><strong>Empty output:</strong> Usually a probe or anchor-point issue. Try a smaller probe or move the anchor point into the channel.</li>\n";
+echo "      <li><strong>Over-smoothing:</strong> If fine features vanish, reduce probe radius or increase grid resolution.</li>\n";
+echo "      <li><strong>Performance:</strong> Large structures at high resolution can take time. Start coarse, then refine.</li>\n";
+echo "    </ul>\n";
+echo "  </div>\n";
+echo "</div>\n";
 
 writeBottom();
 exit;
 
 ?>
-
-

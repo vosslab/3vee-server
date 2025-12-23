@@ -262,37 +262,6 @@ class ThreeVLib(object):
 		return xyzrfile
 
 	#====================
-	def convertEZDtoCCP4(self, ezdfile, ccp4file=None):
-		self.checkSystemLoad()
-		self.writeToRunningLog("converting ezd into ccp4")
-		if ccp4file is None:
-			ccp4file = os.path.splitext(ezdfile)[0]+".ccp4"
-		if os.path.isfile(ccp4file):
-			os.remove(ccp4file)
-
-		os.environ["MAPSIZE"] = "90000000"
-		os.environ["NUMMAPS"] = "1"
-		os.environ["CCP4_OPEN"] = "UNKNOWN"
-
-		mapmancmd = os.path.join(self.procdir, "bin/mapman_linux.exe")
-		mapmanproc = subprocess.Popen(mapmancmd, shell=True, 
-			stdin=subprocess.PIPE)#, stderr=subprocess.PIPE,  stdout=subprocess.PIPE)
-		mapmanproc.stdin.write("read map\n")
-		mapmanproc.stdin.write(ezdfile+"\n")
-		mapmanproc.stdin.write("NEWEZD\n")
-		mapmanproc.stdin.write("write map\n")
-		mapmanproc.stdin.write(ccp4file+"\n")
-		mapmanproc.stdin.write("CCP4\n")
-		mapmanproc.stdin.write("quit\n")
-		mapmanproc.wait()
-		if not os.path.isfile(ccp4file):
-			self.writeToRunningLog("failed to convert EZD to CCP4", type="Cross")
-			sys.exit(1)
-
-		os.remove(ezdfile)
-		return ccp4file
-
-	#====================
 	def convertCCP4toMRC(self, ccp4file, mrcfile=None):
 		self.checkSystemLoad()
 		self.writeToRunningLog("converting ccp4 into mrc")
@@ -344,6 +313,9 @@ class ThreeVLib(object):
 		f = open(logfile, "r")
 		fsvdata = {}
 		fsvdata['mrcfile'] = mrcfile
+		ezdfile = os.path.splitext(mrcfile)[0] + ".ezd"
+		if os.path.isfile(ezdfile):
+			fsvdata['ezdfile'] = ezdfile
 		for line in f:
 			if line[:26] == "FRACTIONAL SOLVENT VOLUME:":
 				bits = line.strip().split(":")

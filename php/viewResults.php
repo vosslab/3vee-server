@@ -66,18 +66,11 @@ function streamToArray($stream) {
 **************************
 *************************/
 function checkLogFile($logfile, $tail) {
-	global $PROCDIR;
-	if (file_exists($logfile)) {
-		$r = tail_file($logfile, $tail);
-		//echo "<!-- ".print_r($r)." -->";
-		$allref = streamToArray($r);
-	} else {
-		$cmd = "tail -$tail $logfile ";
-		$r = shell_exec($cmd);
-		//echo "<!-- ".$r." -->";
-		$allref = streamToArray($r);
+	if (!file_exists($logfile)) {
+		return array();
 	}
-	return $allref;
+	$r = tail_file($logfile, $tail);
+	return streamToArray($r);
 }
 
 /*************************
@@ -286,6 +279,7 @@ function runningLog($jobid, $showrunlog) {
 		echo "<tr><td align='center' valign='top'>\n";
 		echo "<h2>Log file display</h2>\n";
 		echo "<form name='jobform' method='post' action='$formAction'>\n";
+		echo csrf_field();
 		echo "Show last <input type='text' name='tail' size='4' value='$tail'> lines of log file&nbsp;\n";
 		echo "<input type='submit' name='checkjob' value='Update Status'><br />\n";
 		//echo basename($logfile)."</td></tr>\n";
@@ -346,7 +340,7 @@ function preLog($jobid) {
 global $PROCDIR;
 require_once "inc/processing.inc";
 
-$jobid = isset($_GET['jobid']) ? trim($_GET['jobid']) : '';
+$jobid = get_jobid();
 //$datestamp = substr($jobid, 0, 7);
 $jobdir = preg_replace("/\./", "/", $jobid);
 $runningfile = $PROCDIR."output/$jobdir/runlog-".$jobid.".html";

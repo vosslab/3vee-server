@@ -38,18 +38,20 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		#run program
 		fsvdata = self.threev.runFsvCalc(xyzrfile, bigprobe=self.params['bigprobe'],
 			 smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'])
-		ezdfile = fsvdata['ezdfile']
+		ezdfile = fsvdata.get('ezdfile')
+		mrcfile = fsvdata.get('mrcfile')
 		os.remove(xyzrfile)
-		#convert ezd
-		ccp4file = self.threev.convertEZDtoCCP4(ezdfile)
-		#convert ccp4 to mrc
-		mrcfile = self.threev.convertCCP4toMRC(ccp4file)
+		if mrcfile is None:
+			self.threev.writeToRunningLog("FSVCalc did not produce an MRC file", type="Cross")
+			self.threev.close()
+			return
 		#make images
 		pngfiles, objfile = self.threev.makeImages(mrcfile)
 		#make animated gif
 		giffile = self.threev.animateGif(pngfiles)
 		#zip file
-		self.threev.gzipFile(ccp4file)
+		if ezdfile and os.path.isfile(ezdfile):
+			self.threev.gzipFile(ezdfile)
 		self.threev.gzipFile(mrcfile)
 		#os.remove(ccp4file)
 		self.threev.close()
@@ -68,14 +70,10 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		### Downloadable files of the volume
 		f.write("<br/><h3>Downloadable files of your internal solvent:</h3>\n")
 		f.write("<h4><ul>\n")
-		if os.path.isfile(ezdfile+".gz"):
+		if ezdfile and os.path.isfile(ezdfile+".gz"):
 			f.write("<li>download EZD file: <a href='"
 				+website+os.path.basename(ezdfile)+".gz'>"
 				+os.path.basename(ezdfile)+"</a></li>\n")
-		if os.path.isfile(ccp4file+".gz"):
-			f.write("<li>download CCP4 file: <a href='"
-				+website+os.path.basename(ccp4file)+".gz'>"
-				+os.path.basename(ccp4file)+"</a></li>\n")
 		if os.path.isfile(mrcfile+".gz"):
 			f.write("<li>download MRC file: <a href='"
 				+website+os.path.basename(mrcfile)+".gz'>"
@@ -87,9 +85,9 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 
 		### Images of the volume
 		pngfiles.sort()
-		if pngfiles or os.path.isfile(giffile):
+		if pngfiles or (giffile and os.path.isfile(giffile)):
 			f.write("<br/><h3>Images of your internal solvent:</h3>\n")
-		if os.path.isfile(giffile):
+		if giffile and os.path.isfile(giffile):
 			f.write("<a href='"+website+os.path.basename(giffile)
 				+"'>\n<img src='output/results/"+self.params['jobid']+"/"
 				+os.path.basename(giffile)+"' width='256' height='256'>\n</a>&nbsp;\n")		
@@ -99,6 +97,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 					f.write("<a href='"+website+os.path.basename(pngfile)
 						+"'>\n<img src='output/results/"+self.params['jobid']+"/"
 						+os.path.basename(pngfile)+"' width='128' height='128'>\n</a>&nbsp;\n")
+		self.threev.webJmolSection(objfile, website, f, pdbfile=self.pdbfile)
 		f.close()	
 		
 
@@ -110,8 +109,6 @@ if __name__ == "__main__":
 	runFSVCalc = RunFSVCalcScript()
 	runFSVCalc.start()
 	runFSVCalc.close()	
-
-
 
 
 

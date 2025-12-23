@@ -31,6 +31,7 @@ function createForm($extra=false) {
 	}
 
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 
 	// reload set params
 	$bigprobe = ($_POST['bigprobe']) ? $_POST['bigprobe'] : '8';
@@ -115,8 +116,8 @@ function runThreeVProgram() {
 	// get variables
 	global $PROCDIR;
 	global $progname;
-	$bigprobe = $_POST['bigprobe'];
-	$smallprobe = $_POST['smallprobe'];
+	$bigprobe = post_float_value('bigprobe', 6.0);
+	$smallprobe = post_float_value('smallprobe', 2.0);
 
 	// check probe sizes
 	if ($bigprobe < $smallprobe) {
@@ -126,8 +127,8 @@ function runThreeVProgram() {
 
 	// write command
 	$command = $PROCDIR."py/runTunnel.py ";
-	$command.=" --bigprobe=$bigprobe";
-	$command.=" --smallprobe=$smallprobe";
+	$command.=" --bigprobe=".escapeshellarg($bigprobe);
+	$command.=" --smallprobe=".escapeshellarg($smallprobe);
 
 	$error = launchJob($command, $progname);
 	if ($error)

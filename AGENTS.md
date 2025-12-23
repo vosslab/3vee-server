@@ -17,7 +17,7 @@
 
 ## Build, Test, and Development Commands
 - Build & run with Podman/Docker: `podman compose up --build` (or `docker compose up --build`). Opens UI at `http://localhost:8080/php/volumeCalc.php`.
-- Start the Podman VM (macOS) before `compose up`: `podman machine start podman-machine-default` (see `CONTAINER.md` for the full Podman workflow and port-forwarding tips).
+- Start the Podman VM (macOS) before `compose up`: `podman machine start podman-machine-default` (see `docs/CONTAINER.md` for the full Podman workflow and port-forwarding tips).
 - Exec into web container: `podman compose exec web bash`.
 - Lint compile Python locally: `(cd py && python3 -m py_compile *.py run*.py ThreeV*.py)`.
 - Build vossvolvox natively (if needed): `make -C vossvolvox/src all`.

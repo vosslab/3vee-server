@@ -50,6 +50,7 @@ function createForm($extra=false) {
 
 	writeTop($progname, $progname, $javascript, $extra);
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 
 	// reload set params
 	$minprobe = ($_POST['minprobe']) ? $_POST['minprobe'] : '0';
@@ -147,9 +148,9 @@ function runThreeVProgram() {
 	// get common variables
 	global $PROCDIR;
 	global $progname;
-	$minprobe = $_POST['minprobe'];
-	$maxprobe = $_POST['maxprobe'];
-	$probestep = $_POST['probestep'];
+	$minprobe = post_float_value('minprobe', 0.5);
+	$maxprobe = post_float_value('maxprobe', 6.0);
+	$probestep = post_float_value('probestep', 0.5);
 
 	// check probe sizes
 	if ($maxprobe < $minprobe) {
@@ -159,9 +160,9 @@ function runThreeVProgram() {
 
 	// write command line
 	$command = $PROCDIR."py/runVolumeRange.py ";
-	$command.=" --minprobe=$minprobe";
-	$command.=" --maxprobe=$maxprobe";
-	$command.=" --probestep=$probestep";
+	$command.=" --minprobe=".escapeshellarg($minprobe);
+	$command.=" --maxprobe=".escapeshellarg($maxprobe);
+	$command.=" --probestep=".escapeshellarg($probestep);
 
 	$error = launchJob($command, $progname);
 	if ($error)

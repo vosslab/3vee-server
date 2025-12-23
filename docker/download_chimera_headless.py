@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the UCSF Chimera installer by accepting the license form headlessly."""
+"""Download UCSF Chimera/ChimeraX installers by accepting the license form headlessly."""
 
 import argparse
 import sys
@@ -14,6 +14,9 @@ from http.client import HTTPMessage
 
 
 CHIMERA_FORM_URL = "https://www.cgl.ucsf.edu/chimera/cgi-bin/secure/chimera-get.py"
+CHIMERAX_FORM_URL = "https://www.rbvi.ucsf.edu/chimerax/cgi-bin/secure/chimerax-get.py"
+DEFAULT_CHIMERA_FILE = "linux_x86_64_osmesa/chimera-1.19-linux_x86_64_osmesa.bin"
+DEFAULT_CHIMERAX_FILE = "1.11/flatpak/ChimeraX-1.11.flatpak"
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/117.0"
 )
@@ -104,7 +107,7 @@ def extract_redirect(html_text):
         raise RuntimeError("Failed to locate Chimera redirect target")
     for candidate in matches:
         target = html.unescape(candidate)
-        if "chimera-get.py" in target:
+        if "chimera-get.py" in target or "chimerax-get.py" in target:
             print(f"[download_chimera] redirect candidate {target}")
             return target
     chosen = html.unescape(matches[0])
@@ -115,7 +118,7 @@ def extract_redirect(html_text):
     return chosen
 
 
-def download_installer(file_param, output_path, user_agent, force):
+def download_installer(form_url, file_param, output_path, user_agent, force):
     destination = Path(output_path).expanduser()
     if destination.is_file() and destination.stat().st_size > 0 and not force:
         print(
@@ -126,18 +129,18 @@ def download_installer(file_param, output_path, user_agent, force):
     opener = build_opener(user_agent)
 
     # Load license page to establish cookies/session
-    http_request(opener, f"{CHIMERA_FORM_URL}?{urllib.parse.urlencode({'file': file_param})}")
+    http_request(opener, f"{form_url}?{urllib.parse.urlencode({'file': file_param})}")
 
     # Submit the Accept form
     redirect_html = http_request(
         opener,
-        CHIMERA_FORM_URL,
+        form_url,
         data={"file": file_param, "choice": "Accept"},
     ).decode("utf-8", errors="ignore")
     print("[download_chimera] accept form snippet:\n" + redirect_html[:500])
 
     redirect_target = extract_redirect(redirect_html)
-    download_url = urllib.parse.urljoin(CHIMERA_FORM_URL, redirect_target)
+    download_url = urllib.parse.urljoin(form_url, redirect_target)
     print(
         f"[download_chimera] redirect target={redirect_target} -> {download_url}"
     )
@@ -151,9 +154,15 @@ def download_installer(file_param, output_path, user_agent, force):
 def parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--product",
+        choices=("chimera", "chimerax"),
+        default="chimerax",
+        help="Which UCSF download form to use",
+    )
+    parser.add_argument(
         "--file",
-        default="linux_x86_64_osmesa/chimera-1.19-linux_x86_64_osmesa.bin",
-        help="Installer path parameter expected by chimera-get.py",
+        default=None,
+        help="Installer path parameter expected by the download form",
     )
     parser.add_argument(
         "--output",
@@ -175,8 +184,13 @@ def parse_args(argv):
 
 def main(argv=None):
     args = parse_args(argv or sys.argv[1:])
+    form_url = CHIMERAX_FORM_URL if args.product == "chimerax" else CHIMERA_FORM_URL
+    if args.file is None:
+        file_param = DEFAULT_CHIMERAX_FILE if args.product == "chimerax" else DEFAULT_CHIMERA_FILE
+    else:
+        file_param = args.file
     try:
-        download_installer(args.file, args.output, args.user_agent, args.force)
+        download_installer(form_url, file_param, args.output, args.user_agent, args.force)
     except Exception as exc:  # pylint: disable=broad-except
         print(f"Failed to download Chimera installer: {exc}", file=sys.stderr)
         return 1

@@ -62,6 +62,7 @@ function createForm($extra=false) {
 
 	writeTop($progname, $progname, $javascript, $extra);
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 
 	// reload set params
 	$probe = ($_POST['probe']) ? $_POST['probe'] : '3';
@@ -150,11 +151,11 @@ function runThreeVProgram() {
 	// get common variables
 	global $PROCDIR;
 	global $progname;
-	$probe = $_POST['probe'];
+	$probe = post_float_value('probe', 1.4);
 
 	// write command line
 	$command = $PROCDIR."py/runVolume.py ";
-	$command.=" --probe=$probe";
+	$command.=" --probe=".escapeshellarg($probe);
 
 	$error = launchJob($command, $progname);
 	if ($error)

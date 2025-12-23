@@ -17,3 +17,4 @@
 * look at code to avoid text injections, like with probe or pdb entry. sanitize the input.
 * provide a link to submit bugs to github tracker
 * convert backend to rust
+* add dark mode (low priority)

@@ -96,6 +96,7 @@ function createForm($extra=false) {
 	}
 
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 
 	// reload set params
 	$bigprobe = ($_POST['bigprobe']) ? $_POST['bigprobe'] : '10';
@@ -204,11 +205,11 @@ function runThreeVProgram() {
 	// get variables
 	global $PROCDIR;
 	global $progname;
-	$bigprobe = $_POST['bigprobe'];
-	$smallprobe = $_POST['smallprobe'];
-	$x = (float) $_POST['x'];
-	$y = (float) $_POST['y'];
-	$z = (float) $_POST['z'];
+	$bigprobe = post_float_value('bigprobe', 6.0);
+	$smallprobe = post_float_value('smallprobe', 2.0);
+	$x = post_float_value('x', 0.0);
+	$y = post_float_value('y', 0.0);
+	$z = post_float_value('z', 0.0);
 
 	// check probe sizes
 	if ($bigprobe < $smallprobe) {
@@ -218,9 +219,9 @@ function runThreeVProgram() {
 
 	// write command
 	$command = $PROCDIR."py/runChannel.py ";
-	$command.=" --bigprobe=$bigprobe";
-	$command.=" --smallprobe=$smallprobe";
-	$command.=" --coord=$x,$y,$z";
+	$command.=" --bigprobe=".escapeshellarg($bigprobe);
+	$command.=" --smallprobe=".escapeshellarg($smallprobe);
+	$command.=" --coord=".escapeshellarg($x.",".$y.",".$z);
 
 	$error = launchJob($command, $progname);
 	if ($error)

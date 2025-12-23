@@ -69,13 +69,7 @@ function getPDBInfo($pdbfile) {
 */
 function selectStructure($extra=false) {
 	// setup a jobid
-	$today = getdate();
-	$jobid = substr($today['year'],2,2)
-		.strtolower(substr($today['month'],0,3))
-		.sprintf("%02u", $today['mday'])
-		.chr($today['hours']+97)
-		.sprintf("%02u", $today['minutes'])
-		.chr((int) $today['seconds']/2.3+97);
+	$jobid = getJobId();
 	$formAction=$_SERVER['PHP_SELF']."?jobid=$jobid";
 
 	$progname = "Choose a Structure";
@@ -102,6 +96,7 @@ function selectStructure($extra=false) {
 	echo $helpdiv;
 
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 	echo "<input type='hidden' name='jobid' value='$jobid'/>&nbsp;";
 
 	// reload set params
@@ -166,10 +161,13 @@ function selectStructure($extra=false) {
 function selectProcess($extra=false) {
 	global $PROCDIR;
 	$progname = "Cavity Extractor";
-	$pdbid  = substr($_POST['pdbid'],0,4);
-	$hetero = $_POST['hetero'];
+	$pdbid  = post_pdbid();
+	$hetero = post_flag_value('hetero');
 	$hostip = $_SERVER['REMOTE_ADDR'];
-	$jobid  = $_POST['jobid'];
+	if (!filter_var($hostip, FILTER_VALIDATE_IP)) {
+		$hostip = '';
+	}
+	$jobid  = post_jobid();
 	$uploaddir = $PROCDIR.'output/uploads/';
 	$formAction=$_SERVER['PHP_SELF']."?jobid=$jobid";
 
@@ -178,6 +176,11 @@ function selectProcess($extra=false) {
 		selectStructure('<b>ERROR:</b> No pdbid selected');
 		exit;
 	} elseif ($_FILES['uploadpdb']['name']) {
+		$upload_error = validate_pdb_upload($_FILES['uploadpdb']);
+		if ($upload_error) {
+			selectStructure('<b>ERROR:</b> '.$upload_error);
+			exit;
+		}
 		$uploadfile = $uploaddir . $jobid . ".pdb";
 		if (!move_uploaded_file($_FILES['uploadpdb']['tmp_name'], $uploadfile)) {
 			selectStructure('<b>ERROR:</b> Possible file upload attack!');
@@ -188,12 +191,12 @@ function selectProcess($extra=false) {
 	} elseif ($pdbid) {
 		$uploadfile = $uploaddir . $jobid . ".pdb.gz";
 		$pdburl =  "https://files.rcsb.org/download/".$pdbid.".pdb.gz";
-		$command = "wget '$pdburl' -O '$uploadfile'";
-		$command.=" > /var/www/html/3vee/output/running/shell-$jobid.log 2>&1";
+		$command = "wget ".escapeshellarg($pdburl)." -O ".escapeshellarg($uploadfile);
+		$command.=" > ".escapeshellarg("/var/www/html/3vee/output/running/shell-$jobid.log")." 2>&1";
  		$command.=" ;";
 		//echo $command."<br/>\n";
 		system($command);
-		$command2 =" gunzip -v $uploadfile > /var/www/html/3vee/output/running/shell-$jobid.log 2>&1";
+		$command2 =" gunzip -v ".escapeshellarg($uploadfile)." > ".escapeshellarg("/var/www/html/3vee/output/running/shell-$jobid.log")." 2>&1";
 		//echo $command2."<br/>\n";
 		system($command2);
 		$pdbfile = $uploaddir . $jobid . ".pdb";
@@ -211,6 +214,7 @@ function selectProcess($extra=false) {
 	}
 
 	echo "<form name='threevform' method='post' action='$formAction' enctype='multipart/form-data'>\n";
+	echo csrf_field();
 	echo "<input type='hidden' name='jobid' value='$jobid'/>&nbsp;";
 
 	// SHOW Structure information

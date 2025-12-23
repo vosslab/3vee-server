@@ -22,3 +22,14 @@
 - Updated the source code page to point at GitHub repos and removed Subversion references.
 - Added a top navigation bar and simplified footer across PHP pages.
 - Restyled the header/footer with a slimmer menu and improved layout/typography.
+- Replaced macOS QEMU guidance with native Podman instructions and added a Homebrew Brewfile.
+- Updated README quick run instructions and cleaned out the old env/QEMU sections.
+- Added a dark mode backlog item.
+- Added CSRF protection and stricter PDB upload validation.
+- Refreshed the glossary and volume viewing guide layout/content.
+- Added program summaries to the glossary with images and descriptions.
+- Added ASA/SAS/SES background notes and references to the glossary (from Wikipedia).
+- Expanded the glossary with guided tutorials, parameter intuition, and interpretation notes.
+- Expanded the footer to a five-column layout with separate Resources and Social sections.
+- Moved Font Awesome font assets into `php/assets/fonts/`.
+- Replaced footer email with support + social links and added Font Awesome icons.

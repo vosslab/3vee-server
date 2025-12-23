@@ -251,14 +251,9 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 
 #=========================================
 #=========================================
-def _use_pyvista():
-	return os.environ.get("THREEV_USE_PYVISTA", "").lower() in ("1", "true", "yes")
 
 
 def _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=None, animate=False, silhouette=True):
-	if not _use_pyvista():
-		apDisplay.printMsg("PyVista renderer disabled; using matplotlib.")
-		return False
 	main_file = getattr(sys.modules.get("__main__"), "__file__", None)
 	if main_file is None or not os.path.isfile(main_file):
 		apDisplay.printWarning("PyVista renderer skipped: multiprocessing spawn needs a real script path (use script/module, not stdin).")
@@ -301,12 +296,21 @@ def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 		basename = name
 	else:
 		basename = os.path.splitext(density)[0]
+	verts = faces = None
 	vol = mrc.read(density).astype(numpy.float32)
 	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
+	if not print3d and verts is not None and faces is not None:
+		try:
+			apVolumeRender.export_obj(verts, faces, basename + ".obj")
+		except Exception as exc:
+			apDisplay.printWarning(f"OBJ export failed: {exc}")
 	if not _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=False):
 		apVolumeRender.render_png_views(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
 	if print3d:
-		apVolumeRender.export_stl(verts, faces, basename + ".stl")
+		if verts is None or faces is None:
+			apDisplay.printWarning("Skipping STL export; mesh data unavailable.")
+		else:
+			apVolumeRender.export_stl(verts, faces, basename + ".stl")
 	return basename
 
 #=========================================
