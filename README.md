@@ -27,4 +27,4 @@ mkdir -p output
 podman compose up --build
 ```
 
-Open http://localhost:8080/php/volumeCalc.php once the containers start. Job results are written to output/ on the host; see [docs/CONTAINER.md](docs/CONTAINER.md) and [docs/USAGE.md](docs/USAGE.md) for details.
+Open http://localhost:8080/php/volumeCalc.php once the containers start. Job results are written to [output/](output/) on the host; see [docs/CONTAINER.md](docs/CONTAINER.md) and [docs/USAGE.md](docs/USAGE.md) for details.

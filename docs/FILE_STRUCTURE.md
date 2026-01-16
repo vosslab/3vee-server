@@ -3,10 +3,10 @@
 ## Top-level layout
 - [AGENTS.md](AGENTS.md): agent instructions for this repo.
 - [README.md](README.md): project overview and quick start.
+- [Brewfile](Brewfile): macOS Homebrew packages for Podman workflows.
+- [build_podman_image.sh](build_podman_image.sh): Podman build and run helper.
 - [Dockerfile](Dockerfile): container image build for the web stack.
 - [docker-compose.yml](docker-compose.yml): web and MariaDB services.
-- [build_podman_image.sh](build_podman_image.sh): Podman build and run helper.
-- [Brewfile](Brewfile): macOS Homebrew packages for Podman workflows.
 - [SQLITE_MIGRATION_PLAN.md](SQLITE_MIGRATION_PLAN.md): notes on a staged SQLite plan.
 - [LICENSE](LICENSE): licensing terms.
 - [docs/](docs/): documentation set.
@@ -15,21 +15,27 @@
 - [py/](py/): Python job runners and shared libraries.
 - [tests/](tests/): repo-level lint and compliance scripts.
 - [devel/](devel/): developer utilities.
-- [leginon/](leginon/): bundled Leginon and related tooling.
-- [output/](output/): runtime job artifacts (bind-mounted, gitignored).
 - [logs/](logs/): local log output directory used by build scripts.
+- [output/](output/): runtime job artifacts (bind-mounted, gitignored).
 
 ## Key subtrees
+- [docker/entrypoint.sh](docker/entrypoint.sh) and
+  [docker/download_chimera_headless.py](docker/download_chimera_headless.py):
+  container startup and helper scripts.
 - [php/inc/](php/inc/): shared PHP helpers and database accessors.
 - [php/tests/](php/tests/): PHP lint and smoke scripts.
 - [php/css/](php/css/), [php/js/](php/js/), [php/img/](php/img/): UI assets.
 - [php/jmol/](php/jmol/): Jmol viewer assets.
+- [php/assets/fonts/](php/assets/fonts/): Font Awesome web fonts.
 - [py/tests/](py/tests/): Python smoke scripts and sample data.
+- [py/requirements.txt](py/requirements.txt): Python dependency list used in the image.
 - [py/appionlib/](py/appionlib/), [py/pyami/](py/pyami/), [py/sinedon/](py/sinedon/):
   bundled libraries used by the Python job layer.
 
 ## Generated artifacts
 - [output/](output/): job artifacts and logs (ignored in [.gitignore](.gitignore)).
+- [ascii_compliance.txt](ascii_compliance.txt) and [pyflakes.txt](pyflakes.txt):
+  lint output files (ignored in [.gitignore](.gitignore)).
 - [docker/chimera.bin](docker/chimera.bin) and
   [docker/eman-linux-x86_64-cluster-1.9.tar.gz](docker/eman-linux-x86_64-cluster-1.9.tar.gz):
   downloaded assets (ignored in [.gitignore](.gitignore)).
@@ -42,9 +48,11 @@
 - [docs/CODE_ARCHITECTURE.md](docs/CODE_ARCHITECTURE.md): system overview and data flow.
 - [docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md): directory map (this document).
 - [docs/CHANGELOG.md](docs/CHANGELOG.md): dated change log.
+- [docs/TODO.md](docs/TODO.md): backlog items.
 - [docs/REPO_STYLE.md](docs/REPO_STYLE.md): repo conventions.
 - [docs/MARKDOWN_STYLE.md](docs/MARKDOWN_STYLE.md): Markdown rules.
 - [docs/PYTHON_STYLE.md](docs/PYTHON_STYLE.md): Python conventions.
+- [docs/AUTHORS.md](docs/AUTHORS.md): maintainers and contributors.
 
 ## Where to add new work
 - PHP pages and UI changes go in [php/](php/) and shared helpers in [php/inc/](php/inc/).

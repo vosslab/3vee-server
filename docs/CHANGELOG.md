@@ -10,6 +10,9 @@
 - Replaced non-ASCII narrow spaces in AGENTS.md and docs/CONTAINER.md.
 - Reverted unintended refactors during indentation cleanup and fixed sqlexpr.py method indentation.
 - Removed unused imports and replaced apChimera's wildcard re-export with explicit forwarding.
+- Refreshed docs/CODE_ARCHITECTURE.md and docs/FILE_STRUCTURE.md for current layout.
+- Added pytest coverage for mrcTrim cutoff helpers.
+- Linked output/ in README quick-start note.
 - Simplified README with a concise overview, doc map, and Podman quick start.
 - Added docs/INSTALL.md and docs/USAGE.md for setup and basic usage guidance.
 - Expanded docs/INSTALL.md and docs/USAGE.md with quick start, verification, and

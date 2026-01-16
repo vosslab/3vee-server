@@ -2,7 +2,7 @@
 
 ## Overview
 3vee-server provides a PHP web UI that launches Python runner scripts to compute
-volume results, stores job artifacts under [output/](output/), and can persist
+volume results, writes job artifacts under [output/](output/), and can persist
 run metadata in MariaDB when the container stack is used.
 
 ## Major components
@@ -37,8 +37,8 @@ run metadata in MariaDB when the container stack is used.
   [tests/run_pyflakes.sh](tests/run_pyflakes.sh),
   [tests/run_ascii_compliance.py](tests/run_ascii_compliance.py), and
   [tests/check_ascii_compliance.py](tests/check_ascii_compliance.py).
-- Python and PHP smoke scripts live under [py/tests/](py/tests/) and
-  [php/tests/](php/tests/) (see their README files).
+- Smoke scripts and lint helpers live under [py/tests/](py/tests/) and
+  [php/tests/](php/tests/).
 
 ## Extension points
 - Add a new UI page under [php/](php/) and wire it to
@@ -51,5 +51,4 @@ run metadata in MariaDB when the container stack is used.
   [docker-compose.yml](docker-compose.yml).
 
 ## Known gaps
-- Verify whether [leginon/](leginon/) is used by the current 3vee workflows or is
-  retained as a bundled dependency.
+- None noted.
