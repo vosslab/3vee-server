@@ -11,7 +11,6 @@ import os
 import numpy
 from PIL import Image
 
-from appionlib import apVolumeRender
 from appionlib import apDisplay
 
 

@@ -3,7 +3,7 @@
 	output is simply a list of dictionary
 	with field names as keys
 
-  This allows more complex query such those
+	This allows more complex query such those
 	require in, group by etc.
 """
 from sinedon import dbconfig

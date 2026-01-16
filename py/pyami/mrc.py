@@ -1,20 +1,20 @@
 '''
 MRC I/O functions:
-  write(a, filename, header=None)
-    Write your numpy ndarray object to an MRC file.
-		  a - the numpy ndarray object
-      filename - the filename you want to write to
-      header - (optional) dictionary of additional header information
+write(a, filename, header=None)
+	Write your numpy ndarray object to an MRC file.
+	a - the numpy ndarray object
+	filename - the filename you want to write to
+	header - (optional) dictionary of additional header information
 
-  read(filename)
-		Read MRC file into a numpy ndarray object.
-      filename - the MRC filename
+read(filename)
+	Read MRC file into a numpy ndarray object.
+	filename - the MRC filename
 
-  mmap(filename)
-    Open MRC as a memory mapped file.  This is the most efficient way
-    to read data if you only need to access part of a large MRC file.
-    Only the parts you actually access are read from the disk into memory.
-			filename - the MRC filename
+mmap(filename)
+	Open MRC as a memory mapped file. This is the most efficient way
+	to read data if you only need to access part of a large MRC file.
+	Only the parts you actually access are read from the disk into memory.
+	filename - the MRC filename
 '''
 
 

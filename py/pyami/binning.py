@@ -32,11 +32,11 @@ def bin3(a, factor):
 
 	trimmed = _trim_to_factor(numpy.asarray(a), factor)
 	newshape = (trimmed.shape[0] // factor,
-	            factor,
-	            trimmed.shape[1] // factor,
-	            factor,
-	            trimmed.shape[2] // factor,
-	            factor)
+		factor,
+		trimmed.shape[1] // factor,
+		factor,
+		trimmed.shape[2] // factor,
+		factor)
 	reshaped = numpy.reshape(trimmed, newshape)
 	binned = reshaped.mean(axis=(1, 3, 5))
 	return binned

@@ -426,10 +426,10 @@ class _Table:
 		"""Create an index definition for this table.
 
 		Usage: db.table.Index(indices)
-		Where: indices   = tuple or list of column names to key on
-			 orderBy = optional ORDER BY clause.
-			 WHERE	 = optional WHERE clause.
-			 WHERE not implemented YET...
+		Where: indices = tuple or list of column names to key on
+		orderBy = optional ORDER BY clause.
+		WHERE = optional WHERE clause.
+		WHERE not implemented YET...
 
 		"""
 

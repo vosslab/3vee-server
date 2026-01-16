@@ -242,7 +242,7 @@ def printDataBox(labellist,numlist,typelist=None):
 	prints a data box, used in pyace
 	"""
 	if( len(labellist) != len(numlist) 
-	 or ( typelist!=None and len(typelist) != len(numlist) ) ):
+		or ( typelist!=None and len(typelist) != len(numlist) ) ):
 		print(len(labellist)," != ",len(numlist)," != ",len(typelist))
 		printError("printDataBox() list lengths are off")
 	sys.stderr.write(_headerStr(labellist)+"\n")

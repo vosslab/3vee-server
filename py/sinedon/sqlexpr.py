@@ -93,7 +93,7 @@ def sqlRepr(obj):
 		return "(%s)" % ", ".join(map(sqlRepr, obj))
 	else:
 		raise ValueError("Unknown SQL builtin type: %s for %s" % \
-			  (type(obj), obj))
+			(type(obj), obj))
 
 
 ########################################
@@ -286,7 +286,7 @@ class Show(SQLExpression):
 
 class Select(SQLExpression):
 	def __init__(self, items, table=None, where=None, groupBy=None,
-				 having=None, orderBy=None, limit=None):
+		having=None, orderBy=None, limit=None):
 		if type(items) is not type([]) and type(items) is not type(()):
 			items = [items]
 		self.items = items
@@ -643,7 +643,7 @@ class Delete(SQLExpression):
 		if self.whereClause is None:
 			return "DELETE FROM %s" % self.table
 		return "DELETE FROM %s WHERE %s" \
-			   % (self.table, self.whereClause)
+			% (self.table, self.whereClause)
 
 class Replace(Update):
 	def sqlName(self):

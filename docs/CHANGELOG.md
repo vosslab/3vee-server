@@ -5,6 +5,11 @@
 - Removed additional invalid shebangs from Python modules flagged by lint.
 - Removed remaining invalid shebangs flagged by lint in py/sinedon, py/tests, and related scripts.
 - Restored valid shebangs for py/tests shell and Python smoke test scripts.
+- Normalized mixed tab/space indentation in Python modules flagged by lint.
+- Replaced box-drawing characters with ASCII in docs/CONTAINER.md.
+- Replaced non-ASCII narrow spaces in AGENTS.md and docs/CONTAINER.md.
+- Reverted unintended refactors during indentation cleanup and fixed sqlexpr.py method indentation.
+- Removed unused imports and replaced apChimera's wildcard re-export with explicit forwarding.
 - Simplified README with a concise overview, doc map, and Podman quick start.
 - Added docs/INSTALL.md and docs/USAGE.md for setup and basic usage guidance.
 - Expanded docs/INSTALL.md and docs/USAGE.md with quick start, verification, and

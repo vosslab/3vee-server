@@ -37,7 +37,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		xyzrfile = self.threev.convertPDBtoXYZR(pdbfile, self.params['hetero'])
 		#run program
 		fsvdata = self.threev.runFsvCalc(xyzrfile, bigprobe=self.params['bigprobe'],
-			 smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'])
+			smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'])
 		ezdfile = fsvdata.get('ezdfile')
 		mrcfile = fsvdata.get('mrcfile')
 		os.remove(xyzrfile)
@@ -109,7 +109,4 @@ if __name__ == "__main__":
 	runFSVCalc = RunFSVCalcScript()
 	runFSVCalc.start()
 	runFSVCalc.close()	
-
-
-
 

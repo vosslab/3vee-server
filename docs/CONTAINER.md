@@ -5,13 +5,13 @@ This document captures every gory detail required to build, run, and hack on the
 ## 1. Repository Layout Recap
 ```
 3vee-server/
-├── Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + headless Python renderer)
-├── docker-compose.yml      # Orchestrates the web + MariaDB services
-├── docker/entrypoint.sh    # Web container bootstrap (DB wait, sinedon config, maketables)
-├── output/                 # Recommended host bind mount (job artifacts/logs)
-├── php/                    # Web entry points + php/tests smoke scripts
-├── py/                     # Python job runners, libs, and tests
-└── vossvolvox/             # (optional) Only needed if you want to hack on the C++ sources locally
++- Dockerfile              # Builds the web image (Apache + PHP + Python2 stack + vossvolvox + headless Python renderer)
++- docker-compose.yml      # Orchestrates the web + MariaDB services
++- docker/entrypoint.sh    # Web container bootstrap (DB wait, sinedon config, maketables)
++- output/                 # Recommended host bind mount (job artifacts/logs)
++- php/                    # Web entry points + php/tests smoke scripts
++- py/                     # Python job runners, libs, and tests
+`- vossvolvox/             # (optional) Only needed if you want to hack on the C++ sources locally
 ```
 
 During the image build we automatically clone `https://github.com/vosslab/vossvolvox.git` inside the container and compile it, so the local checkout only matters if you plan to modify those sources yourself.
@@ -113,7 +113,7 @@ The web container honors these variables (set them in Compose or via `docker run
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip waiting for the DB at startup. |
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `python py/sinedon/maketables.py threevdata`. |
 
-By default the entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, waiting ~20 s between six attempts. This avoids SSL handshake hiccups commonly seen in Podman/Docker-for-mac environments; monitor `compose logs web` if you need to confirm the wait loop's status.
+By default the entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, waiting ~20 s between six attempts. This avoids SSL handshake hiccups commonly seen in Podman/Docker-for-mac environments; monitor `compose logs web` if you need to confirm the wait loop's status.
 
 The MariaDB service uses the standard `MARIADB_*` env vars to create the same database/user at first boot. Change both sides in tandem.
 

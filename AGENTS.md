@@ -42,7 +42,7 @@
 - Database config is templated via `py/sinedon/sinedon.cfg` at container start; override with `THREEV_DB_*`.
 - Chimera installer only runs on amd64; arm64 builds skip it by design.
 - User input flows into shell commands in PHP -> Python; sanitize and escape if introducing new parameters.
-- The MariaDB wait loop now retries every 20 s (6 attempts total), forces `mysql` to use `--skip-ssl --ssl-verify-server-cert=0`, and logs each probe; follow status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache's startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.
+- The MariaDB wait loop now retries every 20 s (6 attempts total), forces `mysql` to use `--skip-ssl --ssl-verify-server-cert=0`, and logs each probe; follow status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache's startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.
 See Python coding style in docs/PYTHON_STYLE.md.
 See Markdown style in docs/MARKDOWN_STYLE.md.
 When making edits, document them in docs/CHANGELOG.md.

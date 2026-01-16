@@ -7,7 +7,7 @@ and a tiny STL writer for 3D-print exports.
 from pathlib import Path
 
 import numpy
-from PIL import Image, ImageChops, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib import colors as mcolors

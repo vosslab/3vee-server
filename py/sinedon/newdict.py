@@ -7,9 +7,9 @@ class FileReference(object):
 	'''
 	this is a place holder for data that is stored in a file
 	until we find the full path
-	   'filename' is the filename, without a path.
-	   'loader' is a function that takes the full path filename and
-	     returns the data that was read from file.
+	'filename' is the filename, without a path.
+	'loader' is a function that takes the full path filename and
+	returns the data that was read from file.
 	Once you find the path, call read(path) to return the data.
 	'''
 	def __init__(self, filename, loader):

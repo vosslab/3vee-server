@@ -69,7 +69,7 @@ def get_config_dirs(module_name=None, package_name=None):
 	this only works automatically if this function is called from that
 	module.  If you want to force a certain module, pass its name to this
 	function in the optional argument. Environment variable *_CFG_PATH
-  can do final overwrite of this.
+	can do final overwrite of this.
 	'''
 	# system config location is /etc/myami on unix like systems or
 	# under PROGRAMFILES on windows
