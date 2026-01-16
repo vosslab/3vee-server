@@ -13,6 +13,8 @@
 - Refreshed docs/CODE_ARCHITECTURE.md and docs/FILE_STRUCTURE.md for current layout.
 - Added pytest coverage for mrcTrim cutoff helpers.
 - Linked output/ in README quick-start note.
+- Added pytest coverage for pyami arraystats, binning, and ordereddict helpers.
+- Added pytest coverage for pyami weakattr, resultcache, and fileutil helpers.
 - Simplified README with a concise overview, doc map, and Podman quick start.
 - Added docs/INSTALL.md and docs/USAGE.md for setup and basic usage guidance.
 - Expanded docs/INSTALL.md and docs/USAGE.md with quick start, verification, and
