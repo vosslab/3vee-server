@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 def printResult(module_str,is_success, extra=None):
 	if is_success:

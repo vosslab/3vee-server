@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Headless volume rendering helpers (pure Python, no Chimera dependency).
 Uses scikit-image marching cubes + matplotlib (Agg) for snapshots/animations,

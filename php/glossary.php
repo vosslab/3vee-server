@@ -43,7 +43,7 @@ echo "      <dd>The volume defined by expanding each atom by the solvent probe r
 echo "      <dt>Solvent-excluded volume</dt>\n";
 echo "      <dd>The volume inside the surface traced by a rolling solvent probe; it excludes regions the probe center cannot reach.</dd>\n";
 echo "      <dt>ASA/SAS/SES context (from Wikipedia)</dt>\n";
-echo "      <dd>The solvent-accessible surface area (ASA/SAS) is traced by the center of a rolling probe, while the solvent-excluded surface (SES, also called the Connolly surface) follows the probe’s outer envelope around atoms. The SES concept is closely related to ASA and uses rolling-ball methods originally developed by Richards and later implemented in 3D by Connolly and Richmond.</dd>\n";
+echo "      <dd>The solvent-accessible surface area (ASA/SAS) is traced by the center of a rolling probe, while the solvent-excluded surface (SES, also called the Connolly surface) follows the probe's outer envelope around atoms. The SES concept is closely related to ASA and uses rolling-ball methods originally developed by Richards and later implemented in 3D by Connolly and Richmond.</dd>\n";
 echo "      <dd><strong>References cited on Wikipedia:</strong>\n";
 echo "        <ul>\n";
 echo "          <li>Richards, F.M. (1977). Areas, volumes, packing and protein structure. <em>Annu Rev Biophys Bioeng</em>. doi:10.1146/annurev.bb.06.060177.001055</li>\n";
@@ -54,7 +54,7 @@ echo "        </ul>\n";
 echo "        <a href='https://en.wikipedia.org/wiki/Accessible_surface_area'>Wikipedia: Accessible surface area</a>\n";
 echo "      </dd>\n";
 echo "      <dt>Shell volume</dt>\n";
-echo "      <dd>The limiting surface used to separate inside from outside. It is the boundary that 3v uses to define “interior.”</dd>\n";
+echo "      <dd>The limiting surface used to separate inside from outside. It is the boundary that 3v uses to define "interior."</dd>\n";
 echo "      <dt>Convex hull volume</dt>\n";
 echo "      <dd>The smallest convex volume that fully encloses the structure. Conceptually equivalent to an infinite-radius probe.</dd>\n";
 echo "    </dl>\n";

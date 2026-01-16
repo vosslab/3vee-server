@@ -3,7 +3,7 @@
 ## Codebase Overview
 - **Entry points:** Users interact through PHP pages in `php/` (e.g., `volumeCalc.php`, `viewResults.php`). Shared helpers live in `php/inc/*.inc`, and diagnostics/scripts sit in `php/tests/`.
 - **Job orchestration:** Form submissions run `py/run*.py`, which bootstrap `ThreeVScript.py`/`ThreeVLib.py`. Those modules coordinate volume calculations, smoothing (pure Python low-pass filtering), and rendering via the headless Python renderer in `py/appionlib`, plus legacy `vossvolvox` binaries.
-- **Supporting libraries:** `py/appionlib`, `py/pyami`, and `py/sinedon` are mostly vendor drops—touch only as needed for bug fixes or Python 3 work.
+- **Supporting libraries:** `py/appionlib`, `py/pyami`, and `py/sinedon` are mostly vendor drops-touch only as needed for bug fixes or Python 3 work.
 - **Visualization assets:** `jmol/`, `jmol-*/`, `php/css/`, `php/img/`, and `php/js/` provide the static UI and viewer resources packaged with the repo.
 - **Container/build plumbing:** `Dockerfile`, `docker-compose.yml`, `docker/`, and `build_podman_image.sh` define the web + MariaDB stack. Images are pre-built via `podman build --arch <ARCH>` (default `amd64`) before `podman compose up`.
 - **Data & artifacts:** `output/` is bind-mounted at runtime to hold submitted jobs, logs, and generated meshes. Keep it out of version control.
@@ -34,17 +34,23 @@
 - Prefer adding small smoke scripts over heavy frameworks until an official test harness exists.
 
 ## Commit & Pull Request Guidelines
-- Commits: concise present-tense messages (e.g., “Add Python3 port for runVolume”), group related changes.
-- PRs: include summary, validation steps (e.g., “podman compose up --build; submitted volumeCalc”), note any platform caveats (amd64 vs arm64 Chimera).
+- Commits: concise present-tense messages (e.g., "Add Python3 port for runVolume"), group related changes.
+- PRs: include summary, validation steps (e.g., "podman compose up --build; submitted volumeCalc"), note any platform caveats (amd64 vs arm64 Chimera).
 - Keep unrelated formatting churn out of functional changes; avoid rewriting vendorized libs unless required.
 
 ## Security & Configuration Tips
 - Database config is templated via `py/sinedon/sinedon.cfg` at container start; override with `THREEV_DB_*`.
 - Chimera installer only runs on amd64; arm64 builds skip it by design.
-- User input flows into shell commands in PHP → Python; sanitize and escape if introducing new parameters.
-- The MariaDB wait loop now retries every 20 s (6 attempts total), forces `mysql` to use `--skip-ssl --ssl-verify-server-cert=0`, and logs each probe; follow status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache’s startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.
+- User input flows into shell commands in PHP -> Python; sanitize and escape if introducing new parameters.
+- The MariaDB wait loop now retries every 20 s (6 attempts total), forces `mysql` to use `--skip-ssl --ssl-verify-server-cert=0`, and logs each probe; follow status via `podman compose logs --tail 50 web` (or `db` if you temporarily remove `logging.driver: "none"`) and wait for Apache's startup line before loading the UI at `http://localhost:8080/php/volumeCalc.php`.
 See Python coding style in docs/PYTHON_STYLE.md.
 See Markdown style in docs/MARKDOWN_STYLE.md.
 When making edits, document them in docs/CHANGELOG.md.
 See repo style in docs/REPO_STYLE.md.
 Agents may run programs in the tests folder, including smoke tests and pyflakes/mypy runner scripts.
+When in doubt, implement the changes the user asked for rather than waiting for a response; the user is not the best reader and will likely miss your request and then be confused why it was not implemented or fixed.
+When changing code always run tests, documentation does not require tests.
+
+## Environment
+Codex must run Python using `/opt/homebrew/opt/python@3.12/bin/python3.12` (use Python 3.12 only).
+On this user's macOS (Homebrew Python 3.12), Python modules are installed to `/opt/homebrew/lib/python3.12/site-packages/`.

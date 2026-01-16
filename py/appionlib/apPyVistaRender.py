@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Headless rendering via PyVista/VTK.
 Renders iso-surfaces (verts/faces from marching cubes) with optional silhouette

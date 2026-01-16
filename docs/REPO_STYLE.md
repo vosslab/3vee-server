@@ -44,6 +44,7 @@ Repo-wide conventions for this project and related repos.
 - Keep scripts self-contained and single-purpose.
 - Add a shebang for executable scripts and keep them runnable directly.
 - Document shared helpers and modules in `docs/USAGE.md` when used across scripts.
+- Use `tests/run_pyflakes.sh` and `tests/run_ascii_compliance.py` for repo-wide lint checks, with `tests/check_ascii_compliance.py` for single-file ASCII/ISO-8859-1 checks.
 
 ## Dependency manifests
 - Store Python dependencies in `pip_requirements.txt` at the repo root. 
@@ -51,6 +52,7 @@ Repo-wide conventions for this project and related repos.
 - Store Homebrew packages in `Brewfile` at the repo root.
 - Use per-subproject manifests only when a subfolder is a standalone project.
 - Document non-default system dependencies in `docs/INSTALL.md`.
+- In general, we want to require all dependencies, rather than provide work-arounds if they are mssing, because without all the dependencies the program is too crippled to run properly
 
 ## Data and outputs
 - Keep generated outputs out of git unless they are small and intentional.
@@ -66,6 +68,9 @@ Repo-wide conventions for this project and related repos.
 - Use underscores between words and avoid spaces.
 - Choose clear, descriptive names.
 - Keep well-known root-level docs (for example VERSION, README.md, AGENTS.md).
+- I prefer to use social media links instead of hard coding my email in repos. For example, Neil Voss, https://bsky.app/profile/neilvosslab.bsky.social
+- When referencing files, use Markdown links so users can click through. Markdown links are created using the syntax [link text](URL), where "link text" is the clickable text that appears in the document, and "URL" is the web address or file path the link points to. This allows users to navigate between different content easily. Use file-path link text so readers know the exact filename (good: [docs/MARKDOWN_STYLE.md](docs/MARKDOWN_STYLE.md), bad: [Style Guide for Markdown](docs/MARKDOWN_STYLE.md)). Only include a backticked path when the link text is not the path.
+
 
 ### Recommended common docs
 - `AGENTS.md`: agent instructions, tool constraints, and repo-specific workflow guardrails.

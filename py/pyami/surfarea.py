@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 """
 function to calculate the surface area of thresholded 3d numpy array

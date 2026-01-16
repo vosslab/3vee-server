@@ -18,8 +18,8 @@ During the image build we automatically clone `https://github.com/vosslab/vossvo
 
 ## 2. Prerequisites
 - Modern container runtime:
-  - **Docker** Engine ≥ 24 *or*
-  - **Podman** ≥ 4 with Compose plug-in (`podman compose`) and, on macOS/Windows, a Podman machine/VM.
+  - **Docker** Engine >= 24 *or*
+  - **Podman** >= 4 with Compose plug-in (`podman compose`) and, on macOS/Windows, a Podman machine/VM.
 - CPU/RAM: ~2 GiB free RAM and ~5 GiB disk space (compiling `vossvolvox`, installing Python deps, MariaDB data volume).
 - Internet access (the build downloads Debian packages, Python deps, etc.).
 
@@ -84,10 +84,10 @@ Podman equivalent:
 ```bash
 podman compose build web
 ```
-If you want to build without Compose, run `docker build -t threev-web .` or `podman build -t threev-web .` but you’ll need to wire up the DB manually.
+If you want to build without Compose, run `docker build -t threev-web .` or `podman build -t threev-web .` but you'll need to wire up the DB manually.
 
 Need a specific revision? Build args:
-- `VOSSVOLVOX_REF` / `VOSSVOLVOX_REPO` – clone a particular branch/tag or fork of vossvolvox (default ref `master`).
+- `VOSSVOLVOX_REF` / `VOSSVOLVOX_REPO` - clone a particular branch/tag or fork of vossvolvox (default ref `master`).
 
 ## 4. Runtime Topology
 `docker-compose.yml` defines two services:
@@ -97,9 +97,9 @@ Need a specific revision? Build args:
 | `db` | `mariadb:10.6` | Standalone MariaDB instance seeded via standard env vars. Data lives in volume `db-data`. |
 | `web` | locally built | Apache + PHP UI + Python job runners + vossvolvox binaries. Binds `./output` into `/var/www/html/3vee/output`. |
 
-The MariaDB service now uses Compose’ `logging.driver: "none"` setting so its verbose startup messages stay out of `compose up` output; run `docker compose logs db` (or `podman compose logs db`) when you need to inspect the database logs.
+The MariaDB service now uses Compose' `logging.driver: "none"` setting so its verbose startup messages stay out of `compose up` output; run `docker compose logs db` (or `podman compose logs db`) when you need to inspect the database logs.
 
-Port mapping: `8080:80` (host → container). Adjust in `docker-compose.yml` if you already use 8080.
+Port mapping: `8080:80` (host -> container). Adjust in `docker-compose.yml` if you already use 8080.
 
 ### Environment variables
 The web container honors these variables (set them in Compose or via `docker run -e ...`):
@@ -113,7 +113,7 @@ The web container honors these variables (set them in Compose or via `docker run
 | `THREEV_SKIP_DB_WAIT` | `0` | Set to `1` to skip waiting for the DB at startup. |
 | `THREEV_SKIP_DB_INIT` | `0` | Set to `1` to skip running `python py/sinedon/maketables.py threevdata`. |
 
-By default the entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, waiting ~20 s between six attempts. This avoids SSL handshake hiccups commonly seen in Podman/Docker-for-mac environments; monitor `compose logs web` if you need to confirm the wait loop’s status.
+By default the entrypoint probes MariaDB with `mysql --skip-ssl --ssl-verify-server-cert=0`, waiting ~20 s between six attempts. This avoids SSL handshake hiccups commonly seen in Podman/Docker-for-mac environments; monitor `compose logs web` if you need to confirm the wait loop's status.
 
 The MariaDB service uses the standard `MARIADB_*` env vars to create the same database/user at first boot. Change both sides in tandem.
 
@@ -133,7 +133,7 @@ The MariaDB service uses the standard `MARIADB_*` env vars to create the same da
 ### Rootless Podman on macOS
 - Use `podman machine ls` to confirm the default VM exists; start it via `podman machine start podman-machine-default` (or recreate with `podman machine init --now --user-mode-networking` if missing). User-mode networking forwards host ports such as 8080 automatically.
 - `podman compose up` runs inside the Podman VM. Use `podman machine ssh` if you need to inspect files inside.
-- Bind mounts (`./output`) live on the host; Podman syncs them via VirtFS. Large output directories can be slow—consider `podman volume create` and adjust the Compose file if needed.
+- Bind mounts (`./output`) live on the host; Podman syncs them via VirtFS. Large output directories can be slow-consider `podman volume create` and adjust the Compose file if needed.
 
 ## 6. One-off Commands & Debugging
 - **Shell inside web container:** `docker compose exec web bash` (or `podman compose exec`). Useful for inspecting `/var/www/html/3vee/output`, Apache logs, etc.
@@ -154,7 +154,7 @@ The MariaDB service uses the standard `MARIADB_*` env vars to create the same da
 | Symptom | Likely Cause | Fix |
 | --- | --- | --- |
 | `web` container exits immediately | DB not ready, wrong credentials | Check `docker compose logs web`, ensure `db` is healthy, verify `THREEV_DB_*` match `MARIADB_*`. |
-| Jobs stay in “Preparing” state | Python process failed | Inspect `/var/www/html/3vee/output/<jobdir>/shell-*.log` inside `output/` or via `compose exec web`. |
+| Jobs stay in "Preparing" state | Python process failed | Inspect `/var/www/html/3vee/output/<jobdir>/shell-*.log` inside `output/` or via `compose exec web`. |
 | No images rendered | Rendering dependencies missing | Confirm PyVista/matplotlib are installed (see `py/requirements.txt`), inspect `shell-<jobid>.log`, and verify Meshlab/ImageMagick are present. |
 | Podman on macOS cannot reach localhost:8080 | Port forwarding disabled | Run `podman machine stop`, then `podman machine init --now --port-forwarding`. |
 

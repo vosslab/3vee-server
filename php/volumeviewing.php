@@ -37,7 +37,7 @@ echo "  </div>\n";
 
 echo "  <div class='threev-section'>\n";
 echo "    <h2>In-browser viewing</h2>\n";
-echo "    <p>When available, the results page includes a “View Volume in Jmol” link. This opens a Java-based viewer with the OBJ surface. It is useful for quick inspection but less capable than ChimeraX or PyMOL.</p>\n";
+echo "    <p>When available, the results page includes a "View Volume in Jmol" link. This opens a Java-based viewer with the OBJ surface. It is useful for quick inspection but less capable than ChimeraX or PyMOL.</p>\n";
 echo "  </div>\n";
 
 echo "  <div class='threev-section'>\n";

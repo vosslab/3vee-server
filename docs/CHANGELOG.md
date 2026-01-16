@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-01-16
+- Removed shebangs from non-executable Python modules flagged by lint.
+- Removed additional invalid shebangs from Python modules flagged by lint.
+- Removed remaining invalid shebangs flagged by lint in py/sinedon, py/tests, and related scripts.
+- Restored valid shebangs for py/tests shell and Python smoke test scripts.
+- Simplified README with a concise overview, doc map, and Podman quick start.
+- Added docs/INSTALL.md and docs/USAGE.md for setup and basic usage guidance.
+- Expanded docs/INSTALL.md and docs/USAGE.md with quick start, verification, and
+  known gaps sections.
+- Adjusted install and usage docs to include TODO-style gaps and command snippets.
+- Added a macOS Podman note in docs/INSTALL.md and expanded docs/USAGE.md examples.
+- Rewrote docs/CODE_ARCHITECTURE.md to match current repo structure.
+- Clarified the PHP submission step wording in docs/CODE_ARCHITECTURE.md.
+- Added docs/FILE_STRUCTURE.md and linked it from README.md.
+
 ## 2025-12-22
 - Moved documentation into `docs/` and renamed files to match repo conventions.
 - Updated references in `README.md` and `AGENTS.md`.
@@ -11,7 +26,7 @@
 - Added CLI flags (including `--privileged-build` and `--chimerax-test`) to `build_podman_image.sh` for ChimeraX builds.
 - Removed env-based renderer toggles so ChimeraX is always attempted before Python fallbacks.
 - Dropped the legacy `mapman_linux.exe` copy step from the Docker image build.
-- Removed mapman-based EZD→CCP4 conversion and updated FSVCalc to consume MRC output directly.
+- Removed mapman-based EZD->CCP4 conversion and updated FSVCalc to consume MRC output directly.
 - Set the web service to privileged in `docker-compose.yml` to allow ChimeraX (flatpak) at runtime.
 - Passed `QTWEBENGINE_CHROMIUM_FLAGS=--no-sandbox` into the ChimeraX flatpak wrapper to allow root execution.
 - Moved the ChimeraX smoke test to container startup (entrypoint) and dropped the Dockerfile build-time test.

@@ -133,8 +133,8 @@ def setVolumeMass(volumefile, apix=1.0, mass=1.0, rna=0.0):
 	"""
 	Adjust the contour so the enclosed mass matches the requested kDa target.
 
-	We assume a bulk density for protein/RNA (default 0.81 Da/Å^3 for protein,
-	linearly adjusted toward 1.35 Da/Å^3 for RNA content). The routine finds
+	We assume a bulk density for protein/RNA (default 0.81 Da/A^3 for protein,
+	linearly adjusted toward 1.35 Da/A^3 for RNA content). The routine finds
 	the voxel threshold that yields the desired enclosed mass when multiplied
 	by voxel volume.
 	"""
@@ -152,8 +152,8 @@ def setVolumeMass(volumefile, apix=1.0, mass=1.0, rna=0.0):
 		vol_for_threshold = _bilateral_filter_3d(vol_for_threshold, sigma_spatial=1.0, sigma_intensity=0.25, max_radius=2)
 
 	# Estimate density based on RNA fraction (very coarse model).
-	protein_density = 0.81  # Da/Å^3
-	rna_density = 1.35      # Da/Å^3
+	protein_density = 0.81  # Da/A^3
+	rna_density = 1.35      # Da/A^3
 	rna_fraction = max(0.0, min(1.0, float(rna)))
 	density_da_per_a3 = protein_density * (1 - rna_fraction) + rna_density * rna_fraction
 

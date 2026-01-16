@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 """
 Python library for running 3v programs

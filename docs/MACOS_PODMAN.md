@@ -1,6 +1,6 @@
 # macOS Podman setup (native arm64/amd64)
 
-3vee-server builds and runs natively on Apple Silicon without emulation. Use Podman’s VM and compose to run the stack on macOS.
+3vee-server builds and runs natively on Apple Silicon without emulation. Use Podman's VM and compose to run the stack on macOS.
 
 ## Prerequisites
 
