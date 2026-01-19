@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-01-19
+- Resolved merge conflicts in AGENTS.md, README.md, docs/CODE_ARCHITECTURE.md, and docs/CONTAINER.md.
+
 ## 2026-01-16
 - Removed shebangs from non-executable Python modules flagged by lint.
 - Removed additional invalid shebangs from Python modules flagged by lint.
