@@ -59,7 +59,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		f = open("results-"+self.params['jobid']+".html", "w")
 		website = "output/results/"+self.params['jobid']+"/"
 
-		### Statistics of your 
+		### Statistics of your
 		f.write("<br/><h3>Statistics of your internal solvent:</h3>\n")
 		f.write("<table><tr><td><h4><ul>\n")
 		for key in list(fsvdata.keys()):
@@ -90,7 +90,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		if giffile and os.path.isfile(giffile):
 			f.write("<a href='"+website+os.path.basename(giffile)
 				+"'>\n<img src='output/results/"+self.params['jobid']+"/"
-				+os.path.basename(giffile)+"' width='256' height='256'>\n</a>&nbsp;\n")		
+				+os.path.basename(giffile)+"' width='256' height='256'>\n</a>&nbsp;\n")
 		elif pngfiles:
 			for pngfile in pngfiles:
 				if os.path.isfile(pngfile):
@@ -98,8 +98,8 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 						+"'>\n<img src='output/results/"+self.params['jobid']+"/"
 						+os.path.basename(pngfile)+"' width='128' height='128'>\n</a>&nbsp;\n")
 		self.threev.webJmolSection(objfile, website, f, pdbfile=self.pdbfile)
-		f.close()	
-		
+		f.close()
+
 
 
 #====================
@@ -108,5 +108,5 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 if __name__ == "__main__":
 	runFSVCalc = RunFSVCalcScript()
 	runFSVCalc.start()
-	runFSVCalc.close()	
+	runFSVCalc.close()
 

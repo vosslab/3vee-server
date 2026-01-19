@@ -311,7 +311,7 @@ class Select(SQLExpression):
 			select += " FROM %s" % ", ".join(tables)
 		elif self.table:
 			select += " FROM %s" % self.table
-		
+
 		if self.whereClause is not None:
 			select += " WHERE %s" % sqlRepr(self.whereClause)
 		if self.groupBy is not None:
@@ -340,10 +340,10 @@ class SelectAll(SQLExpression):
 		self.limit = limit
 
 	def sqlRepr(self):
-		select = "SELECT * " 
+		select = "SELECT * "
 
 		select += " FROM %s" % (tableStr(self.table),)
-		
+
 		if self.whereClause is not None:
 			select += " WHERE %s" % sqlRepr(self.whereClause)
 		if self.groupBy is not None:
@@ -364,7 +364,7 @@ class SelectAll(SQLExpression):
 class ColumnSpec(dict):
 		"""
 		ColumnSpec is a dictionary describing one column of a table.
-		The keys of this dictionary match the result columns of 
+		The keys of this dictionary match the result columns of
 		a 'describe table' query.
 		"""
 		def __init__(self, initdict=None):
@@ -432,7 +432,7 @@ class ColumnSpec(dict):
 				sql_args = []
 				pieces.append(backquote(name))
 				pieces.append(type)
-				if null: 
+				if null:
 					pieces.append('NULL')
 				else:
 					pieces.append('NOT NULL')
@@ -468,8 +468,8 @@ class ColumnSpec(dict):
 
 class AlterTable(SQLExpression):
 	''' ALTER TABLE `particle` ADD `fieldname` TEXT NOT NULL ;
-	ALTER TABLE `particle` CHANGE `fieldname` `fieldname` TEXT NOT NULL 
-	ALTER TABLE `particle` DROP `fieldname` 
+	ALTER TABLE `particle` CHANGE `fieldname` `fieldname` TEXT NOT NULL
+	ALTER TABLE `particle` DROP `fieldname`
 	'''
 	def __init__(self, table, column, operation):
 		self.table = table
@@ -521,7 +521,7 @@ class HasTable(SQLExpression):
 		self.tablename = table[1]
 
 	def sqlRepr(self):
-		q = "SELECT * FROM information_schema.tables WHERE table_schema = '%s' and table_name= '%s'" % (self.db, self.tablename)
+		q = "SELECT * FROM information_schema.tables WHERE table_schema = '%s' and table_name= '%s'" % (self.db, self.tablename) # nosec B608: internal metadata query
 		return q
 
 class CreateTable(SQLExpression):
@@ -539,7 +539,7 @@ class CreateTable(SQLExpression):
 			type_str = " ENGINE=MyISAM "
 
 		# For InnoDB implementation, CREATE TABLE IF NOT EXISTS
-		# is replaced with CREATE TABLE, and a seperate query 
+		# is replaced with CREATE TABLE, and a seperate query
 		# is made to find out if the table exists.
 		create = "CREATE TABLE %s " % (tableStr(self.table),)
 		keys = []
@@ -641,9 +641,8 @@ class Delete(SQLExpression):
 		self.whereClause = where
 	def sqlRepr(self):
 		if self.whereClause is None:
-			return "DELETE FROM %s" % self.table
-		return "DELETE FROM %s WHERE %s" \
-			% (self.table, self.whereClause)
+			return "DELETE FROM %s" % self.table # nosec B608: table name is internal
+		return "DELETE FROM %s WHERE %s" % (self.table, self.whereClause) # nosec B608: internal where clause construction
 
 class Replace(Update):
 	def sqlName(self):
@@ -668,27 +667,34 @@ class Describe(SQLExpression):
 ########################################
 
 def AND_LIKE(list_args):
-	e = 'LIKE(arg[0], arg[1])'
 	new_args = []
 	for arg in list_args:
-		new_args.append(eval(e))
+		new_args.append(LIKE(arg[0], arg[1]))
 	return AND(*new_args)
 
 def AND_EQUAL(list_args):
 	return AND_OP(list_args, '==')
 
 def AND_IS(list_args):
-	e = 'IS(arg[0], arg[1])'
 	new_args = []
 	for arg in list_args:
-		new_args.append(eval(e))
+		new_args.append(IS(arg[0], arg[1]))
 	return AND(*new_args)
 
 def AND_OP(list_args, op):
-	e = 'arg[0] %s arg[1]' % op
 	new_args = []
+	opmap = {
+		'==': lambda a, b: a == b,
+		'!=': lambda a, b: a != b,
+		'<': lambda a, b: a < b,
+		'<=': lambda a, b: a <= b,
+		'>': lambda a, b: a > b,
+		'>=': lambda a, b: a >= b,
+	}
+	if op not in opmap:
+		raise ValueError('unsupported operator: %s' % (op,))
 	for arg in list_args:
-		new_args.append(eval(e))
+		new_args.append(opmap[op](arg[0], arg[1]))
 	return AND(*new_args)
 
 def AND(*ops):
@@ -803,7 +809,7 @@ def whereFormatSimple(in_dict):
 def orderFormat(alias):
 	#sqlorder = "ORDER BY %s.DEF_timestamp DESC " % backquote(alias)
 	sqlorder = "ORDER BY %s.DEF_id DESC " % backquote(alias)
-	return sqlorder 
+	return sqlorder
 
 def limitFormat(limit):
 	if limit is None:
@@ -825,27 +831,4 @@ func = const
 ########################################
 
 if __name__ == "__main__":
-	tests = """
->>> AND(table.preset.Mag == 66000, table.preset.Defocus > -200)
->>> AND(LIKE(table.preset.name, "MyPreset"), IN(table.Mag.zip, [600, 1600, 6600]))
->>> Select([table.preset.name, table.preset.Defocus], where=LIKE(table.preset.name, "%square%"))
->>> Insert(table.preset, [{'Defocus': -20, 'Name': 'foc', 'Mag': 66000, 'Dose': 0.67542999999999997}, {'Defocus': -20, 'Name': 'hole', 'Mag': 6000, 'Dose': 0.67542999999999997}])
->>> Insert(table.preset, [("expo1", 66000, -200, 0.867543), ("expo2", 66000, -2000, 0.867543)], template=('Name', 'Mag', 'Defocus', 'Dose'))
->>> Delete(table.preset, where="expo"==table.preset.name)
->>> Update(table.preset, {"lastModified": const.NOW()})
->>> Replace(table.preset, ["expo1", 66000, -200, 0.867543], template=('name', 'Mag', 'Defocus', 'Dose'))
->>> CreateTable('myTable2', [{'Field': 'id', 'Type': 'int(16) ', 'Key': 'PRIMARY', 'Extra':'auto_increment'}, {'Field': 'filename', 'Type': 'VARCHAR(50)', 'Key': 'INDEX', 'Index': ['filename']}, {'Field': 'filenameFR', 'Type': 'VARCHAR(50)', 'Key': 'INDEX', 'Index': ['filename']}], 'ISAM')
->>> CreateTable('PEOPLE', [{'Field': 'id', 'Type': 'int(16)', 'Key': 'PRIMARY', 'Extra':'auto_increment'}, {'Field': 'Name', 'Type': 'VARCHAR(50)'}, {'Field': 'Address', 'Type': 'VARCHAR(50)'}, {'Field': 'City', 'Type': 'VARCHAR(50)'}, {'Field': 'State', 'Type': 'VARCHAR(50)'}])
->>> Replace("tablename", ["expo1", 66000, -200, 0.867543], template=('name', 'Mag', 'Defocus', 'Dose'))
->>> Select([table.preset.name, const.count(table.preset.Id)], where=LIKE(table.preset.name, "%square%"))
->>> DropTable(table.preset)
->>> CreateTable('OBJECT', [{'Field': 'Id', 'Type': 'int(20) unsigned', 'Key': 'PRIMARY', 'Extra':'auto_increment'}, {'Field': 'hash', 'Type': 'VARCHAR(64)', 'Key': 'UNIQUE', 'Index': ['hash']}, {'Field': 'objectKey', 'Type': 'varchar(50)', 'Key': 'UNIQUE', 'Index': ['objectKey(50)'], 'Null' : 'YES', 'Default': 'Denis'}, {'Field': 'object', 'Type': 'longblob'}, {'Field': 'objectKeyString', 'Type': 'text'}, {'Field': 'objectString', 'Type': 'text'},{'Field':'timestamp','Type':'timestamp','Null':'YES', 'Key':'INDEX'}])
->>> SelectAll(table.PRESET, where=LIKE(table.PRESET.name, "%square%"), orderBy=None)
->>> Select([table.preset.name, table.preset2.Defocus], where=AND(LIKE(table.preset.name, "%square%"), table.preset.id==table.preset2.id), orderBy={'fields':('id', 'name'), 'sort':'DESC'})
->>> Show('Index', table.PRESET)
-"""
-	for expr in tests.split('\n'):
-		if not expr.strip(): continue
-		if expr.startswith('>>> '):
-			expr = expr[4:]
-			print(repr(eval(expr)))
+	pass

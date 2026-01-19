@@ -4,6 +4,7 @@ import shutil
 import re
 import math
 import sys
+import ast
 import pwd
 import time
 import random
@@ -12,6 +13,8 @@ import string
 import inspect
 import subprocess
 import pickle
+import signal
+import tempfile
 
 ## appion
 from appionlib import apDisplay
@@ -149,18 +152,17 @@ def getCPUVendor():
 
 #=====================
 def getGPUVendor():
-	pciexe = getExecPath("lspci")	
+	pciexe = getExecPath("lspci")
 	if not pciexe: pciexe = getExecPath("/sbin/lspci")
 	if pciexe is None:
 		return None
-	
-	proc = subprocess.Popen(pciexe, shell=True, stdout=subprocess.PIPE)
+
+	proc = subprocess.Popen([pciexe], stdout=subprocess.PIPE, text=True)
 	proc.wait()
 	lines = proc.stdout.readlines()
-	lines = list(map(str, lines)) # abonham edit 19-04-2022 convert to list[str] to avoid type error 
 	vendor = None
 	for line in lines:
-		if 'VGA compatible controller:' in line: 
+		if 'VGA compatible controller:' in line:
 			sline = line.strip()
 			bits = sline.split(':')
 			if len(bits) < 3:
@@ -197,8 +199,7 @@ def getLinuxDistro():
 		return flavor
 
 	### more general at least ubuntu/redhat
-	cmd = "lsb_release -d"
-	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	proc = subprocess.Popen(["lsb_release", "-d"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 	proc.wait()
 	descript = proc.stdout.readline().strip()
 	if descript:
@@ -238,17 +239,17 @@ def getLogHeader():
 #=====================
 def dumpParameters(parameters, paramfile):
 	''' uses cPickle to dump parameters (as a dictionary) to file '''
-	pf = open(paramfile, "w")
+	pf = open(paramfile, "wb")
 	pickle.dump(parameters, pf)
 	pf.close()
-	return 
+	return
 
 #=====================
 def readRunParameters(paramfile):
 	if not os.path.isfile(paramfile):
 		apDisplay.printError("Could not find run parameters file: "+paramfile)
-	pf = open(paramfile, "r")
-	runparams = pickle.load(pf)
+	pf = open(paramfile, "rb")
+	runparams = pickle.load(pf) # nosec B301: trusted local parameter files
 	pf.close()
 	return runparams
 
@@ -407,7 +408,7 @@ def splitMultipleSets(param_str,numiter):
 		else:
 			try:
 				repeat = int(set[:m_index])
-				fullparam.extend(list(map((lambda x:tc(param_str[position+m_index+1:position+len(set)])),list(range(repeat)))))	
+				fullparam.extend(list(map((lambda x:tc(param_str[position+m_index+1:position+len(set)])),list(range(repeat)))))
 			except:
 				raise
 				fullparam = list(map((lambda x: tc(param_str)),list(range(numiter))))
@@ -438,8 +439,8 @@ def convertIterationParams(iterparams,params,numiter):
 
 #=====================
 def getXversion():
-	xcmd = "X -version"
-	proc = subprocess.Popen(xcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	#xcmd = "X -version"
+	proc = subprocess.Popen(["X", "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 	proc.wait()
 	for line in proc.stderr:
 		if re.match("Build ID:", line):
@@ -470,9 +471,9 @@ def versionToNumber(version):
 def resetVirtualFrameBuffer(killall=False):
 	logf = open("xvfb.log", "a")
 	if killall is True:
-		xvfbcmd = "killall Xvfb\n"
-		logf.write(xvfbcmd)
-		proc = subprocess.Popen(xvfbcmd, shell=True, stdout=logf, stderr=logf)
+		xvfbcmd = ["killall", "Xvfb"]
+		logf.write(" ".join(xvfbcmd) + "\n")
+		proc = subprocess.Popen(xvfbcmd, stdout=logf, stderr=logf)
 		proc.wait()
 	port = 1
 	fontpath = getFontPath()
@@ -482,15 +483,16 @@ def resetVirtualFrameBuffer(killall=False):
 	port = int(random.random()*9000+1000)
 	portstr = str(port)
 	apDisplay.printMsg("Opening Xvfb port "+portstr)
-	xvfbcmd = (
-		"Xvfb :"+portstr
-		+" -once -ac -pn -screen 0 1200x1200x24 "
-		+fontpath+securfile+rgbfile
-		+" &"
-	)
-	apDisplay.printMsg(xvfbcmd)
-	logf.write(xvfbcmd)
-	proc = subprocess.Popen(xvfbcmd, shell=True, stdout=logf, stderr=logf)
+	xvfbcmd = [
+		"Xvfb", ":"+portstr, "-once", "-ac", "-pn",
+		"-screen", "0", "1200x1200x24",
+	]
+	xvfbcmd.extend(fontpath)
+	xvfbcmd.extend(securfile)
+	xvfbcmd.extend(rgbfile)
+	apDisplay.printMsg(" ".join(xvfbcmd))
+	logf.write(" ".join(xvfbcmd) + "\n")
+	proc = subprocess.Popen(xvfbcmd, stdout=logf, stderr=logf)
 	os.environ["DISPLAY"] = ":"+portstr
 	logf.close()
 	return port
@@ -499,29 +501,26 @@ def resetVirtualFrameBuffer(killall=False):
 def killVirtualFrameBuffer(port=None):
 	### port is unknown kill all virtual frame buffers
 	if port is None:
-		xvfbcmd = "killall Xvfb\n"
-		proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		proc = subprocess.Popen(["killall", "Xvfb"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		proc.wait()
 		return
 
 	### find specific virtual frame buffer
-		xvfbcmd = "ps -ef | grep -i xvfb | grep %d"%(port)
-		proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		proc.wait()
+	proc = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+	proc.wait()
 	lines = proc.stdout.readlines()
 	for line in lines:
-		if 'Xvfb' in line:
+		if "Xvfb" in line and (":%d" % port) in line:
 			bits = line.strip().split()
-			if len(bits) > 0:
+			if len(bits) > 1:
 				### kill the frame buffer
 				pid = int(bits[1])
-				xvfbcmd = "kill %d"%(pid)
-				proc = subprocess.Popen(xvfbcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-				proc.wait()
+				os.kill(pid, signal.SIGTERM)
 				### delete this file can cause problems with user permissions
-				rmxfile = "/bin/rm -fv /tmp/.X11-unix/X%d"%(port)
-				proc = subprocess.Popen(rmxfile, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-				proc.wait()
+				rmxdir = os.path.join(tempfile.gettempdir(), ".X11-unix")
+				rmxfile = os.path.join(rmxdir, "X%d" % (port))
+				if os.path.exists(rmxfile):
+					os.remove(rmxfile)
 				apDisplay.printMsg("Killed Xvfb on port %d"%(port))
 				return
 	return
@@ -537,9 +536,9 @@ def getFontPath(msg=True):
 	for path in pathlist:
 		alias = os.path.join(path, "fonts.alias")
 		if os.path.isdir(path) and os.path.isfile(alias):
-			return " -fp "+path
+			return ["-fp", path]
 	apDisplay.printWarning("Xvfb: could not find Font Path")
-	return " "
+	return []
 
 #=====================
 def getSecureFile(msg=True):
@@ -556,9 +555,9 @@ def getSecureFile(msg=True):
 	]
 	for securfile in filelist:
 		if os.path.isfile(securfile):
-			return " -sp "+securfile
+			return ["-sp", securfile]
 	apDisplay.printWarning("Xvfb: could not find Security File")
-	return " "
+	return []
 
 #=====================
 def getRgbFile(msg=True):
@@ -574,20 +573,23 @@ def getRgbFile(msg=True):
 	xversion = getXversion()
 	print("X version", xversion)
 	if xversion is None or xversion > 1.0109:
-		return " "
+		return []
 	for rgbfile in filelist:
 		if os.path.isfile(rgbfile+".txt"):
-			return " -co "+rgbfile
+			return ["-co", rgbfile]
 	apDisplay.printWarning("Xvfb: could not find RGB File")
-	return " "
+	return []
 
 #=====================
 def getNumProcessors(msg=True):
 	# First see if on a PBS cluster:
 	if 'PBS_NODEFILE' in os.environ:
-		cmd = "wc -l $PBS_NODEFILE"# | awk '{print $1}'"
-		nproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().strip()
-		nproc = int(nproc)
+		nodefile = os.environ.get('PBS_NODEFILE')
+		if nodefile and os.path.isfile(nodefile):
+			with open(nodefile, 'r') as handle:
+				nproc = len(handle.readlines())
+		else:
+			nproc = 0
 
 	else:
 		if not os.path.exists('/proc/cpuinfo'):
@@ -612,11 +614,8 @@ def setUmask(msg=False):
 
 #=====================
 def getExecPath(exefile, die=False):
-	proc = subprocess.Popen("which "+exefile, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	out = proc.stdout
-	proc.wait()
-	path = out.readline().strip()
-	if len(path) < 1:
+	path = shutil.which(exefile)
+	if not path:
 		if die is False:
 			return None
 		apDisplay.printError("Cound not find "+exefile+" in your PATH")
@@ -632,16 +631,17 @@ def runCmd(cmd, package="", verbose=False, showcmd=True, logfile=None, fail=Fals
 		sys.stderr.write(apDisplay.colorString(str(package)+": ","magenta")+cmd+"\n")
 	t0 = time.time()
 	try:
+		popen_args = ["/bin/bash", "-lc", cmd]
 		if logfile is not None:
 			logf = open(logfile, 'a')
-			proc = subprocess.Popen(cmd, shell=True, 
+			proc = subprocess.Popen(popen_args,
 				stdout=logf, stderr=logf)
 		elif verbose is False:
 			devnull = open('/dev/null', 'w')
-			proc = subprocess.Popen(cmd, shell=True, 
+			proc = subprocess.Popen(popen_args,
 				stdout=devnull, stderr=devnull)
 		else:
-			proc = subprocess.Popen(cmd, shell=True)
+			proc = subprocess.Popen(popen_args)
 		if verbose is True:
 			out, err = proc.communicate()
 			if out is not None and err is not None:
@@ -684,8 +684,8 @@ def tc(string):
 	return in python type from according to string format
 	"""
 	try:
-		out = eval(string)
-	except:
+		out = ast.literal_eval(string)
+	except (ValueError, SyntaxError):
 		string = string.strip()
 		if string.upper() in ('T','TRUE'):
 			out = True

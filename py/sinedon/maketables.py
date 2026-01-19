@@ -85,7 +85,7 @@ def makeTables(sinedonname,modulename,dbname=None,xmlfile=None,check_exist=False
 	module = __import__(modulename)
 	modbase = re.sub(r"^.*\.", "", modulename)
 	tableData = getattr(module, modbase) ## hope this works
-	
+
 	### get module members
 	funcs = inspect.getmembers(tableData, inspect.isclass)
 

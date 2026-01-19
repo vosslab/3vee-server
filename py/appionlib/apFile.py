@@ -25,7 +25,7 @@ def md5sumfile(fname):
 	#this next library is deprecated in python 2.6+, need to use hashlib
 	# import md5
 	import hashlib
-	m = hashlib.md5()
+	m = hashlib.md5(usedforsecurity=False)
 	while True:
 		d = f.read(8096)
 		if not d:
@@ -156,7 +156,7 @@ def getBoxSize(filename, msg=True):
 			return (shape[0], shape[1], 1)
 		elif len(shape) == 3:
 			return shape
-	proc = subprocess.Popen("iminfo %s"%(filename), shell=True, stdout=subprocess.PIPE)
+	proc = subprocess.Popen(["iminfo", filename], stdout=subprocess.PIPE, text=True)
 	proc.wait()
 	lines = ""
 	for line in proc.stdout:
@@ -266,18 +266,25 @@ def rsync(from_path, to_dir, remove_sent=False, delay=0):
 		return
 	fileutil.mkdirs(to_dir)
 	cmd = makeRsyncCommand(from_path, to_dir, remove_sent)
-	print(cmd)
+	print(" ".join(cmd))
 	time.sleep(delay)
-	proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+	proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 	(output, error) = proc.communicate()
+
+def _expand_rsync_sources(from_path):
+	files = glob.glob(from_path)
+	if files:
+		return files
+	return [from_path]
 
 def makeRsyncCommand(from_path, to_dir, remove_sent=False):
 	#rsync command handles both file and directory
-	remove_sent_text = ''
+	cmd = ['rsync', '-av']
 	if remove_sent:
 		# remove-sent-files flag
-		remove_sent_text = '--remove-sent-files '
-	cmd = 'rsync -av %s%s %s' % (remove_sent_text, from_path, to_dir)
+		cmd.append('--remove-sent-files')
+	cmd.extend(_expand_rsync_sources(from_path))
+	cmd.append(to_dir)
 	return cmd
 
 def compress_and_rsync(from_path, to_dir, remove_sent=False, delay=0):
@@ -289,21 +296,25 @@ def compress_and_rsync(from_path, to_dir, remove_sent=False, delay=0):
 	time.sleep(delay)
 
 	if os.path.isdir(from_path):
-		wild_card = '/*'
-		#bzip2 command need to modify from_path to allow directory
-		bzip2_from_path = from_path+wild_card
+		# bzip2 command needs expansion for directories
+		bzip2_from_path = sorted(glob.glob(os.path.join(from_path, '*')))
 		rsync_from_path = from_path
 	else:
-		bzip2_from_path = from_path
+		bzip2_from_path = [from_path]
 		rsync_from_path = from_path+'.bz2'
 	# bzip2 only compresses file, not directory
-	cmd = 'pbzip2 -k -p1 %s' % (bzip2_from_path)
+	if not bzip2_from_path:
+		apDisplay.printWarning('no files to compress in %s' % (from_path))
+	else:
+		cmd = ['pbzip2', '-k', '-p1'] + bzip2_from_path
+		print(' '.join(cmd))
+		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+		(output, error) = proc.communicate()
 	if to_dir:
 		rsync_cmd = makeRsyncCommand(rsync_from_path, to_dir, remove_sent)
-		cmd += '; '+rsync_cmd
-	print(cmd)
-	proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-	(output, error) = proc.communicate()
+		print(' '.join(rsync_cmd))
+		proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE)
+		(output, error) = proc.communicate()
 
 ####
 # This is a low-level file with NO database connections

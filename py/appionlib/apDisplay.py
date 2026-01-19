@@ -44,7 +44,7 @@ def printMsg(text, colorstr=None):
 		except:
 			print("write error")
 	sys.stderr.write(" ... "+colorString(text, colorstr)+"\n")
-	
+
 def printError(text,raised=True):
 	"""
 	standardized error message
@@ -100,7 +100,7 @@ def printColor(text, colorstr):
 		except:
 			print("write error")
 	sys.stderr.write(colorString(text, colorstr)+"\n")
-	
+
 
 def shortenImageName(imgname):
 	"""
@@ -173,7 +173,7 @@ def short(imgname):
 	return shortenImageName(imgname)
 
 def timeString(avg, stdev=0):
-	""" 
+	"""
 	returns a string with the length of time scaled for clarity
 	"""
 	avg = float(avg)
@@ -241,7 +241,7 @@ def printDataBox(labellist,numlist,typelist=None):
 	"""
 	prints a data box, used in pyace
 	"""
-	if( len(labellist) != len(numlist) 
+	if( len(labellist) != len(numlist)
 		or ( typelist!=None and len(typelist) != len(numlist) ) ):
 		print(len(labellist)," != ",len(numlist)," != ",len(typelist))
 		printError("printDataBox() list lengths are off")
@@ -323,7 +323,7 @@ def colorType(val):
 	elif type(val) == type(512):
 		return colorString(val,"green")
 	elif type(val) == type("hello"):
-		return colorString("'"+val+"'","brown")	
+		return colorString("'"+val+"'","brown")
 	return val
 
 def colorProb(num,red=0.50,green=0.80):
@@ -343,7 +343,7 @@ def colorProb(num,red=0.50,green=0.80):
 		return colorString(numstr,"brown")
 	elif num < 0:
 		numstr = "%2.2f" % num
-		return colorString(numstr,"purple")		
+		return colorString(numstr,"purple")
 	else:
 		numstr = "%2.2f" % num
 		return colorString(numstr,"blue")
@@ -355,7 +355,7 @@ def clearColor():
 	opencol = "\033["
 	closecol = "m"
 	clear = opencol + "0" + closecol
-	return clear	
+	return clear
 
 def colorString(text, fg=None, bg=None):
 	"""Return colored text.
@@ -395,22 +395,22 @@ def colorString(text, fg=None, bg=None):
 	closecol = "m"
 	clear = opencol + "0" + closecol
 	xterm = 0
-	if os.environ.get("TERM") is not None and os.environ.get("TERM") == "xterm": 
+	if os.environ.get("TERM") is not None and os.environ.get("TERM") == "xterm":
 		xterm = True
 	else:
 		xterm = False
 	b = ''
 	# In xterm, brown comes out as yellow..
-	if xterm and fg == "yellow": 
+	if xterm and fg == "yellow":
 		fg = "brown"
 	f = opencol + colors[fg] + closecol
 	if bg:
-		if bg == "yellow" and xterm: 
+		if bg == "yellow" and xterm:
 			bg = "brown"
-		try: 
+		try:
 			b = colors[bg].replace('3', '4', 1)
 			b = opencol + b + closecol
-		except KeyError: 
+		except KeyError:
 			pass
 	return "%s%s%s%s" % (b, f, text, clear)
 

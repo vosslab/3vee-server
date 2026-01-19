@@ -92,17 +92,17 @@ class ThreeVLib(object):
 			sys.stderr.write(apDisplay.colorString("COMMAND: ","magenta")+cmd+"\n")
 		t0 = time.time()
 		popen_kwargs = {}
-		popen_kwargs = {}
+		popen_args = None
 		if source is True:
 			cmd = "source /etc/bashrc; "+cmd
-			popen_kwargs["executable"] = "/bin/bash"
 			popen_kwargs["env"] = os.environ.copy()
 			popen_kwargs["env"]["BASH_ENV"] = "/etc/bashrc"
+		popen_args = ["/bin/bash", "-lc", cmd]
 		try:
 			if verbose is False:
-				proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_kwargs)
+				proc = subprocess.Popen(popen_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_kwargs)
 			else:
-				proc = subprocess.Popen(cmd, shell=True, **popen_kwargs)
+				proc = subprocess.Popen(popen_args, **popen_kwargs)
 			if verbose is True:
 				proc.wait()
 			else:
@@ -198,7 +198,7 @@ class ThreeVLib(object):
 		self.writeToRunningLog("completed download of PDB id"
 			+(" %s (size: %d k, %d lines)"%(pdbid,size,numlines)))
 		return pdbfile
-		
+
 	#====================
 	def convertPDBtoXYZR(self, pdbfile, hetero=False):
 		self.checkSystemLoad()
@@ -229,7 +229,7 @@ class ThreeVLib(object):
 			apDisplay.printError("could not find file: "+newatm)
 		xyzrfile = os.path.splitext(pdbfile)[0]+".xyzr"
 
-		convertexe = os.path.join(self.procdir, "bin/pdb_to_xyzr.exe") 
+		convertexe = os.path.join(self.procdir, "bin/pdb_to_xyzr.exe")
 		convertcmd = convertexe+" "+atomfile+" > "+xyzrfile
 		print(os.getcwd())
 		os.chdir(self.rundir)
@@ -288,7 +288,7 @@ class ThreeVLib(object):
 	def runFsvCalc(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
-		./FsvCalc.exe -i <file> -b <big_probe> -s <small_probe> 
+		./FsvCalc.exe -i <file> -b <big_probe> -s <small_probe>
 			-t <trim probe> -m <MRC outfile> -g <gridspace>
 		FsvCalc.exe -- Calculates the Fractional Solvent Volume
 		"""
@@ -349,11 +349,11 @@ class ThreeVLib(object):
 		return fsvdata
 
 	#====================
-	def runChannel(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
+	def runChannel(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5,
 		xyzcoord=(None,None,None), gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
-		./Channel.exe -i <file> -b <big_probe> -s <small_probe> 
+		./Channel.exe -i <file> -b <big_probe> -s <small_probe>
 			-t <trim probe> -x <x-coord> -y <y-coord> -z <z-coord>
 			-m <MRC outfile> -g <gridspace>
 		Channel.exe -- Extracts a particular channel from the solvent
@@ -385,11 +385,11 @@ class ThreeVLib(object):
 			sys.exit(1)
 
 	#====================
-	def runChannelFinder(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
+	def runChannelFinder(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5,
 		gridsize=0.5, mrcfile=None, minvolume=None, minpercent=None, numchan=None):
 		self.checkSystemLoad()
 		"""
-		./AllChannel.exe -i <file> -b <big_probe> -s <small_probe> -g <gridspace> 
+		./AllChannel.exe -i <file> -b <big_probe> -s <small_probe> -g <gridspace>
 			-t <trim probe> -v <min-volume in A^3> -p <min-percent>
 		AllChannel.exe -- Extracts all channels from the solvent above a cutoff
 		"""
@@ -435,7 +435,7 @@ class ThreeVLib(object):
 			sys.exit(1)
 
 	#====================
-	def runTunnel(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
+	def runTunnel(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5,
 		gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
@@ -471,12 +471,12 @@ class ThreeVLib(object):
 			sys.exit(1)
 
 	#====================
-	def runSolvent(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
+	def runSolvent(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5,
 		gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
 		./Solvent.exe -i <file> -s <sm_probe_rad> -b <big_probe_rad>
-			-t <trim_probe_rad> -g <grid spacing> 
+			-t <trim_probe_rad> -g <grid spacing>
 			-e <EZD outfile> -o <PDB outfile> -m <MRC outfile>
 		Solvent.exe -- Extracts the all of the solvent
 		"""
@@ -507,11 +507,11 @@ class ThreeVLib(object):
 			sys.exit(1)
 
 	#====================
-	def runCavity(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, 
+	def runCavity(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5,
 		xyzcoord=(0.0,0.0,0.0), gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
-		./Channel.exe -i <file> -b <big_probe> -s <small_probe> 
+		./Channel.exe -i <file> -b <big_probe> -s <small_probe>
 			-t <trim probe> -x <x-coord> -y <y-coord> -z <z-coord>
 			-m <MRC outfile> -g <gridspace>
 		Channel.exe -- Extracts a particular channel from the solvent
@@ -551,7 +551,7 @@ class ThreeVLib(object):
 	def runVolume(self, xyzrfile, probe=3.0, gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
-		./Volume.exe -i <file> -g <gridspacing> -p <probe_rad> 
+		./Volume.exe -i <file> -g <gridspacing> -p <probe_rad>
 			-m <MRC outfile> -o <PDB outfile> -m <MRC outfile>
 		Volume.exe -- Calculate the volume and surface area for any probe radius
 		"""
@@ -584,7 +584,7 @@ class ThreeVLib(object):
 	def runVolumeNoCav(self, xyzrfile, probe=3.0, gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
-		./VolumeNoCav.exe -i <file> -g <gridspacing> -p <probe_rad> 
+		./VolumeNoCav.exe -i <file> -g <gridspacing> -p <probe_rad>
 			-m <MRC outfile> -o <PDB outfile> -m <MRC outfile>
 		VolumeNoCav.exe -- Calculate the volume and surface area for any probe radius
 		"""
@@ -611,7 +611,7 @@ class ThreeVLib(object):
 
 	#====================
 	def trimMrcFile(self, mrcfile, flataxis=None, trimpercent=-1):
-		self.checkSystemLoad()		
+		self.checkSystemLoad()
 		self.writeToRunningLog("trimming mrc volume")
 
 		if not os.path.isfile(mrcfile):
@@ -641,7 +641,7 @@ class ThreeVLib(object):
 
 	#====================
 	def bisectMrcFile(self, mrcfile, flataxis=None):
-		self.checkSystemLoad()		
+		self.checkSystemLoad()
 		self.writeToRunningLog("trimming mrc volume")
 
 		if not os.path.isfile(mrcfile):
@@ -669,7 +669,7 @@ class ThreeVLib(object):
 	#====================
 	def meshlabDecimateConvert(self, xthreedfile):
 		t0 = time.time()
-		self.checkSystemLoad()		
+		self.checkSystemLoad()
 
 		if not os.path.isfile(xthreedfile):
 			self.writeToRunningLog("failed to find X3D file for conversion", type="Cross")
@@ -805,7 +805,7 @@ class ThreeVLib(object):
 		if os.path.isfile(x3dfile):
 			self.writeToRunningLog("Renderer created 3D printing compatible file")
 			objfile = x3dfile
-			
+
 		### look for files
 		pngbase = os.path.splitext(filename)[0]
 		pngfiles = glob.glob(pngbase+".*.png")
@@ -957,7 +957,7 @@ class ThreeVLib(object):
 		#webf.write("</td><td align='right'>")
 		#webf.write("  %.1f &Aring;<sup>2</sup>\n"%(pixarea))
 
-		sphericity = (36.0 * math.pi * volume**2)**(1/3.) / area 
+		sphericity = (36.0 * math.pi * volume**2)**(1/3.) / area
 		webf.write("</td></tr><tr><td align='left'>\n")
 		webf.write(self.docpop("sphericity", "Sphericity, &Psi;:"))
 		webf.write("</td><td align='right'>")

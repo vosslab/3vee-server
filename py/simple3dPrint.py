@@ -31,17 +31,17 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	#====================
 	def start(self):
 		#### run program
-		mrcfile = self.threev.runVolumeNoCav(self.xyzrfile, 
+		mrcfile = self.threev.runVolumeNoCav(self.xyzrfile,
 			probe=self.params['probe'], gridsize=self.params['gridsize'])
 
-		
+
 		if self.params['flatmethod'] == 'trim':
 			trimMrcFile = self.threev.trimMrcFile(mrcfile, self.params['flataxis'], self.params['trimpercent'])
 			if trimMrcFile is None or not os.path.isfile(trimMrcFile):
 				return
 			apFile.removeFile(mrcfile)
 			mrcfiles = [trimMrcFile]
-		elif self.params['flatmethod'] == 'bisect': 
+		elif self.params['flatmethod'] == 'bisect':
 			bisectMrcFile1, bisectMrcFile2 = self.threev.bisectMrcFile(mrcfile, self.params['flataxis'])
 			if bisectMrcFile1 is None or not os.path.isfile(bisectMrcFile2):
 				return
@@ -70,7 +70,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
-	runthreev.close()	
+	runthreev.close()
 
 
 

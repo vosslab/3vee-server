@@ -112,7 +112,7 @@ class DBDataKeeper(object):
 		'''
 		query using a partial Data instance
 		'''
-		# idata: instance of a Data class 
+		# idata: instance of a Data class
 		# results: number of rows wanted
 		queryinfo = self.queryInfo(idata, timelimit=timelimit, limit=limit)
 		self.dbd.ping()
@@ -330,7 +330,7 @@ class DBDataKeeper(object):
 		table = newdata.__class__.__name__
 		definition, formated = sqldict.dataSQLColumns(newdata)
 		return self.dbd.diffSQLTable(table, definition)
-	
+
 
 	# don't bother with these for now
 	def remove(self, id):

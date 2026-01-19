@@ -41,8 +41,8 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		self.threev.webImageSection(pngfiles, self.website, f)
 		self.threev.webJmolSection(objfile, self.website, f, pdbfile=self.pdbfile)
 
-		f.close()	
-		
+		f.close()
+
 
 
 #====================

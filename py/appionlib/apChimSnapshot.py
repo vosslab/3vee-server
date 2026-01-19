@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # Script to radially color a contour surface of a density map and save an
 # image without starting the Chimera graphical user interface.  This would ideally use
-# the "OSMESA" version of Chimera, but it does not work, so we have been using the linux 
+# the "OSMESA" version of Chimera, but it does not work, so we have been using the linux
 # program Xvfb to make a fake X windows client.
 
 import re
@@ -451,7 +451,7 @@ class ChimSnapShots(object):
 			filename = "%s.%03d.%s"%(self.volumepath, imgnum, self.imgformat.lower())
 			self.runChimCommand('turn y %.4f'%(threefoldstepangle))
 			self.save_image(filename)
-	
+
 		### pause
 		for i in range(numpause):
 			imgnum += 1
@@ -922,7 +922,7 @@ class ChimSnapShots(object):
 		for var in list(os.environ.keys()):
 			if var[:4] == "CHIM":
 				if os.environ.get(var) is not None:
-					self.writeMessageToLog("export %s=%s"%(var, os.environ.get(var)))		
+					self.writeMessageToLog("export %s=%s"%(var, os.environ.get(var)))
 
 #==========================================
 #==========================================

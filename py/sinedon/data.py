@@ -327,7 +327,7 @@ class Data(newdict.TypedDict):
 		#  Below we have defined a special __deepcopy__
 		#  so that the new copy gets a new dmid.
 		#  I would still suggest not using deepcopy.
-		#  Pickle is left alone because dmid should stay 
+		#  Pickle is left alone because dmid should stay
 		#  the same.  However, DataManager should do some
 		#  dmid tracking when getting remote data (via pickle)
 		####################################################
@@ -364,18 +364,18 @@ class Data(newdict.TypedDict):
 		# (overriding anything set by initializer)
 		self.update(kwargs)
 
-	## definining __reduce__ allows unpickler to call __init__ 	 
-	## which is necessary to register data with datamanager 	 
+	## definining __reduce__ allows unpickler to call __init__
+	## which is necessary to register data with datamanager
 	## This overrides OrderedDict.__reduce__ with the only difference
 	## being that we don't want to dereference the items
-	def __reduce__(self): 	 
-		state = dict(self.__dict__) 	 
+	def __reduce__(self):
+		state = dict(self.__dict__)
 		del state['references']
-		## giving the new object an initializer has a lot of 	 
-		## duplicate information to what is given in the 	 
-		## state dict, but it is necessary to get the dict 	 
-		## base class to have its items set 	 
-		initializer = dict(self.items(dereference=False)) 	 
+		## giving the new object an initializer has a lot of
+		## duplicate information to what is given in the
+		## state dict, but it is necessary to get the dict
+		## base class to have its items set
+		initializer = dict(self.items(dereference=False))
 		return (self.__class__, (initializer,), state)
 
 	def insert(self, **kwargs):

@@ -39,7 +39,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	def start(self):
 		### run program
 		mrcfile = self.threev.runChannel(self.xyzrfile, bigprobe=self.params['bigprobe'],
-			smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'], 
+			smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'],
 			xyzcoord=self.coord_list)
 
 		### make images
@@ -53,8 +53,8 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
 		self.threev.webMrcSection([mrcfile], self.website, f, pdb=True, pymol=self.params['pymol'])
 
-		f.close()	
-		
+		f.close()
+
 
 
 #====================
@@ -63,7 +63,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
-	runthreev.close()	
+	runthreev.close()
 
 
 

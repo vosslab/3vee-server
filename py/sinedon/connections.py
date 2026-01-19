@@ -19,7 +19,7 @@ def getConnection(modulename):
 		else:
 			connectedconf = connections[modulename]['config']
 		dbconf = dbconfig.getConfig(modulename)
-	
+
 		if dbconf != connectedconf:
 			#print 'MAKING CONNECTION', modulename, dbconf
 			connections[modulename] = {'config': dbconf, 'connection': DB(**dbconf)}

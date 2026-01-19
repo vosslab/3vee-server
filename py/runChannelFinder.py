@@ -36,7 +36,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	def start(self):
 		### run program
 		mrcfiles = self.threev.runChannelFinder(self.xyzrfile, bigprobe=self.params['bigprobe'],
-			smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'], 
+			smallprobe=self.params['smallprobe'], gridsize=self.params['gridsize'],
 			minvolume=self.params['minvolume'], minpercent=self.params['minpercent'],
 			numchan=self.params['numchan'])
 
@@ -56,7 +56,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 
 		self.threev.webMrcSection(mrcfiles, self.website, f, pdb=True, pymol=self.params['pymol'])
 		f.close()
-		
+
 
 
 #====================
@@ -65,7 +65,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
-	runthreev.close()	
+	runthreev.close()
 
 
 

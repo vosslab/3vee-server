@@ -152,25 +152,24 @@ def check_exist_one_file(filenames, combine=True):
 
 def unixChangeMode(path,mode_str='g-w,o-rw', recursive=False):
 	# only works on uniux
+	cmd = ['chmod']
 	if recursive:
-		rec_str = '-R '
-	else:
-		rec_str = ''
-	cmd = 'chmod %s%s %s' % (rec_str, mode_str, path)
-	print(cmd)
-	p = subprocess.Popen(cmd, shell=True)
+		cmd.append('-R')
+	cmd.extend([mode_str, path])
+	print(' '.join(cmd))
+	p = subprocess.Popen(cmd)
 	p.wait()
 
 def unixChangeOwnership(uid,gid,pathname, recursive=False):
 	# change ownership of desintation directory or file
 	# not recursive so it does not go through all every time.
+	cmd = ['chown']
 	if recursive:
-		rec_str = '-R '
-	else:
-		rec_str = ''
-	cmd = 'chown %s%s:%s %s' % (rec_str, uid, gid, pathname)
-	print(cmd)
-	p = subprocess.Popen(cmd, shell=True)
+		cmd.append('-R')
+	cmd.append('%s:%s' % (uid, gid))
+	cmd.append(pathname)
+	print(' '.join(cmd))
+	p = subprocess.Popen(cmd)
 	p.wait()
 
 cache_name = 'LEGINON_READONLY_IMAGE_PATH'

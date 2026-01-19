@@ -65,7 +65,7 @@ class ThreeVScript(object):
 	#=====================
 	def argumentFromParamDest(self, dest):
 		"""
-		For a given optparse destination (dest, e.g., 'runname') 
+		For a given optparse destination (dest, e.g., 'runname')
 			this will determine the command line
 			argument (e.g., -n)
 		"""
@@ -84,7 +84,7 @@ class ThreeVScript(object):
 	#=====================
 	def usageFromParamDest(self, dest, value):
 		"""
-		For a given optparse destination (dest, e.g., 'commit') 
+		For a given optparse destination (dest, e.g., 'commit')
 			and value (e.g., 'False') this will generate the command line
 			usage (e.g., '--no-commit')
 		"""

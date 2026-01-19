@@ -43,7 +43,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 			mrcfile = ("%s-%03.1f.mrc"%(root, probe))
 
 			#### run program
-			mrcfile = self.threev.runVolume(self.xyzrfile, 
+			mrcfile = self.threev.runVolume(self.xyzrfile,
 				probe=probe, gridsize=self.params['gridsize'],
 				mrcfile=mrcfile)
 
@@ -61,8 +61,8 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 			f.write("<hr/><hr/>\n")
 
 		self.threev.webMrcSection(mrclist, self.website, f)
-		f.close()	
-		
+		f.close()
+
 
 
 #====================
@@ -71,7 +71,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 if __name__ == "__main__":
 	runthreev = RunThreeVScript()
 	runthreev.start()
-	runthreev.close()	
+	runthreev.close()
 
 
 

@@ -2,6 +2,8 @@
 
 ## 2026-01-19
 - Resolved merge conflicts in AGENTS.md, README.md, docs/CODE_ARCHITECTURE.md, and docs/CONTAINER.md.
+- Addressed Bandit findings by removing shell=True usage, replacing eval calls, and annotating trusted pickle/SQL paths.
+- Updated Chimera downloader temp output handling, and hardened helper utilities around rsync, Xvfb, and vm_stat usage.
 
 ## 2026-01-16
 - Removed shebangs from non-executable Python modules flagged by lint.

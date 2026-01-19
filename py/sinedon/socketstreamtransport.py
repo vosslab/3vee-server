@@ -24,7 +24,7 @@ class Handler(SocketServer.StreamRequestHandler):
 
 	def handle(self):
 		try:
-			request = pickle.load(self.rfile)
+			request = pickle.load(self.rfile) # nosec B301: trusted local socket transport
 		except Exception as e:
 			estr = 'error reading request, %s' % e
 			try:
@@ -94,7 +94,7 @@ class Client(object):
 			sfile = s.makefile('rwb')
 		except Exception as e:
 			raise TransportError('error creating socket file, %s' % e)
-			
+
 		try:
 			pickle.dump(request, sfile, pickle.HIGHEST_PROTOCOL)
 		except Exception as e:
@@ -105,7 +105,7 @@ class Client(object):
 		except Exception as e:
 			raise TransportError('error flushing socket file buffer, %s' % e)
 
-		result = pickle.load(sfile)
+		result = pickle.load(sfile) # nosec B301: trusted local socket transport
 
 		try:
 			sfile.close()
@@ -119,4 +119,3 @@ class Client(object):
 
 Server.clientclass = Client
 Client.serverclass = Server
-

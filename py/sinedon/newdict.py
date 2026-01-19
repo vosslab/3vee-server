@@ -1,6 +1,6 @@
 import numpy
 import os
-from pyami.ordereddict import OrderedDict 
+from pyami.ordereddict import OrderedDict
 import array
 
 class FileReference(object):
@@ -69,7 +69,7 @@ class TypedDict(OrderedDict):
 	def __setitem__(self, key, value):
 		## validate key, new keys not allowed
 		t = self.__types[key]
-		## validate value	
+		## validate value
 		if value is not None:
 			try:
 				validator = validators[t]

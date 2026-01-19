@@ -9,6 +9,7 @@ import urllib.error
 import http.cookiejar
 import re
 import html
+import tempfile
 from pathlib import Path
 from http.client import HTTPMessage
 
@@ -17,6 +18,7 @@ CHIMERA_FORM_URL = "https://www.cgl.ucsf.edu/chimera/cgi-bin/secure/chimera-get.
 CHIMERAX_FORM_URL = "https://www.rbvi.ucsf.edu/chimerax/cgi-bin/secure/chimerax-get.py"
 DEFAULT_CHIMERA_FILE = "linux_x86_64_osmesa/chimera-1.19-linux_x86_64_osmesa.bin"
 DEFAULT_CHIMERAX_FILE = "1.11/flatpak/ChimeraX-1.11.flatpak"
+DEFAULT_OUTPUT = str(Path(tempfile.gettempdir()) / "chimera.bin")
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/117.0"
 )
@@ -166,7 +168,7 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--output",
-        default="/tmp/chimera.bin",
+        default=DEFAULT_OUTPUT,
         help="Destination path for the downloaded installer",
     )
     parser.add_argument(

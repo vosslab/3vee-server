@@ -7,7 +7,7 @@
 #
 debug = False
 """
-sqldict: 
+sqldict:
 
 This creates a database interface which works pretty much like a
 Python dictionary. The data are stored in a sql table.
@@ -73,7 +73,7 @@ ACCESSING DATA
 >>> db.Preset.Name= db.Preset.Index(['Name'])
 
 This defines an index member to Preset called 'Name', which allows
-searching by 'Name'. 
+searching by 'Name'.
 
 >>> db.Preset.NameDesc= db.Preset.Index(['Name'], orderBy = {'fields':('id',),'sort':'DESC'})
 
@@ -151,6 +151,7 @@ import sys
 import copy
 import datetime
 import re
+import ast
 import numpy
 import math
 import pymysql
@@ -323,7 +324,7 @@ class _Table:
 
 	def insert(self, v=[], force=0):
 		"""Insert a list of dictionaries into a SQL table. If the data
-		already exist, they won't be inserted again in the table, 
+		already exist, they won't be inserted again in the table,
 		unless force is true. The function returns the last inserted row
 		id for a new insert or an existing primary key."""
 		c = self.cursor()
@@ -617,7 +618,7 @@ class _multipleQueries:
 				break
 		if keyfield is None:
 			return
-			
+
 		havedict = {}
 		filtered = []
 		for result in results:
@@ -719,7 +720,7 @@ class _multipleQueries:
 
 		### already done
 		if root.dbid is not None:
-			return 
+			return
 
 		needpath = []
 		for key,value in root.items(dereference=False):
@@ -999,7 +1000,7 @@ class ObjectBuilder:
 	def dumpdict(self):
 		"""dump as a Python dictionary."""
 		return dict(zip(self.columns, self.dump()))
-		
+
 	def register(self, db):
 		"""Register into database."""
 		t = db.Table(self.table, self.columns)
@@ -1122,7 +1123,7 @@ def queryFormatOptimized(queryinfo,tableselect):
 	### comment the following line to use the orginal: JOIN ... ON (), JOIN ... ON ()
 	if len(sqljoin) > 1:
 		sqljoinstr = 'JOIN (' + ', '.join(refjoinlist) + ') ON ('+' AND '.join(fieldjoinlist)+')'
-		
+
 	if sqlwhere:
 		sqlwherestr= 'WHERE ' + ' AND '.join(sqlwhere)
 	else:
@@ -1153,9 +1154,9 @@ def flatDict(in_dict):
 	items = {}
 	try:
 		keys = in_dict.keys()
-	
+
 	except AttributeError:
-		raise TypeError("Must be a Dictionary") 
+		raise TypeError("Must be a Dictionary")
 
 	for key in keys:
 		value = in_dict[key]
@@ -1176,7 +1177,7 @@ def flatDict(in_dict):
 			if issubclass(type(value), int):
 				# handle numpy float type. numpy2.0 default to output with np type.
 				value = int(value)
-			items[key] = value	
+			items[key] = value
 	return items
 
 def unflatDict(in_dict, join):
@@ -1200,7 +1201,7 @@ def unflatDict(in_dict, join):
 			name = a[1]
 			if not name in allsubdicts.keys():
 				allsubdicts[a[1]]=None
-		
+
 		elif a[0] != 'ARRAY':
 			items.update(datatype({key:value},join=join))
 
@@ -1217,7 +1218,7 @@ def unflatDict(in_dict, join):
 	allsubdicts.update(items)
 	return allsubdicts
 
-	
+
 def dict2matrix(in_dict):
 	"""
 	This function returns a matrix from a dictionary.
@@ -1241,20 +1242,20 @@ def dict2matrix(in_dict):
 	# Get the shape and size of the matrix
 	ij=[]
 	for m in in_dict:
-		i=eval(re.findall(r'\d+',m)[0])
-		j=eval(re.findall(r'\d+',m)[1])
+		i=int(re.findall(r'\d+',m)[0])
+		j=int(re.findall(r'\d+',m)[1])
 		ij.append((i,j))
 	shape = max(ij)
 
 	# Build the matrix
 	matrix = numpy.zeros(shape, numpy.float64)
 	for m in in_dict:
-		i=eval(re.findall(r'\d+',m)[0])-1
-		j=eval(re.findall(r'\d+',m)[1])-1
+		i=int(re.findall(r'\d+',m)[0])-1
+		j=int(re.findall(r'\d+',m)[1])-1
 		matrix[i][j]=in_dict[m]
 
 	return matrix
-		
+
 def matrix2dict(matrix, name=None):
 	"""
 	This function returns a dictionary which represents a matrix.
@@ -1275,12 +1276,12 @@ def matrix2dict(matrix, name=None):
 
 	if name is None:
 		name='m'
-		
+
 	try:
 		if not (matrix.shape >= (1, 1) and len(matrix.shape) > 1):
 			raise ValueError("Wrong shape: must be at least 2x1 or 1x2")
 	except AttributeError:
-		raise TypeError("Must be numpy array") 
+		raise TypeError("Must be numpy array")
 	# force numpy.matrix to numpy.ndarray
 	matrix = numpy.array(matrix)
 
@@ -1330,7 +1331,7 @@ def sql2data(in_dict, qikey=None, qinfo=None):
 	{'camera': {'exposure time': 1, 'camera size': {'y': 1, 'x': 1},
 		 'dimension': {'y': 1, 'x': 1}, 'binning': {'y': 1, 'x': 1},
 		 'offset': {'y': 1, 'x': 1}},
-	 'matrix': array([[  1.94448980e-10,   1.22265148e-10], 
+	 'matrix': array([[  1.94448980e-10,   1.22265148e-10],
 			 [ -1.24684512e-10,   2.00273703e-10]]),
 	 'database filename': 1,
 	 'scope': {'gun shift': {'y': 1, 'x': 1}, 'dark field mode': 1},
@@ -1376,7 +1377,7 @@ def findDataClass(modulename, classname):
 
 def datatype(in_dict, join=None, parentclass=None):
 	"""
-	This function converts a specific string or a SQL type to 
+	This function converts a specific string or a SQL type to
 	a python type.
 	"""
 	content={}
@@ -1394,8 +1395,8 @@ def datatype(in_dict, join=None, parentclass=None):
 				content[a[1]] = None
 			else:
 				try:
-					content[a[1]] = eval(value)
-				except SyntaxError:
+					content[a[1]] = ast.literal_eval(value)
+				except (ValueError, SyntaxError):
 					content[a[1]] = None
 		elif a0 == 'PICKLE':
 			## contains a python pickle string,
@@ -1405,7 +1406,7 @@ def datatype(in_dict, join=None, parentclass=None):
 			except AttributeError:
 				pass
 			try:
-				ob = cPickle.loads(value)
+				ob = cPickle.loads(value) # nosec B301: database values are trusted in this context
 			except:
 				ob = None
 			content[a[1]] = newdict.AnyObject(ob)

@@ -1,6 +1,6 @@
 /* style sheet for appionweb pages */
 
-body {     
+body {
 	margin:0;
 	padding:0 0 15px 0;
 	color:#000;
@@ -117,12 +117,12 @@ li {
 #apheader a {
 	  color:#ffe88d;
 	  text-decoration:none;
-}	  
+}
 
 #apheader a:hover {
 	  color:#ffcc00;
 	  text-decoration:underline;
-}  
+}
 
 /* Accessibility bar and login */
 #apheader .aptopbar ,.apbottombar {
@@ -141,7 +141,7 @@ li {
 
 #apheader .aplogout {
 	  padding-right:10px;
-	  text-align:right;	  
+	  text-align:right;
 }
 
 #apheader .middlebar {

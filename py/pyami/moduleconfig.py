@@ -59,7 +59,7 @@ class ModuleConfigParser(object):
 						value = False
 					elif ',' in valuestring:
 						items = self.configparser.get(name,key).split(',')
-						
+
 						try:
 							#list of floats for aparture sizes
 							value = list(map((lambda x: float(x)), items))
@@ -68,7 +68,7 @@ class ModuleConfigParser(object):
 								#list of integers for lens or deflector neutrals
 								value = list(map((lambda x: int(x)), value))
 						except:
-							#list of strings for mag mode 
+							#list of strings for mag mode
 							value = list(map((lambda x: x.strip()), items))
 					else:
 						value = valuestring

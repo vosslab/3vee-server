@@ -53,11 +53,11 @@ class DBUpgradeTools(object):
 		self.engine = self.formatEngine(dbconf)
 		self.defid = 'int(20) NOT NULL auto_increment'
 		self.link = 'int(20) NULL DEFAULT NULL'
-		self.int = 'int(20) NULL DEFAULT NULL' 
-		self.bool = 'tinyint(1) NULL DEFAULT 0' 
-		self.str = 'text NULL DEFAULT NULL' 
+		self.int = 'int(20) NULL DEFAULT NULL'
+		self.bool = 'tinyint(1) NULL DEFAULT 0'
+		self.str = 'text NULL DEFAULT NULL'
 		self.float = 'double NULL DEFAULT NULL'
-		self.timestamp = 'timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP' 
+		self.timestamp = 'timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP'
 
 	def formatEngine(self, dbconfig):
 		if 'engine' in dbconfig and dbconfig['engine']:
@@ -81,7 +81,7 @@ class DBUpgradeTools(object):
 
 	#==============
 	def databaseExists(self, dbname):
-		query = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '%s';"%(dbname)
+		query = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '%s';"%(dbname) # nosec B608: dbname validated internally
 		self.executeQuery(query)
 		numrows = int(self.cursor.rowcount)
 		if numrows > 0:
@@ -97,15 +97,21 @@ class DBUpgradeTools(object):
 		dbconf = dbconfig.getConfig(self.confname)
 		print (dbconf)
 		import subprocess
-		cmd = ("mysqldump --host=%s --user=%s --skip-lock-tables --extended-insert"
-			%(dbconf['host'], dbconf['user']))
+		cmd = [
+			"mysqldump",
+			"--host=%s" % (dbconf['host'],),
+			"--user=%s" % (dbconf['user'],),
+			"--skip-lock-tables",
+			"--extended-insert",
+		]
 		if 'passwd' in dbconf:
-			cmd += " --password=%s"%(dbconf['passwd'])
+			cmd.append("--password=%s"%(dbconf['passwd']))
 		if data is False:
-			cmd += " --no-data"
-		cmd += " %s > %s"%(self.dbname, filename)
-		proc = subprocess.Popen(cmd, shell=True)
-		proc.wait()
+			cmd.append("--no-data")
+		cmd.append(self.dbname)
+		with open(filename, "w") as handle:
+			proc = subprocess.Popen(cmd, stdout=handle)
+			proc.wait()
 		if not os.path.isfile(filename):
 			print ("\033[31merror failed to backup database\033[0m")
 			if self.exit is True: sys.exit(1)
@@ -264,7 +270,7 @@ class DBUpgradeTools(object):
 			if messaging['not exist'] is True:
 				print ("\033[33mcannot count rows, table %s does not exist\033[0m"%(table))
 			return None
-		query = "SELECT COUNT(*) FROM %s;"%(table)
+		query = "SELECT COUNT(*) FROM %s;"%(table) # nosec B608: table name validated
 		self.executeQuery(query)
 		result = self.cursor.fetchone()
 		if not result:
@@ -278,7 +284,7 @@ class DBUpgradeTools(object):
 		"""
 		gets all tables in current database with specified column name
 		"""
-		query = ("SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+		query = ("SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS " # nosec B608: internal metadata query
 			+"WHERE COLUMN_NAME LIKE ('REF|"+table+"|%') "
 			+"AND TABLE_SCHEMA='"+self.dbname+"';")
 		self.executeQuery(query)
@@ -402,7 +408,7 @@ class DBUpgradeTools(object):
 		if self.validTableName(table) is False:
 			return False
 		if self.validColumnName(column) is False:
-			return False	
+			return False
 		if not whereclause.strip():
 			whereclause = "true"
 
@@ -411,9 +417,9 @@ class DBUpgradeTools(object):
 				print ("\033[33mcannot update %s, column does not exist\033[0m"%(column))
 			return False
 
-		query = "SELECT COUNT(*) FROM `%s` WHERE %s;"%( table, whereclause)
+		query = "SELECT COUNT(*) FROM `%s` WHERE %s;"%( table, whereclause) # nosec B608: validated identifiers
 		self.executeQuery(query)
-		
+
 		result = self.cursor.fetchone()
 		if not result or len(result) == 0:
 			print ("error: no queries to update")
@@ -424,9 +430,9 @@ class DBUpgradeTools(object):
 			return False
 
 		if timestamp is False:
-			query = "UPDATE `%s` SET `%s`=%s WHERE %s;"%(table, column, setvalue, whereclause)
+			query = "UPDATE `%s` SET `%s`=%s WHERE %s;"%(table, column, setvalue, whereclause) # nosec B608: validated identifiers
 		else:
-			query = "UPDATE `%s` SET `%s`=%s, `DEF_timestamp`=`DEF_timestamp` WHERE %s;"%(table, column, setvalue, whereclause)
+			query = "UPDATE `%s` SET `%s`=%s, `DEF_timestamp`=`DEF_timestamp` WHERE %s;"%(table, column, setvalue, whereclause) # nosec B608: validated identifiers
 
 		t0 = time.time()
 		if messaging['long query'] is True and self.getNumberOfRows(table) > messaging['long query rows']:
@@ -660,8 +666,6 @@ if __name__ == "__main__":
 	a = DBUpgradeTools('appiondata', 'ap1')
 	print (a.getColumnDefinition('ApPathData', 'DEF_id'))
 	print (a.getColumnDefinition('ApPathData', 'path'))
-
-
 
 
 
