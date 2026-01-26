@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-01-26
+- Resolved merge conflicts in AGENTS.md, README.md, docs/CODE_ARCHITECTURE.md, and docs/CONTAINER.md.
+
 ## 2026-01-19
 - Resolved merge conflicts in AGENTS.md, README.md, docs/CODE_ARCHITECTURE.md, and docs/CONTAINER.md.
 - Addressed Bandit findings by removing shell=True usage, replacing eval calls, and annotating trusted pickle/SQL paths.
