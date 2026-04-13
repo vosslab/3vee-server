@@ -65,9 +65,9 @@ wait_for_db() {
   echo "Waiting for MariaDB at ${host} as ${user}..."
 
   # Use a loop so failures do not trigger set -e
-  while ! mysql --skip-ssl --ssl-verify-server-cert=0 \
+  while ! mysqladmin --skip-ssl --ssl-verify-server-cert=0 \
                 -h "${host}" -u "${user}" -p"${pass}" \
-                -e "SELECT 1" >/dev/null 2>&1; do
+                ping >/dev/null 2>&1; do
     attempt=$((attempt + 1))
     if (( attempt >= max_attempts )); then
       echo "ERROR: MariaDB still not ready after ${max_attempts} attempts" >&2
@@ -93,9 +93,12 @@ bootstrap_db() {
 
 prepare_fs() {
 	echo "[entrypoint] preparing filesystem"
-	mkdir -p "${APP_ROOT}/output"
+	mkdir -p "${APP_ROOT}/output/uploads"
 	chown -R www-data:www-data "${APP_ROOT}/output"
+	chmod -R 755 "${APP_ROOT}/output"
 	mkdir -p /run/apache2
+	# runtime write check
+	test -w "${APP_ROOT}/output/uploads" || echo "WARNING: uploads dir not writable" >&2
 }
 
 export APP_ROOT

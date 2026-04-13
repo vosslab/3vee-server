@@ -66,3 +66,9 @@ class sqlDB(object):
 	def close(self):
 		'Close a DB connection'
 		self.dbConnection.close()
+
+	def __del__(self):
+		try:
+			self.dbConnection.close()
+		except Exception:
+			pass

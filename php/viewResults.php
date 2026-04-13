@@ -271,7 +271,7 @@ function runningLog($jobid, $showrunlog) {
 	echo "<h4>hit reload to refresh this page</h4>\n";
 
 	$logfile = $PROCDIR."output/$jobdir/shell-$jobid.log";
-	$tail = isset($_POST['tail']) && $_POST['tail'] !== '' ? (int)$_POST['tail'] : 20;
+	$tail = isset($_POST['tail']) && $_POST['tail'] !== '' ? (int)$_POST['tail'] : 50;
 	$loginfo = checkLogFile($logfile, $tail);
 	if ($loginfo) {
 		echo "<br/><hr width='50%'/>\n";

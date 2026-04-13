@@ -304,7 +304,14 @@ def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 			apVolumeRender.export_obj(verts, faces, basename + ".obj")
 		except Exception as exc:
 			apDisplay.printWarning(f"OBJ export failed: {exc}")
-	if not _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=False):
+	try:
+		import pyvista  # noqa: F401
+		use_pyvista = True
+	except ImportError:
+		use_pyvista = False
+	if use_pyvista and _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=False):
+		pass
+	else:
 		apVolumeRender.render_png_views(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
 	if print3d:
 		if verts is None or faces is None:
@@ -325,7 +332,14 @@ def renderAnimation(density, contour=None, zoom=1.0, sym=None, color=None,
 	basename = name or density
 	vol = mrc.read(density).astype(numpy.float32)
 	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
-	if not _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=True):
+	try:
+		import pyvista  # noqa: F401
+		use_pyvista = True
+	except ImportError:
+		use_pyvista = False
+	if use_pyvista and _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=True):
+		pass
+	else:
 		apVolumeRender.render_animation_gif(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
 	return basename
 

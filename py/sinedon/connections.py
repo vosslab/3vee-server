@@ -1,9 +1,20 @@
 from sinedon import dbconfig
 from sinedon.dbdatakeeper import DBDataKeeper as DB
+import atexit
 import threading
 
 lock = threading.Lock()
 connections = {}
+
+def _close_all_connections():
+	for entry in connections.values():
+		try:
+			entry['connection'].close()
+		except:
+			pass
+	connections.clear()
+
+atexit.register(_close_all_connections)
 
 def tail(modulename):
 	return modulename.split('.')[-1]

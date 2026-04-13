@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-04-13
+- Fixed PDB upload failure ("file did not upload properly") caused by missing `output/uploads/` directory.
+- Added `output/uploads/` creation and permission checks to `docker/entrypoint.sh`.
+- Added PHP ini config in Dockerfile to raise `upload_max_filesize` (50M) and `post_max_size` (55M).
+- Hardened `build_podman_image.sh` to clean up stale pods, orphaned containers, and dangling images
+  before starting, preventing the Podman "proxy already running" error.
+- Added `--no-cache` flag to `build_podman_image.sh` for forcing full rebuilds.
+- Added `VERSION` file (26.04) and OCI image version label to Dockerfile.
+- Fixed MariaDB "Aborted connection" warnings by adding `atexit` handler to close sinedon DB
+  connections cleanly, explicit `close()` in `maketables.py`, and `__destruct()` in PHP mysql class.
+- Fixed `getSQLResult()` in `php/inc/mysql.inc` reading result sets after connection was closed.
+- Fixed `np.int32` appearing in volume shape log output.
+- Fixed "Failed to write running log" errors during Python interpreter shutdown.
+- Fixed triple "FINISHED" log messages from nested `__del__` calls.
+- Made matplotlib the default renderer; PyVista only attempted if installed.
+- Moved HTML link parens outside anchor tag in volume imaging log message.
+- Changed default log tail display from 20 to 50 lines.
+- Switched entrypoint DB probe from `mysql -e` to `mysqladmin ping` for cleaner connections.
+
 ## 2026-01-26
 - Resolved merge conflicts in AGENTS.md, README.md, docs/CODE_ARCHITECTURE.md, and docs/CONTAINER.md.
 

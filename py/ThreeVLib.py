@@ -768,11 +768,11 @@ class ThreeVLib(object):
 
 		### create images
 		link = re.sub("/var/www/html/3vee/output", self.output_url, filename)
-		self.writeToRunningLog("imaging volume <a href='"+link+"'>(download mrc)</a> with headless renderer")
+		self.writeToRunningLog("imaging volume (<a href='"+link+"'>download mrc</a>) with headless renderer")
 		try:
 			mrc_size_mb = os.path.getsize(tempfile) / (1024.0 * 1024.0)
 			vol_header = mrc.readHeaderFromFile(tempfile)
-			dims = (vol_header.get('nx'), vol_header.get('ny'), vol_header.get('nz'))
+			dims = (int(vol_header.get('nx')), int(vol_header.get('ny')), int(vol_header.get('nz')))
 			self.writeToRunningLog(f"volume shape {dims} size {mrc_size_mb:.2f} MB")
 		except Exception as exc:
 			self.writeToRunningLog(f"could not read volume metadata: {exc}", type="Star")
@@ -910,7 +910,13 @@ class ThreeVLib(object):
 					f.write("<font size=-2><i>("+time.asctime()+")</i></font>\n")
 					f.write("</li>\n")
 		except Exception as exc:
-			sys.stderr.write(f"Failed to write running log: {exc}\n")
+			import traceback
+			tb = traceback.extract_tb(exc.__traceback__)
+			if tb:
+				last = tb[-1]
+				sys.stderr.write(f"Failed to write running log at {last.filename}:{last.lineno}: {exc}\n")
+			else:
+				sys.stderr.write(f"Failed to write running log: {exc}\n")
 
 	#====================
 	def thousands(self, num):
@@ -1133,8 +1139,13 @@ class ThreeVLib(object):
 
 	#====================
 	def __del__(self):
-		self.writeToRunningLog("FINISHED")
-		return
+		if getattr(self, '_closed', False):
+			return
+		self._closed = True
+		try:
+			self.writeToRunningLog("FINISHED")
+		except:
+			pass
 
 	#=====================
 	def close(self):

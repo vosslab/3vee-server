@@ -1,5 +1,8 @@
 FROM debian:trixie
 
+ARG THREEV_VERSION
+LABEL org.opencontainers.image.version="${THREEV_VERSION}"
+
 ENV DEBIAN_FRONTEND=noninteractive \
     APP_ROOT=/var/www/html/3vee
 
@@ -67,6 +70,10 @@ RUN set -eux; \
     a2enmod rewrite "${PHP_MOD}"; \
     printf "ServerName 3vee.local\n" > /etc/apache2/conf-available/servername.conf; \
     a2enconf servername
+
+# PHP upload settings for PDB files (up to 30 MB)
+RUN bash -c 'printf "upload_max_filesize = 50M\npost_max_size = 55M\nupload_tmp_dir = /tmp\n" \
+    > "$(ls -d /etc/php/*/apache2/conf.d)/99-3vee-uploads.ini"'
 
 COPY docker/entrypoint.sh /usr/local/bin/3vee-entrypoint.sh
 RUN chmod +x /usr/local/bin/3vee-entrypoint.sh

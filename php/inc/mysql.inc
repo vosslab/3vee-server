@@ -36,6 +36,10 @@ class mysql {
 		self::__construct($db_host, $db_user, $db_pass, $db);
 	}
 
+	function __destruct() {
+		$this->close_db();
+	}
+
 	function getDBInfo() {
 		return "\n\t\thostname: " . $this->db_host . "\n\t\tdatabase: " . $this->db . "\n\t\tuser: " . $this->db_user;
 	}
@@ -224,14 +228,24 @@ class mysql {
 	}
 
 	function getSQLResult($query, $fetch=MYSQLI_ASSOC) {
-		$result = $this->SQLQuery($query);
-		if (!$result)
+		$this->sqlquery = $query;
+		$link = $this->connect_db($this->db_host);
+		if (!$link)
 			return false;
-		if (!($result instanceof mysqli_result))
-			return $result;
+		$result = mysqli_query($link, $query);
+		if (!$result) {
+			$this->mysqlerror = "Error: " . mysqli_error($link);
+			$this->mysqlerrornb = mysqli_errno($link);
+			$this->close_db($link);
+			return false;
+		}
 		$data = array();
-		while ($row = mysqli_fetch_array($result, $fetch))
-			$data[] = $row;
+		if ($result instanceof mysqli_result) {
+			while ($row = mysqli_fetch_array($result, $fetch))
+				$data[] = $row;
+			mysqli_free_result($result);
+		}
+		$this->close_db($link);
 		return $data;
 	}
 

@@ -137,6 +137,7 @@ def makeTables(sinedonname,modulename,dbname=None,xmlfile=None,check_exist=False
 		xmlf.close()
 
 	print ("Created %d tables"%(count))
+	dbd.close()
 
 #=================
 #=================
