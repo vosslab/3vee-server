@@ -50,7 +50,6 @@ except ImportError:
 
 import datetime
 import re
-import six
 from sinedon import sqldict
 from sinedon import newdict
 import pickle
@@ -73,7 +72,7 @@ def isoStr(val):
 def sqlRepr(obj):
 	if isinstance(obj, SQLExpression):
 		return obj.sqlRepr()
-	elif isinstance(obj, six.string_types):
+	elif isinstance(obj, str):
 		for orig, repl in sqlStringReplace:
 			obj = str(obj.replace(orig, repl))
 		return "'%s'" % obj

@@ -1,7 +1,3 @@
-
-from builtins import object
-#!/usr/bin/env python
-
 import weakref
 import numpy
 import sys

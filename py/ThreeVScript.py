@@ -12,6 +12,27 @@ from optparse import OptionParser
 import ThreeVLib
 import threevdata
 
+#============================================
+def add_dual_probe_options(parser):
+	"""Add big/small probe radius options for solvent-type calculations."""
+	parser.add_option("--bigprobe", dest="bigprobe", type="float", default=6.0,
+		help="Big probe radius", metavar="#")
+	parser.add_option("--smallprobe", dest="smallprobe", type="float", default=2.0,
+		help="Small probe radius", metavar="#")
+	return parser
+
+#============================================
+def add_probe_range_options(parser):
+	"""Add min/max/step probe range options for volume range sweeps."""
+	parser.add_option("--minprobe", dest="minprobe", type="float", default=0.0,
+		help="Minimum probe radius", metavar="#")
+	parser.add_option("--maxprobe", dest="maxprobe", type="float", default=10.0,
+		help="Maximum probe radius", metavar="#")
+	parser.add_option("--probestep", dest="probestep", type="float", default=1.0,
+		help="Probe radius step size", metavar="#")
+	return parser
+
+#============================================
 class ThreeVScript(object):
 	#=====================
 	def __init__(self):
@@ -198,8 +219,6 @@ class ThreeVScript(object):
 			action="store_true", help="Use biological unit instead")
 		self.parser.add_option("--allowuse", dest="allowuse", default=False,
 			action="store_true", help="Allow publication of results")
-		self.parser.add_option("--pymol", dest="pymol", default=False,
-			action="store_true", help="Make volume compatible with PyMOL")
 		self.parser.add_option("--waterpdb", dest="waterpdb", default=False,
 			action="store_true", help="Create PDB file with water atoms at each voxel")
 
@@ -299,6 +318,17 @@ class ThreeVScript(object):
 	#=====================
 	def close(self):
 		self.__del__()
+
+	#=====================
+	def write_single_mrc_results_page(self, mrcfile, pngfiles, objfile,
+		pdbfile=None, include_stats=True):
+		"""Write the standard single-MRC results HTML page."""
+		with open(f"results-{self.params['jobid']}.html", "w") as f:
+			self.threev.webImageSection(pngfiles, self.website, f)
+			self.threev.webJmolSection(objfile, self.website, f, pdbfile=pdbfile)
+			if include_stats:
+				self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
+			self.threev.webMrcSection([mrcfile], self.website, f, pdb=True)
 
 	#=====================
 	#=====================

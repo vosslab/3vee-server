@@ -12,10 +12,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	#=====================
 	def setupParserOptions(self):
 		self.parser.set_usage("Usage: %prog --rundir=<output dir> --jobid=<job id> --pdbid=<pdb id>")
-		self.parser.add_option("--bigprobe", dest="bigprobe", type="float", default=6.0,
-			help="Probe radius", metavar="#")
-		self.parser.add_option("--smallprobe", dest="smallprobe", type="float", default=2.0,
-			help="Probe radius", metavar="#")
+		ThreeVScript.add_dual_probe_options(self.parser)
 		self.parser.add_option("--minpercent", dest="minpercent", type="float",
 			help="Minimum size of a channel", metavar="#")
 		self.parser.add_option("--minvolume", dest="minvolume", type="int",
@@ -51,10 +48,10 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 			self.threev.webImageSection(pngfiles, self.website, f, title=title)
 			self.threev.webJmolSection(objfile, self.website, f, pdbfile=self.pdbfile)
 			self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
-			self.threev.webMrcSection([mrcfile], self.website, f, pymol=self.params['pymol'])
+			self.threev.webMrcSection([mrcfile], self.website, f)
 			f.write("<hr/><hr/>\n")
 
-		self.threev.webMrcSection(mrcfiles, self.website, f, pdb=True, pymol=self.params['pymol'])
+		self.threev.webMrcSection(mrcfiles, self.website, f, pdb=True)
 		f.close()
 
 

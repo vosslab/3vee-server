@@ -1,8 +1,3 @@
-
-from builtins import str
-from builtins import range
-from builtins import object
-#!/usr/bin/env python
 import weakref
 import threading
 

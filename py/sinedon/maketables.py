@@ -3,7 +3,7 @@ import re
 import sys
 import sqldict
 import inspect
-import sinedon
+import sinedon.dbconfig
 
 from optparse import OptionParser
 
@@ -75,10 +75,10 @@ def makeTables(sinedonname,modulename,dbname=None,xmlfile=None,check_exist=False
 	### use alternate db name if desired
 	if dbname is not None:
 		print ("setting alternate database name")
-		sinedon.setConfig(sinedonname, db=dbname)
+		sinedon.dbconfig.setConfig(sinedonname, db=dbname)
 
 	### connect to DB
-	dbconf = sinedon.getConfig(sinedonname)
+	dbconf = sinedon.dbconfig.getConfig(sinedonname)
 	dbd = sqldict.SQLDict(**dbconf)
 
 	### import desire module

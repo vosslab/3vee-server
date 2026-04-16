@@ -31,12 +31,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		pngfiles, objfile = self.threev.makeImages(mrcfile)
 
 		### write to webpage
-		f = open("results-"+self.params['jobid']+".html", "w")
-		self.threev.webImageSection(pngfiles, self.website, f)
-		self.threev.webJmolSection(objfile, self.website, f)
-		self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
-		self.threev.webMrcSection([mrcfile], self.website, f, pdb=True, pymol=self.params['pymol'])
-		f.close()
+		self.write_single_mrc_results_page(mrcfile, pngfiles, objfile)
 
 
 

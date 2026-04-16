@@ -9,7 +9,7 @@ echo "<div class='threev-content'>\n";
 
 echo "  <div class='threev-section'>\n";
 echo "    <h2>Volume viewing guide</h2>\n";
-echo "    <p>3v produces MRC volumes and optional PDBs. These can be opened in ChimeraX, Chimera, or PyMOL. The results pages also include a Jmol link when an OBJ surface is available.</p>\n";
+echo "    <p>3v produces MRC and CCP4 volumes and optional PDBs. MRC is the standard format for ChimeraX and Chimera. CCP4 files are provided for software expecting CCP4 map semantics, including PyMOL (<code>format=ccp4</code>). The results pages also include a Jmol link when an OBJ surface is available.</p>\n";
 echo "  </div>\n";
 
 echo "  <div class='threev-section'>\n";
@@ -32,6 +32,15 @@ echo "    <ul>\n";
 echo "      <li>Use a slightly higher threshold to suppress noise on the surface.</li>\n";
 echo "      <li>Enable surface smoothing to reduce faceting in low-resolution maps.</li>\n";
 echo "      <li>Color the volume to distinguish shell, channel, and cavity regions.</li>\n";
+echo "    </ul>\n";
+echo "  </div>\n";
+
+echo "  <div class='threev-section'>\n";
+echo "    <h2>Software compatibility</h2>\n";
+echo "    <ul>\n";
+echo "      <li><strong>ChimeraX / Chimera:</strong> Use MRC files.</li>\n";
+echo "      <li><strong>PyMOL:</strong> Use CCP4 files. PyMOL can read both integer and float MRC/CCP4 maps.</li>\n";
+echo "      <li><strong>VMD:</strong> VMD's CCP4/MRC reader expects float32 maps (mode 2). 3v writes integer maps, which VMD may not load correctly.</li>\n";
 echo "    </ul>\n";
 echo "  </div>\n";
 

@@ -24,6 +24,15 @@ from appionlib import apHeadlessRender
 from appionlib import apFile
 from pyami import mrc, surfarea
 
+#============================================
+def with_ccp4_output(cmd: str, mrcfile: str) -> str:
+	"""Append --ccp4-output flag to a vossvolvox command string."""
+	basename = os.path.splitext(mrcfile)[0]
+	ccp4file = basename + ".ccp4"
+	cmd += f" --ccp4-output {ccp4file}"
+	return cmd
+
+#============================================
 class ThreeVLib(object):
 	#====================
 	def __init__(self, jobid=None):
@@ -261,30 +270,6 @@ class ThreeVLib(object):
 		return xyzrfile
 
 	#====================
-	def convertCCP4toMRC(self, ccp4file, mrcfile=None):
-		self.checkSystemLoad()
-		self.writeToRunningLog("converting ccp4 into mrc")
-		if mrcfile is None:
-			mrcfile = os.path.splitext(ccp4file)[0]+".mrc"
-		if os.path.isfile(mrcfile):
-			os.remove(mrcfile)
-
-		try:
-			volume = mrc.read(ccp4file)
-		except Exception:
-			self.writeToRunningLog("failed to read CCP4 file for conversion", type="Cross")
-			raise
-
-		header = mrc.getHeader(volume)
-		mrc.write(volume, mrcfile, header=header)
-
-		if not os.path.isfile(mrcfile):
-			self.writeToRunningLog("failed to convert CCP4 to MRC", type="Cross")
-			sys.exit(1)
-
-		return mrcfile
-
-	#====================
 	def runFsvCalc(self, xyzrfile, bigprobe=6.0, smallprobe=2.0, trimprobe=1.5, gridsize=0.5, mrcfile=None):
 		self.checkSystemLoad()
 		"""
@@ -294,18 +279,19 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v fsv calc program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		fsvcalccmd  = os.path.join(self.procdir, "bin/FsvCalc.exe")
+		fsvcalccmd = os.path.join(self.procdir, "bin/FsvCalc.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run FSVCalc.exe", type="Cross")
 			sys.exit(1)
-		fsvcalccmd += " -i %s"%(xyzrfile)
-		fsvcalccmd += " -b %.3f"%(bigprobe)
-		fsvcalccmd += " -s %.3f"%(smallprobe)
-		fsvcalccmd += " -t %.3f"%(trimprobe)
-		fsvcalccmd += " -g %.3f"%(gridsize)
-		fsvcalccmd += " -m %s"%(mrcfile)
+		fsvcalccmd += f" -i {xyzrfile}"
+		fsvcalccmd += f" -b {bigprobe:.3f}"
+		fsvcalccmd += f" -s {smallprobe:.3f}"
+		fsvcalccmd += f" -t {trimprobe:.3f}"
+		fsvcalccmd += f" -g {gridsize:.3f}"
+		fsvcalccmd += f" -m {mrcfile}"
+		fsvcalccmd = with_ccp4_output(fsvcalccmd, mrcfile)
 		self.runCommand(fsvcalccmd, verbose=True)
 
 		logfile = os.path.join(self.rundir, "shell-"+self.jobid+".log")
@@ -360,25 +346,27 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v channel program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		channelcmd  = os.path.join(self.procdir, "bin/Channel.exe")
+		channelcmd = os.path.join(self.procdir, "bin/Channel.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run Channel.exe", type="Cross")
 			sys.exit(1)
-		channelcmd += " -i %s"%(xyzrfile)
-		channelcmd += " -b %.3f"%(bigprobe)
-		channelcmd += " -s %.3f"%(smallprobe)
-		channelcmd += " -t %.3f"%(trimprobe)
-		channelcmd += " -g %.3f"%(gridsize)
-		channelcmd += " -m %s"%(mrcfile)
+		channelcmd += f" -i {xyzrfile}"
+		channelcmd += f" -b {bigprobe:.3f}"
+		channelcmd += f" -s {smallprobe:.3f}"
+		channelcmd += f" -t {trimprobe:.3f}"
+		channelcmd += f" -g {gridsize:.3f}"
+		channelcmd += f" -m {mrcfile}"
 		if self.script.params['waterpdb'] is True:
-			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
-			channelcmd += " -o %s"%(pdbfile)
+			basename = os.path.splitext(mrcfile)[0]
+			pdbfile = basename + ".pdb"
+			channelcmd += f" -o {pdbfile}"
+		channelcmd = with_ccp4_output(channelcmd, mrcfile)
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to file: "+mrcfile)
+			print(f"wrote to file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -395,27 +383,28 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v all channel program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 		mrcfile = os.path.abspath(mrcfile)
 
-		chanfindcmd  = os.path.join(self.procdir, "bin/AllChannel.exe")
+		chanfindcmd = os.path.join(self.procdir, "bin/AllChannel.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run AllChannel.exe", type="Cross")
 			sys.exit(1)
-		chanfindcmd += " -i %s"%(xyzrfile)
-		chanfindcmd += " -b %.3f"%(bigprobe)
-		chanfindcmd += " -s %.3f"%(smallprobe)
-		chanfindcmd += " -t %.3f"%(trimprobe)
-		chanfindcmd += " -g %.3f"%(gridsize)
+		chanfindcmd += f" -i {xyzrfile}"
+		chanfindcmd += f" -b {bigprobe:.3f}"
+		chanfindcmd += f" -s {smallprobe:.3f}"
+		chanfindcmd += f" -t {trimprobe:.3f}"
+		chanfindcmd += f" -g {gridsize:.3f}"
 		if numchan is not None:
-			chanfindcmd += " -n %d"%(numchan)
+			chanfindcmd += f" -n {numchan:d}"
 		elif minvolume is not None:
-			chanfindcmd += " -v %d"%(minvolume)
+			chanfindcmd += f" -v {minvolume:d}"
 		elif minpercent is not None:
-			chanfindcmd += " -p %.6f"%(minpercent)
+			chanfindcmd += f" -p {minpercent:.6f}"
 		else:
-			chanfindcmd += " -p %.6f"%(0.001)
-		chanfindcmd += " -m %s"%(mrcfile)
+			chanfindcmd += f" -p {0.001:.6f}"
+		chanfindcmd += f" -m {mrcfile}"
+		chanfindcmd = with_ccp4_output(chanfindcmd, mrcfile)
 
 		self.runCommand(chanfindcmd, verbose=True)
 
@@ -446,25 +435,27 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v exit tunnel program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		tunnelcmd  = os.path.join(self.procdir, "bin/Tunnel.exe")
+		tunnelcmd = os.path.join(self.procdir, "bin/Tunnel.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run Tunnel.exe", type="Cross")
 			sys.exit(1)
-		tunnelcmd += " -i %s"%(xyzrfile)
-		tunnelcmd += " -b %.3f"%(bigprobe)
-		tunnelcmd += " -s %.3f"%(smallprobe)
-		tunnelcmd += " -t %.3f"%(trimprobe)
-		tunnelcmd += " -g %.3f"%(gridsize)
-		tunnelcmd += " -m %s"%(mrcfile)
+		tunnelcmd += f" -i {xyzrfile}"
+		tunnelcmd += f" -b {bigprobe:.3f}"
+		tunnelcmd += f" -s {smallprobe:.3f}"
+		tunnelcmd += f" -t {trimprobe:.3f}"
+		tunnelcmd += f" -g {gridsize:.3f}"
+		tunnelcmd += f" -m {mrcfile}"
 		if self.script.params['waterpdb'] is True:
-			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
-			tunnelcmd += " -o %s"%(pdbfile)
+			basename = os.path.splitext(mrcfile)[0]
+			pdbfile = basename + ".pdb"
+			tunnelcmd += f" -o {pdbfile}"
+		tunnelcmd = with_ccp4_output(tunnelcmd, mrcfile)
 		self.runCommand(tunnelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to file: "+mrcfile)
+			print(f"wrote to file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -482,25 +473,27 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v solvent program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		channelcmd  = os.path.join(self.procdir, "bin/Solvent.exe")
+		channelcmd = os.path.join(self.procdir, "bin/Solvent.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run Solvent.exe", type="Cross")
 			sys.exit(1)
-		channelcmd += " -i %s"%(xyzrfile)
-		channelcmd += " -b %.3f"%(bigprobe)
-		channelcmd += " -s %.3f"%(smallprobe)
-		channelcmd += " -t %.3f"%(trimprobe)
-		channelcmd += " -g %.3f"%(gridsize)
-		channelcmd += " -m %s"%(mrcfile)
+		channelcmd += f" -i {xyzrfile}"
+		channelcmd += f" -b {bigprobe:.3f}"
+		channelcmd += f" -s {smallprobe:.3f}"
+		channelcmd += f" -t {trimprobe:.3f}"
+		channelcmd += f" -g {gridsize:.3f}"
+		channelcmd += f" -m {mrcfile}"
 		if self.script.params['waterpdb'] is True:
-			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
-			channelcmd += " -o %s"%(pdbfile)
+			basename = os.path.splitext(mrcfile)[0]
+			pdbfile = basename + ".pdb"
+			channelcmd += f" -o {pdbfile}"
+		channelcmd = with_ccp4_output(channelcmd, mrcfile)
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to file: "+mrcfile)
+			print(f"wrote to file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -518,29 +511,31 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v channel program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		channelcmd  = os.path.join(self.procdir, "bin/Channel.exe")
+		channelcmd = os.path.join(self.procdir, "bin/Channel.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run Channel.exe", type="Cross")
 			sys.exit(1)
-		channelcmd += " -i %s"%(xyzrfile)
-		channelcmd += " -b %.3f"%(bigprobe)
-		channelcmd += " -s %.3f"%(smallprobe)
-		channelcmd += " -t %.3f"%(trimprobe)
-		channelcmd += " -g %.3f"%(gridsize)
+		channelcmd += f" -i {xyzrfile}"
+		channelcmd += f" -b {bigprobe:.3f}"
+		channelcmd += f" -s {smallprobe:.3f}"
+		channelcmd += f" -t {trimprobe:.3f}"
+		channelcmd += f" -g {gridsize:.3f}"
 		if all(coord is not None for coord in xyzcoord):
-			channelcmd += " -x %.3f"%(xyzcoord[0])
-			channelcmd += " -y %.3f"%(xyzcoord[1])
-			channelcmd += " -z %.3f"%(xyzcoord[2])
-		channelcmd += " -m %s"%(mrcfile)
+			channelcmd += f" -x {xyzcoord[0]:.3f}"
+			channelcmd += f" -y {xyzcoord[1]:.3f}"
+			channelcmd += f" -z {xyzcoord[2]:.3f}"
+		channelcmd += f" -m {mrcfile}"
 		if self.script.params['waterpdb'] is True:
-			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
-			channelcmd += " -o %s"%(pdbfile)
+			basename = os.path.splitext(mrcfile)[0]
+			pdbfile = basename + ".pdb"
+			channelcmd += f" -o {pdbfile}"
+		channelcmd = with_ccp4_output(channelcmd, mrcfile)
 		self.runCommand(channelcmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to file: "+mrcfile)
+			print(f"wrote to file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("failed to create an MRC file", type="Cross")
@@ -557,24 +552,25 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v volume program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-
-		volumecmd  = os.path.join(self.procdir, "bin/Volume.exe")
+		volumecmd = os.path.join(self.procdir, "bin/Volume.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run Volume.exe", type="Cross")
 			sys.exit(1)
-		volumecmd += " -i %s"%(xyzrfile)
-		volumecmd += " -p %.3f"%(probe)
-		volumecmd += " -g %.3f"%(gridsize)
-		volumecmd += " -m %s"%(mrcfile)
+		volumecmd += f" -i {xyzrfile}"
+		volumecmd += f" -p {probe:.3f}"
+		volumecmd += f" -g {gridsize:.3f}"
+		volumecmd += f" -m {mrcfile}"
 		if self.script.params['waterpdb'] is True:
-			pdbfile = re.sub(".mrc", ".pdb", mrcfile)
-			volumecmd += " -o %s"%(pdbfile)
+			basename = os.path.splitext(mrcfile)[0]
+			pdbfile = basename + ".pdb"
+			volumecmd += f" -o {pdbfile}"
+		volumecmd = with_ccp4_output(volumecmd, mrcfile)
 		self.runCommand(volumecmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to mrc file: "+mrcfile)
+			print(f"wrote to mrc file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("unknown output for Volume.exe", type="Cross")
@@ -590,20 +586,21 @@ class ThreeVLib(object):
 		"""
 		self.writeToRunningLog("running 3v volume program")
 		if mrcfile is None:
-			mrcfile = os.path.splitext(xyzrfile)[0]+".mrc"
+			mrcfile = os.path.splitext(xyzrfile)[0] + ".mrc"
 
-		volumecmd  = os.path.join(self.procdir, "bin/VolumeNoCav.exe")
+		volumecmd = os.path.join(self.procdir, "bin/VolumeNoCav.exe")
 		if not os.path.isfile(xyzrfile):
 			self.writeToRunningLog("failed to find XYZR file to run VolumeNoCav.exe", type="Cross")
 			sys.exit(1)
-		volumecmd += " -i %s"%(xyzrfile)
-		volumecmd += " -p %.3f"%(probe)
-		volumecmd += " -g %.3f"%(gridsize)
-		volumecmd += " -m %s"%(mrcfile)
+		volumecmd += f" -i {xyzrfile}"
+		volumecmd += f" -p {probe:.3f}"
+		volumecmd += f" -g {gridsize:.3f}"
+		volumecmd += f" -m {mrcfile}"
+		volumecmd = with_ccp4_output(volumecmd, mrcfile)
 		self.runCommand(volumecmd, verbose=True)
 
 		if os.path.isfile(mrcfile):
-			print("wrote to mrc file: "+mrcfile)
+			print(f"wrote to mrc file: {mrcfile}")
 			return mrcfile
 		else:
 			self.writeToRunningLog("unknown output for VolumeNoCav.exe", type="Cross")
@@ -867,24 +864,10 @@ class ThreeVLib(object):
 		return tarname
 
 	#====================
-	def gzipFile(self, fname, pymol=False):
-		self.writeToRunningLog("compressing "+os.path.basename(fname))
+	def gzipFile(self, fname):
+		self.writeToRunningLog(f"compressing {os.path.basename(fname)}")
 		self.checkSystemLoad()
-		if pymol is True:
-			header = mrc.readHeaderFromFile(fname)
-			for key in list(header.keys()):
-				xyz = ('x', 'y', 'z')
-				if (key[0] in xyz or key[-1] in xyz) and not key.startswith('am'):
-					#print key, header[key]
-					continue
-				else:
-					del header[key]
-			a = mrc.read(fname)
-			b = numpy.array(a, dtype=numpy.float32)
-			#print header
-			mrc.write(b, fname, header=header)
-			del a,b
-		gzfname = fname+".gz"
+		gzfname = fname + ".gz"
 		if os.path.isfile(gzfname):
 			if os.path.isfile(fname):
 				### files exists, overwrite it
@@ -1041,7 +1024,7 @@ class ThreeVLib(object):
 		return (xcom, ycom, zcom)
 
 	#====================
-	def webMrcSection(self, mrcfiles, website, webf, pdb=False, pymol=False):
+	def webMrcSection(self, mrcfiles, website, webf, pdb=False):
 		if isinstance(mrcfiles, str):
 			mrcfiles = [mrcfiles]
 		if not mrcfiles:
@@ -1054,7 +1037,8 @@ class ThreeVLib(object):
 		for mrcfile in mrcfiles:
 			#webf.write("WATER PDB")
 			if self.script.params['waterpdb'] is True:
-				pdbfile = re.sub(".mrc", ".pdb", mrcfile)
+				basename = os.path.splitext(mrcfile)[0]
+				pdbfile = basename + ".pdb"
 				#webf.write("PDB file: "+pdbfile)
 				gzpdbfile = self.gzipFile(pdbfile)
 				#webf.write("Gzip PDB file: "+gzpdbfile)
@@ -1063,11 +1047,21 @@ class ThreeVLib(object):
 						+website+os.path.basename(gzpdbfile)+"'>"
 						+os.path.basename(pdbfile)+"</a></li>\n")
 			if mrcfile[-2:] != "gz":
-				gzmrcfile = self.gzipFile(mrcfile, pymol)
+				gzmrcfile = self.gzipFile(mrcfile)
 			if os.path.isfile(gzmrcfile):
 				webf.write("<li>download gzipped MRC file: <a href='"
 					+website+os.path.basename(gzmrcfile)+"'>"
 					+os.path.basename(mrcfile)+"</a></li>\n")
+			# CCP4 download link (for PyMOL and other CCP4 map readers)
+			basename = os.path.splitext(mrcfile)[0]
+			ccp4file = basename + ".ccp4"
+			if os.path.isfile(ccp4file):
+				gzccp4file = self.gzipFile(ccp4file)
+				if os.path.isfile(gzccp4file):
+					webf.write(f"<li>download gzipped CCP4 file "
+						f"(for PyMOL and other CCP4 map readers): <a href='"
+						f"{website}{os.path.basename(gzccp4file)}'>"
+						f"{os.path.basename(ccp4file)}</a></li>\n")
 		if len(mrcfiles) > 1 and os.path.isfile(tarfile):
 			webf.write("<li>download TAR archive of all gzipped MRC files: <a href='"
 				+website+os.path.basename(tarfile)+"'>"
@@ -1076,9 +1070,11 @@ class ThreeVLib(object):
 			webf.write("<li>download gzipped PDB of the original structure: <a href='"
 				+self.pdburl+"'>"
 				+self.pdbid+".pdb.gz</a></li>\n")
-		webf.write("<li><font size='-1'>To view these files, use "
-			+"<a href='http://www.cgl.ucsf.edu/chimera/'>UCSF Chimera</a> or "
-			+"<a href='http://pymol.org/'>PyMol</a></font>")
+		webf.write("<li><font size='-1'>Use MRC files with "
+			+"<a href='https://www.cgl.ucsf.edu/chimerax/'>ChimeraX</a>/"
+			+"<a href='http://www.cgl.ucsf.edu/chimera/'>Chimera</a>. "
+			+"Use CCP4 files with "
+			+"<a href='http://pymol.org/'>PyMOL</a>.</font>")
 		webf.write("<li><font size='-1'><a href='volumeviewing.php'>Volume Viewing Guide</a>"
 			+" on how to view these files</font>")
 		webf.write("</ul></h4>\n")

@@ -14,10 +14,7 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 	#=====================
 	def setupParserOptions(self):
 		self.parser.set_usage("Usage: %prog --rundir=<output dir> --jobid=<job id> --pdbid=<pdb id>")
-		self.parser.add_option("--bigprobe", dest="bigprobe", type="float", default=6.0,
-			help="Probe radius", metavar="#")
-		self.parser.add_option("--smallprobe", dest="smallprobe", type="float", default=2.0,
-			help="Probe radius", metavar="#")
+		ThreeVScript.add_dual_probe_options(self.parser)
 
 	#=====================
 	def checkConflicts(self):
@@ -53,7 +50,11 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 		if ezdfile and os.path.isfile(ezdfile):
 			self.threev.gzipFile(ezdfile)
 		self.threev.gzipFile(mrcfile)
-		#os.remove(ccp4file)
+		# gzip CCP4 file if it exists
+		basename = os.path.splitext(mrcfile)[0]
+		ccp4file = basename + ".ccp4"
+		if os.path.isfile(ccp4file):
+			self.threev.gzipFile(ccp4file)
 		self.threev.close()
 
 		f = open("results-"+self.params['jobid']+".html", "w")
@@ -78,9 +79,16 @@ class RunFSVCalcScript(ThreeVScript.ThreeVScript):
 			f.write("<li>download MRC file: <a href='"
 				+website+os.path.basename(mrcfile)+".gz'>"
 				+os.path.basename(mrcfile)+"</a></li>\n")
-		f.write("</ul>To view these files, use "
-			+"<a href='http://www.cgl.ucsf.edu/chimera/'>UCSF Chimera</a> or "
-			+"<a href='http://pymol.org/'>PyMol</a>")
+		if os.path.isfile(ccp4file+".gz"):
+			f.write(f"<li>download CCP4 file "
+				f"(for PyMOL and other CCP4 map readers): <a href='"
+				f"{website}{os.path.basename(ccp4file)}.gz'>"
+				f"{os.path.basename(ccp4file)}</a></li>\n")
+		f.write("</ul>Use MRC files with "
+			+"<a href='https://www.cgl.ucsf.edu/chimerax/'>ChimeraX</a>/"
+			+"<a href='http://www.cgl.ucsf.edu/chimera/'>Chimera</a>. "
+			+"Use CCP4 files with "
+			+"<a href='http://pymol.org/'>PyMOL</a>.")
 		f.write("</h4>\n")
 
 		### Images of the volume

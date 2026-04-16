@@ -14,12 +14,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	#=====================
 	def setupParserOptions(self):
 		self.parser.set_usage("Usage: %prog --rundir=<output dir> --jobid=<job id> --pdbid=<pdb id>")
-		self.parser.add_option("--minprobe", dest="minprobe", type="float", default=0.0,
-			help="Probe radius", metavar="#")
-		self.parser.add_option("--maxprobe", dest="maxprobe", type="float", default=10.0,
-			help="Probe radius", metavar="#")
-		self.parser.add_option("--probestep", dest="probestep", type="float", default=1.0,
-			help="Probe radius", metavar="#")
+		ThreeVScript.add_probe_range_options(self.parser)
 
 	#=====================
 	def checkConflicts(self):
@@ -57,7 +52,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 			self.threev.webImageSection(pngfiles, self.website, f, title=title)
 			self.threev.webJmolSection(objfile, self.website, f)
 			self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
-			self.threev.webMrcSection([mrcfile], self.website, f, pdb=True, pymol=self.params['pymol'])
+			self.threev.webMrcSection([mrcfile], self.website, f, pdb=True)
 			f.write("<hr/><hr/>\n")
 
 		self.threev.webMrcSection(mrclist, self.website, f)

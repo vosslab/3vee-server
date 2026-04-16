@@ -19,11 +19,6 @@ mmap(filename)
 
 
 
-from builtins import zip
-from builtins import map
-from builtins import str
-from builtins import range
-
 import numpy
 import sys
 from pyami import arraystats

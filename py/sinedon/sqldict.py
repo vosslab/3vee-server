@@ -156,7 +156,7 @@ import numpy
 import math
 import pymysql
 import pymysql.err
-import sinedon
+import sinedon.data
 import pyami.mrc
 import os
 import pickle as cPickle # python3

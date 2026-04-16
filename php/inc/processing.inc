@@ -652,12 +652,6 @@ function firstColumn($print3d=false) {
 	$html .= "<br/><br/>\n";
 
 	if ($print3d == false) {
-		// PyMOL compatibility
-		$pymol = (post_value('pymol')=='on') ? 'CHECKED' : '';
-		$html .= "<input type='checkbox' name='pymol' $pymol />\n";
-		$html .= docpop('pymol','PyMOL compatible');
-		$html .= "<br/>\n";
-
 		// Water PDB
 		$waterpdb = (post_value('waterpdb')=='on') ? 'CHECKED' : '';
 		$html .= "<input type='checkbox' name='waterpdb' $waterpdb />\n";
@@ -756,7 +750,6 @@ function launchJob($command, $progname, $print3d=false) {
 	$flatmethod = post_choice('flatMethod', array('trim', 'bisect', 'none'), 'trim');
 	$flataxis = post_choice('flataxis', array('auto', 'x', 'y', 'z'), 'auto');
 	$trimpercent_raw = post_float_optional('trimpercent');
-	$pymol = post_flag_value('pymol');
 	$waterpdb = post_flag_value('waterpdb');
 	$uploadName = isset($_FILES['uploadpdb']['name']) ? $_FILES['uploadpdb']['name'] : '';
 
@@ -799,9 +792,7 @@ function launchJob($command, $progname, $print3d=false) {
 		$command.=" --allowuse";
 	$command.=" --gridres=".escapeshellarg($gridres);
 	
-	if (!$print3d) {	
-		if ($pymol=='on')
-			$command.=" --pymol";
+	if (!$print3d) {
 		if ($waterpdb=='on')
 			$command.=" --waterpdb";
 	}	

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-04-16
+
+### Additions and New Features
+- Added CCP4 export: all vossvolvox binaries now receive `--ccp4-output` via `with_ccp4_output()` helper.
+- Added CCP4 download links to results pages alongside MRC downloads, labeled for PyMOL and CCP4 map readers.
+- Added shared argparse helpers `add_dual_probe_options()` and `add_probe_range_options()` in ThreeVScript.py, following the bptools.py pattern.
+- Added `write_single_mrc_results_page()` method to ThreeVScript, consolidating results page boilerplate for 5 scripts.
+
+### Behavior or Interface Changes
+- Replaced the PyMOL checkbox with automatic CCP4 file generation; CCP4 files are always produced alongside MRC.
+- Updated volume viewing guide to mention CCP4 format and its PyMOL compatibility.
+
+### Fixes and Maintenance
+- Replaced fragile `re.sub(".mrc", ".pdb", ...)` calls with explicit `os.path.splitext` basename pattern.
+- Converted %-format strings to f-strings in all vossvolvox command-building methods.
+
+### Removals and Deprecations
+- Removed `--pymol` CLI option, PyMOL checkbox in PHP UI, and pymol tooltip from help.js.
+- Removed float-conversion hack from `gzipFile()` (was converting MRC int data to float32 for PyMOL).
+- Removed dead `convertCCP4toMRC()` method from ThreeVLib.py.
+
 ## 2026-04-13
 - Fixed PDB upload failure ("file did not upload properly") caused by missing `output/uploads/` directory.
 - Added `output/uploads/` creation and permission checks to `docker/entrypoint.sh`.

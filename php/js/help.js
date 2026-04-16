@@ -32,7 +32,6 @@ var help = {
 		'sphericity'  : 'Sphericity is a measure of how much the volume resembles a sphere. A perfect sphere has a sphericity of 1.0, a cube has a sphericity of 0.81. Sphericity is determined from the volume and surface area of an object. &Psi; = (36&pi;V<sup>2</sup>)<sup>1/3</sup>/A.',
 		'com'  : 'The center of mass is defined as the average position of all the occupied voxels. This is not necessarily located inside the volume.',
 		'reducedcenter'  : 'The reduced center is the center of mass of the reduced volume. The CoM is less prone to large extermities of the channel. The reduced volume is obtained by iteratively removing all voxels on the surface until only the core voxels remain. For a channel, you can use the center of mass as input for the Single Channel Extract.',
-		'pymol' : 'By default the MRC/CCP4 file contain integers, but pymol requires floats, so this converts the data to floats',
 		'waterpdb' : 'Create a PDB file with a water molecule at each voxel location',
 		'flatmethod' : 'Method to create flat surface for 3D printing. Trim: cut off large surface, Bisect: cut model in half',
 	}

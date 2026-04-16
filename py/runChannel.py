@@ -12,10 +12,7 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 	#=====================
 	def setupParserOptions(self):
 		self.parser.set_usage("Usage: %prog --rundir=<output dir> --jobid=<job id> --pdbid=<pdb id>")
-		self.parser.add_option("--bigprobe", dest="bigprobe", type="float", default=6.0,
-			help="Probe radius", metavar="#")
-		self.parser.add_option("--smallprobe", dest="smallprobe", type="float", default=2.0,
-			help="Probe radius", metavar="#")
+		ThreeVScript.add_dual_probe_options(self.parser)
 		self.parser.add_option("--coord", dest="coord", default="0,0,0",
 			help="X,Y,Z coordinate of channel", metavar="#,#,#")
 
@@ -46,14 +43,8 @@ class RunThreeVScript(ThreeVScript.ThreeVScript):
 		pngfiles, objfile = self.threev.makeImages(mrcfile)
 
 		### write to webpage
-		f = open("results-"+self.params['jobid']+".html", "w")
-
-		self.threev.webImageSection(pngfiles, self.website, f)
-		self.threev.webJmolSection(objfile, self.website, f, pdbfile=self.pdbfile)
-		self.threev.webMrcStats(mrcfile, self.params['gridsize'], f)
-		self.threev.webMrcSection([mrcfile], self.website, f, pdb=True, pymol=self.params['pymol'])
-
-		f.close()
+		self.write_single_mrc_results_page(mrcfile, pngfiles, objfile,
+			pdbfile=self.pdbfile)
 
 
 

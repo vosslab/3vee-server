@@ -1,0 +1,7 @@
+# Runtime dependencies for 3vee-server
+matplotlib  # volume rendering and figure generation
+numpy  # core numerical arrays used throughout
+pillow  # image I/O and processing (PIL fork)
+pymysql  # MySQL/MariaDB database driver for sinedon ORM
+scikit-image  # isosurface extraction (marching cubes) in volume renderer
+scipy  # image filtering (ndimage) for smoothing and rendering

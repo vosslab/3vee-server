@@ -1,5 +1,5 @@
 ###############
-# Headless rendering (PyVista preferred, matplotlib fallback)
+# Headless rendering
 ###############
 
 import os
@@ -8,8 +8,6 @@ import time
 import numpy
 import random
 import colorsys
-import multiprocessing
-import sys
 from scipy import ndimage
 from PIL import Image
 #appion
@@ -21,33 +19,6 @@ from appionlib import apVolumeRender
 
 satvalue = 0.9
 hsvalue = 0.5
-
-def _pyvista_worker(verts, faces, basename, imgsize, pdb, silhouette, animate, result_q):
-	try:
-		os.environ.setdefault("PYVISTA_OFF_SCREEN", "true")
-		os.environ.setdefault("VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN", "1")
-		from appionlib import apPyVistaRender
-		if animate:
-			apPyVistaRender.render_animation_gif(
-				verts,
-				faces,
-				basename,
-				imgsize=imgsize,
-				pdb_path=pdb,
-				silhouette_width=2 if silhouette else 0,
-			)
-		else:
-			apPyVistaRender.render_png_views(
-				verts,
-				faces,
-				basename,
-				imgsize=imgsize,
-				pdb_path=pdb,
-				silhouette_width=2 if silhouette else 0,
-			)
-		result_q.put(("ok", None))
-	except Exception as exc:
-		result_q.put(("error", str(exc)))
 
 def _normalize_volume(volume):
 	std = volume.std()
@@ -253,38 +224,6 @@ def renderSlice(density, box=None, tmpfile=None, sym='c1'):
 #=========================================
 
 
-def _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=None, animate=False, silhouette=True):
-	main_file = getattr(sys.modules.get("__main__"), "__file__", None)
-	if main_file is None or not os.path.isfile(main_file):
-		apDisplay.printWarning("PyVista renderer skipped: multiprocessing spawn needs a real script path (use script/module, not stdin).")
-		return False
-	ctx = multiprocessing.get_context("spawn")
-	result_q = ctx.Queue()
-
-	proc = ctx.Process(
-		target=_pyvista_worker,
-		args=(verts, faces, basename, imgsize, pdb, silhouette, animate, result_q),
-	)
-	proc.start()
-	proc.join()
-
-	if proc.exitcode != 0:
-		apDisplay.printWarning(f"PyVista renderer crashed (exit {proc.exitcode}); using matplotlib fallback.")
-		return False
-
-	if result_q.empty():
-		apDisplay.printWarning("PyVista renderer returned no result; using matplotlib fallback.")
-		return False
-
-	status, msg = result_q.get()
-	if status == "ok":
-		apDisplay.printMsg("Rendered with PyVista backend.")
-		return True
-	apDisplay.printWarning(f"PyVista renderer failed, using matplotlib fallback: {msg}")
-	return False
-
-#=========================================
-#=========================================
 def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 		silhouette=True, xvfb=False, pdb=None, name=None, print3d=False):
 	"""
@@ -304,15 +243,7 @@ def renderSnapshots(density, contour=None, zoom=1.0, sym=None, color=None,
 			apVolumeRender.export_obj(verts, faces, basename + ".obj")
 		except Exception as exc:
 			apDisplay.printWarning(f"OBJ export failed: {exc}")
-	try:
-		import pyvista  # noqa: F401
-		use_pyvista = True
-	except ImportError:
-		use_pyvista = False
-	if use_pyvista and _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=False):
-		pass
-	else:
-		apVolumeRender.render_png_views(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
+	apVolumeRender.render_png_views(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
 	if print3d:
 		if verts is None or faces is None:
 			apDisplay.printWarning("Skipping STL export; mesh data unavailable.")
@@ -332,15 +263,7 @@ def renderAnimation(density, contour=None, zoom=1.0, sym=None, color=None,
 	basename = name or density
 	vol = mrc.read(density).astype(numpy.float32)
 	verts, faces = apVolumeRender.extract_mesh(vol, level=contour, spacing=(1.0, 1.0, 1.0))
-	try:
-		import pyvista  # noqa: F401
-		use_pyvista = True
-	except ImportError:
-		use_pyvista = False
-	if use_pyvista and _try_pyvista_render(verts, faces, basename, imgsize=512, pdb=pdb, silhouette=silhouette, animate=True):
-		pass
-	else:
-		apVolumeRender.render_animation_gif(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
+	apVolumeRender.render_animation_gif(verts, faces, basename, imgsize=512, silhouette_width=2 if silhouette else 0)
 	return basename
 
 #=========================================
